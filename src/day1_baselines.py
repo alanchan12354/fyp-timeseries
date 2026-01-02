@@ -57,8 +57,24 @@ def main():
     if df.empty:
         raise RuntimeError("No data downloaded. Check internet or ticker.")
 
-    price = df["Close"].dropna()
+    close = df["Close"]
+
+    # yfinance sometimes returns Close as a DataFrame (e.g., one column SPY) instead of a Series
+    if isinstance(close, pd.DataFrame):
+        # if there's exactly one column, take it
+        if close.shape[1] == 1:
+            close = close.iloc[:, 0]
+        # otherwise try to select the ticker column
+        elif TICKER in close.columns:
+            close = close[TICKER]
+        else:
+            close = close.iloc[:, 0]
+
+    price = close.dropna()
     returns = np.log(price / price.shift(1)).dropna()
+    print(type(returns), getattr(returns, "shape", None))
+
+
 
     # 2) features/targets
     X, y, idx = make_lag_features(returns, LAGS)
