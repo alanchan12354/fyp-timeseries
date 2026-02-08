@@ -29,6 +29,7 @@ LR = 1e-3
 PATIENCE = 10     # Relaxed patience
 
 OUT_DIR = "reports/day3"
+os.makedirs(OUT_DIR, exist_ok=True)
 FIG_DIR = os.path.join(OUT_DIR, "figures")
 os.makedirs(FIG_DIR, exist_ok=True)
 
@@ -110,7 +111,7 @@ class TransformerModel(nn.Module):
         super().__init__()
         self.input_proj = nn.Linear(1, d_model)
         self.pos_encoder = nn.Parameter(torch.randn(1, 100, d_model) * 0.02) # Simple learnable pos enc
-        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True,   norm_first=True)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
         self.fc = nn.Linear(d_model, 1)
         self.d_model = d_model
@@ -124,7 +125,7 @@ class TransformerModel(nn.Module):
         return self.fc(out[:, -1, :]).squeeze(1)
 
 # ---------- TRAIN LOOP ----------
-def train_model(model_name, model_cls, train_loader, val_loader, test_data):
+def train_model(model_name, model_cls, train_loader, val_loader, test_data, test_idx):
     print(f"\nTraining {model_name}...")
     model = model_cls().to(DEVICE)
     opt = torch.optim.Adam(model.parameters(), lr=LR)
@@ -187,11 +188,38 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data):
     X_te, y_te = test_data
     with torch.no_grad():
         preds = model(torch.tensor(X_te, dtype=torch.float32).to(DEVICE)).cpu().numpy()
-        
+
+    # Save per-model plots (learning curve already saved)
+    # test slice
+    try:
+        n_plot = min(200, len(y_te))
+        t = test_idx[:n_plot]
+        plt.figure()
+        plt.plot(t, y_te[:n_plot], label="true")
+        plt.plot(t, preds[:n_plot], label=model_name)
+        plt.legend()
+        plt.title(f"{model_name}: next-day log return (test slice)")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.savefig(os.path.join(FIG_DIR, f"{model_name.lower()}_test_slice_true_vs_pred.png"))
+        plt.close()
+
+        plt.figure()
+        plt.scatter(y_te, preds, s=8)
+        plt.title(f"{model_name}: true vs predicted (test)")
+        plt.xlabel("true")
+        plt.ylabel("pred")
+        plt.tight_layout()
+        plt.savefig(os.path.join(FIG_DIR, f"{model_name.lower()}_scatter.png"))
+        plt.close()
+    except Exception:
+        pass
+
     return {
         "MAE": float(mean_absolute_error(y_te, preds)),
         "RMSE": rmse(y_te, preds),
-        "DA": directional_accuracy(y_te, preds)
+        "DA": directional_accuracy(y_te, preds),
+        "best_val_MSE": float(best_val)
     }
 
 def main():
@@ -227,12 +255,26 @@ def main():
     ]
     
     for name, cls in models:
-        metrics = train_model(name, cls, tr_load, va_load, (X_te_s, y_te))
+        metrics = train_model(name, cls, tr_load, va_load, (X_te_s, y_te), idx_te)
         results.append({"Model": name, **metrics})
         
     # Save Results
     res_df = pd.DataFrame(results)
     res_df.to_csv(os.path.join(OUT_DIR, f"metrics_h{HORIZON}.csv"), index=False)
+
+    # Save JSON report similar to earlier days
+    report = {
+        "ticker": TICKER,
+        "start": START,
+        "seq_len": SEQ_LEN,
+        "horizon": HORIZON,
+        "split": {"train": TRAIN_RATIO, "val": VAL_RATIO, "test": 1 - TRAIN_RATIO - VAL_RATIO},
+        "device": DEVICE,
+        "models": {r["Model"]: {k: v for k, v in r.items() if k != "Model"} for r in results}
+    }
+    with open(os.path.join(OUT_DIR, f"metrics_h{HORIZON}.json"), "w") as f:
+        json.dump(report, f, indent=2)
+
     print("\nFinal Results:")
     print(res_df)
     
@@ -241,7 +283,16 @@ def main():
     plt.title(f"Model Comparison (Horizon={HORIZON})")
     plt.tight_layout()
     plt.savefig(os.path.join(FIG_DIR, f"comparison_h{HORIZON}.png"))
+    # Print saved artifacts
     print(f"Saved artifacts to {OUT_DIR}")
+    print(f" - {os.path.join(OUT_DIR, f'metrics_h{HORIZON}.json')}")
+    print(f" - {os.path.join(OUT_DIR, f'metrics_h{HORIZON}.csv')}")
+    for name, _ in models:
+        print(f" - {os.path.join(OUT_DIR, name + '.pt')}")
+        print(f" - {os.path.join(FIG_DIR, 'loss_' + name + '.png')}")
+        print(f" - {os.path.join(FIG_DIR, name.lower() + '_test_slice_true_vs_pred.png')}")
+        print(f" - {os.path.join(FIG_DIR, name.lower() + '_scatter.png')}")
+    print(f" - {os.path.join(FIG_DIR, f'comparison_h{HORIZON}.png')}")
 
 if __name__ == "__main__":
     main()
