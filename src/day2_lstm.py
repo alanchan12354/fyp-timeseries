@@ -22,10 +22,10 @@ TRAIN_RATIO = 0.70
 VAL_RATIO = 0.15
 
 BATCH_SIZE = 64
-EPOCHS = 120
+EPOCHS = 300
 LR = 1e-3
 HIDDEN = 64
-LAYERS = 1
+LAYERS = 2
 PATIENCE = 6  # early stopping
 
 OUT_DIR = "reports"
