@@ -111,7 +111,7 @@ class TransformerModel(nn.Module):
         super().__init__()
         self.input_proj = nn.Linear(1, d_model)
         self.pos_encoder = nn.Parameter(torch.randn(1, 100, d_model) * 0.02) # Simple learnable pos enc
-        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True,   norm_first=True)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True, norm_first=True)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
         self.fc = nn.Linear(d_model, 1)
         self.d_model = d_model
