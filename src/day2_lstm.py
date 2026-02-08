@@ -22,7 +22,7 @@ TRAIN_RATIO = 0.70
 VAL_RATIO = 0.15
 
 BATCH_SIZE = 64
-EPOCHS = 50
+EPOCHS = 120
 LR = 1e-3
 HIDDEN = 64
 LAYERS = 1
@@ -143,7 +143,9 @@ def main():
 
     # 6) model
     model = LSTMRegressor(hidden=HIDDEN, layers=LAYERS).to(DEVICE)
+
     opt = torch.optim.Adam(model.parameters(), lr=LR)
+    #opt = torch.optim.
     loss_fn = nn.MSELoss()
 
     best_val = float("inf")
