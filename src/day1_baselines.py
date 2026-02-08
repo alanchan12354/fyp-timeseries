@@ -5,7 +5,7 @@ import pandas as pd
 import yfinance as yf
 import matplotlib.pyplot as plt
 
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import Ridge, LinearRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
@@ -94,7 +94,12 @@ def main():
     # predict r_{t+1} using r_t == lag_1 (first feature column)
     yhat_persist_te = X_te[:, 0]
 
-    # ---------- baseline 2: ridge regression ----------
+    # ---------- baseline 2: linear regression (simple) ----------
+    lr_model = LinearRegression()
+    lr_model.fit(X_tr_s, y_tr)
+    yhat_lr_te = lr_model.predict(X_te_s)
+
+    # ---------- baseline 3: ridge regression ----------
     alphas = [1e-4, 1e-3, 1e-2, 1e-1, 1, 10, 100]
     best_alpha, best_val_rmse = None, float("inf")
     for a in alphas:
@@ -121,6 +126,11 @@ def main():
             "RMSE": rmse(y_te, yhat_persist_te),
             "DA": directional_accuracy(y_te, yhat_persist_te),
         },
+        "linear_regression": {
+             "MAE": float(mean_absolute_error(y_te, yhat_lr_te)),
+             "RMSE": rmse(y_te, yhat_lr_te),
+             "DA": directional_accuracy(y_te, yhat_lr_te),
+        },
         "ridge": {
             "alpha": float(best_alpha),
             "MAE": float(mean_absolute_error(y_te, yhat_ridge_te)),
@@ -136,7 +146,7 @@ def main():
 
     # also a small csv
     rows = []
-    for name in ["persistence", "ridge"]:
+    for name in ["persistence", "linear_regression", "ridge"]:
         rows.append({"model": name, **{k: metrics[name][k] for k in ["MAE", "RMSE", "DA"]}})
     pd.DataFrame(rows).to_csv(os.path.join(OUT_DIR, "metrics_day1.csv"), index=False)
 
@@ -148,6 +158,7 @@ def main():
     plt.figure()
     plt.plot(t, y_te[:n_plot], label="true")
     plt.plot(t, yhat_persist_te[:n_plot], label="persist")
+    plt.plot(t, yhat_lr_te[:n_plot], label="linear")
     plt.plot(t, yhat_ridge_te[:n_plot], label="ridge")
     plt.legend()
     plt.title("Next-day log return: true vs predicted (test slice)")
