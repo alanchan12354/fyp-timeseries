@@ -56,3 +56,7 @@ python -m src.comparison.main
 ## Configuration
 
 You can adjust hyperparameters (SEQ_LEN, LR, EPOCHS, etc.) in `src/common/config.py`.
+
+## New to the Codebase?
+
+Read the beginner-friendly walkthrough in `docs/CODEBASE_TOUR.md` for a full end-to-end explanation of how the project is structured and how data flows through it.
