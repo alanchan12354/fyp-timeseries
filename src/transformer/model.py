@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import math
 
 class TransformerModel(nn.Module):
     def __init__(self, d_model=64, nhead=4, num_layers=2, dropout=0.1):
@@ -13,12 +14,18 @@ class TransformerModel(nn.Module):
     def forward(self, x):
         # x: (B, Seq, 1) -> (B, Seq, d_model)
         x = self.input_proj(x)
-        if x.size(1) > self.pos_encoder.size(1):
-             # basic safety
-             x = x[:, :self.pos_encoder.size(1), :]
-             
-        # Add simpler positional encoding
-        x = x + self.pos_encoder[:, :x.size(1), :]
+        seq_len = x.size(1)
+        base_pos_len = self.pos_encoder.size(1)
+
+        # Keep full sequence context even when seq_len exceeds the learned
+        # positional table by tiling the table instead of truncating inputs.
+        if seq_len <= base_pos_len:
+            pos = self.pos_encoder[:, :seq_len, :]
+        else:
+            repeats = math.ceil(seq_len / base_pos_len)
+            pos = self.pos_encoder.repeat(1, repeats, 1)[:, :seq_len, :]
+
+        x = x + pos
         out = self.transformer_encoder(x)
         # Take last time step
         return self.fc(out[:, -1, :]).squeeze(1)
