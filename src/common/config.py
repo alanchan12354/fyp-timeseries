@@ -17,6 +17,7 @@ BATCH_SIZE = 64
 EPOCHS = 100
 LR = 1e-3
 PATIENCE = 10
+MIN_EPOCHS = 20
 
 # Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
