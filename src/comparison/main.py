@@ -1,64 +1,122 @@
-import pandas as pd
 import json
 import os
-import matplotlib.pyplot as plt
-import torch
-from torch.utils.data import DataLoader
-from sklearn.preprocessing import StandardScaler
 
-from src.common.config import SEQ_LEN, HORIZON, TRAIN_RATIO, VAL_RATIO, BATCH_SIZE, REPORTS_DIR, FIGURES_DIR
-from src.common.data import load_data, build_sequences, chronological_split, SeqDataset
+import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import StandardScaler
+from torch.utils.data import DataLoader
+
+from src.common.config import (
+    BATCH_SIZE,
+    FIGURES_DIR,
+    HORIZON,
+    REPORTS_DIR,
+    SEQ_LEN,
+    TRAIN_RATIO,
+    VAL_RATIO,
+)
+from src.common.data import SeqDataset, build_sequences, chronological_split, load_data
 from src.common.train import train_model
 
 # Import Models
-from src.rnn.model import RNNModel
-from src.lstm.model import LSTMModel
 from src.gru.model import GRUModel
+from src.lstm.model import LSTMModel
+from src.rnn.model import RNNModel
 from src.transformer.model import TransformerModel
+
+
+def _plot_loss_comparison(df: pd.DataFrame) -> None:
+    loss_cols = ["best_train_MSE", "best_test_MSE", "best_val_MSE"]
+    titles = ["Training Loss (MSE)", "Testing Loss (MSE)", "Validation Loss (MSE)"]
+
+    y_max = float(df[loss_cols].to_numpy().max()) * 1.05
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5), sharey=True)
+
+    for ax, col, title in zip(axes, loss_cols, titles):
+        ax.bar(df["Model"], df[col])
+        ax.set_title(title)
+        ax.set_xlabel("Model")
+        ax.grid(True, axis="y", alpha=0.3)
+        ax.tick_params(axis="x", rotation=30)
+        ax.set_ylim(0, y_max)
+
+    axes[0].set_ylabel("MSE")
+    fig.suptitle(f"Loss Comparison Across Models (Horizon={HORIZON})")
+    plt.tight_layout()
+
+    out_path = os.path.join(FIGURES_DIR, "comparison_losses.png")
+    plt.savefig(out_path)
+    plt.close(fig)
+    print(f"Comparison loss plots saved to {out_path}")
+
 
 def main():
     print("Running Model Comparison...")
-    
+
     # 1. Data
     returns = load_data()
     X, y, idx = build_sequences(returns, SEQ_LEN, HORIZON)
-    (X_tr, y_tr, _), (X_va, y_va, _), (X_te, y_te, idx_te) = chronological_split(X, y, idx, TRAIN_RATIO, VAL_RATIO)
-    
+    (X_tr, y_tr, _), (X_va, y_va, _), (X_te, y_te, idx_te) = chronological_split(
+        X, y, idx, TRAIN_RATIO, VAL_RATIO
+    )
+
     # 2. Scale
     scaler = StandardScaler()
-    N, T, D = X_tr.shape
+    _, _, D = X_tr.shape
     X_tr_s = scaler.fit_transform(X_tr.reshape(-1, D)).reshape(X_tr.shape)
-    X_va_s = scaler.transform(X_va.reshape(-1, D)).reshape(X_va.shape) 
+    X_va_s = scaler.transform(X_va.reshape(-1, D)).reshape(X_va.shape)
     X_te_s = scaler.transform(X_te.reshape(-1, D)).reshape(X_te.shape)
-    
+
     # 3. Loaders
     tr_load = DataLoader(SeqDataset(X_tr_s, y_tr), batch_size=BATCH_SIZE, shuffle=True)
     va_load = DataLoader(SeqDataset(X_va_s, y_va), batch_size=BATCH_SIZE)
-    
-    results = []
+
+    # 4. Baseline (Linear Regression) losses and metrics
+    X_tr_flat = X_tr_s.reshape(len(X_tr_s), -1)
+    X_va_flat = X_va_s.reshape(len(X_va_s), -1)
+    X_te_flat = X_te_s.reshape(len(X_te_s), -1)
+
+    baseline = LinearRegression()
+    baseline.fit(X_tr_flat, y_tr)
+
+    yhat_tr = baseline.predict(X_tr_flat)
+    yhat_va = baseline.predict(X_va_flat)
+    yhat_te = baseline.predict(X_te_flat)
+
+    results = [
+        {
+            "Model": "Baseline-LR",
+            "MAE": float((abs(y_te - yhat_te)).mean()),
+            "RMSE": float(mean_squared_error(y_te, yhat_te) ** 0.5),
+            "best_train_MSE": float(mean_squared_error(y_tr, yhat_tr)),
+            "best_val_MSE": float(mean_squared_error(y_va, yhat_va)),
+            "best_test_MSE": float(mean_squared_error(y_te, yhat_te)),
+        }
+    ]
+
     models = [
         ("RNN", RNNModel, {"hidden": 64}),
         ("LSTM", LSTMModel, {"hidden": 64}),
         ("GRU", GRUModel, {"hidden": 64}),
-        ("Transformer", TransformerModel, {"d_model": 64})
+        ("Transformer", TransformerModel, {"d_model": 64}),
     ]
-    
+
     for name, cls, kwargs in models:
         metrics = train_model(name, cls, tr_load, va_load, (X_te_s, y_te), idx_te, **kwargs)
         results.append({"Model": name, **metrics})
-        
+
     res_df = pd.DataFrame(results)
     print("\nComparison Results:")
     print(res_df)
-    
+
     res_df.to_csv(os.path.join(REPORTS_DIR, "metrics_comparison.csv"), index=False)
-    
-    # Bar Chart
-    res_df.set_index("Model")[["MAE", "RMSE"]].plot(kind="bar", rot=0)
-    plt.title(f"Model Comparison (Horizon={HORIZON})")
-    plt.tight_layout()
-    plt.savefig(os.path.join(FIGURES_DIR, "comparison_all.png"))
-    print(f"Comparison plot saved to {os.path.join(FIGURES_DIR, 'comparison_all.png')}")
+    with open(os.path.join(REPORTS_DIR, "metrics_comparison.json"), "w") as f:
+        json.dump(res_df.to_dict(orient="records"), f, indent=2)
+
+    _plot_loss_comparison(res_df)
+
 
 if __name__ == "__main__":
     main()

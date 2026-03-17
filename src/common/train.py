@@ -24,6 +24,8 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
     loss_fn = nn.MSELoss()
     
     best_val = float("inf")
+    best_train_loss = float("nan")
+    best_test_loss = float("nan")
     patience_left = PATIENCE
     train_losses, val_losses = [], []
     smooth_val_losses = []
@@ -75,6 +77,18 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
 
         if va_loss_for_stop < best_val - MIN_DELTA:
             best_val = va_loss_for_stop
+            best_train_loss = tr_loss
+
+            model.eval()
+            X_te_raw, y_te_raw = test_data
+            if not torch.is_tensor(X_te_raw):
+                X_te_eval = torch.tensor(X_te_raw, dtype=torch.float32).to(DEVICE)
+            else:
+                X_te_eval = X_te_raw.to(DEVICE)
+            y_te_eval = torch.tensor(y_te_raw, dtype=torch.float32).to(DEVICE)
+            with torch.no_grad():
+                best_test_loss = loss_fn(model(X_te_eval), y_te_eval).item()
+
             if epoch >= MIN_EPOCHS:
                 patience_left = PATIENCE
             torch.save(model.state_dict(), os.path.join(REPORTS_DIR, f"{model_name}.pt"))
@@ -141,4 +155,6 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
 
     metrics = evaluate_preds(y_te, preds)
     metrics["best_val_MSE"] = float(best_val)
+    metrics["best_train_MSE"] = float(best_train_loss)
+    metrics["best_test_MSE"] = float(best_test_loss)
     return metrics
