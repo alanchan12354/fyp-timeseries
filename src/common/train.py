@@ -4,7 +4,17 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 
-from .config import DEVICE, EPOCHS, LR, PATIENCE, MIN_EPOCHS, FIGURES_DIR, REPORTS_DIR
+from .config import (
+    DEVICE,
+    EPOCHS,
+    LR,
+    PATIENCE,
+    MIN_DELTA,
+    VAL_LOSS_SMOOTH_WINDOW,
+    MIN_EPOCHS,
+    FIGURES_DIR,
+    REPORTS_DIR,
+)
 from .metrics import evaluate_preds
 
 def train_model(model_name, model_cls, train_loader, val_loader, test_data, test_idx, **model_kwargs):
@@ -16,6 +26,7 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
     best_val = float("inf")
     patience_left = PATIENCE
     train_losses, val_losses = [], []
+    smooth_val_losses = []
     
     for epoch in range(1, EPOCHS + 1):
         model.train()
@@ -39,14 +50,31 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
                 va_loss += loss_fn(model(xb), yb).item() * len(xb)
         va_loss /= len(val_loader.dataset)
         val_losses.append(va_loss)
+
+        # Optional smoothing for validation-loss based early stopping.
+        # Falls back to raw loss when the configured window is <= 1.
+        if VAL_LOSS_SMOOTH_WINDOW and VAL_LOSS_SMOOTH_WINDOW > 1:
+            window = min(VAL_LOSS_SMOOTH_WINDOW, len(val_losses))
+            va_loss_for_stop = float(np.mean(val_losses[-window:]))
+        else:
+            va_loss_for_stop = va_loss
+        smooth_val_losses.append(va_loss_for_stop)
         
         in_warmup = epoch < MIN_EPOCHS
         if epoch % 10 == 0 or in_warmup:
             warmup_msg = f" | Warmup: {epoch}/{MIN_EPOCHS}" if in_warmup else " | Warmup: done"
-            print(f"Epoch {epoch:03d} | Tr: {tr_loss:.6f} | Va: {va_loss:.6f}{warmup_msg}")
+            smoothed_msg = (
+                f" | VaSmooth: {va_loss_for_stop:.6f}"
+                if VAL_LOSS_SMOOTH_WINDOW and VAL_LOSS_SMOOTH_WINDOW > 1
+                else ""
+            )
+            print(
+                f"Epoch {epoch:03d} | Tr: {tr_loss:.6f} | Va: {va_loss:.6f}"
+                f"{smoothed_msg}{warmup_msg}"
+            )
 
-        if va_loss < best_val - 1e-8:
-            best_val = va_loss
+        if va_loss_for_stop < best_val - MIN_DELTA:
+            best_val = va_loss_for_stop
             if epoch >= MIN_EPOCHS:
                 patience_left = PATIENCE
             torch.save(model.state_dict(), os.path.join(REPORTS_DIR, f"{model_name}.pt"))
@@ -59,7 +87,9 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
     # Plot Learning Curve
     plt.figure()
     plt.plot(train_losses, label="Train Loss")
-    plt.plot(val_losses, label="Val Loss") 
+    plt.plot(val_losses, label="Val Loss")
+    if VAL_LOSS_SMOOTH_WINDOW and VAL_LOSS_SMOOTH_WINDOW > 1:
+        plt.plot(smooth_val_losses, label=f"Val Loss (MA{VAL_LOSS_SMOOTH_WINDOW})")
     plt.title(f"{model_name} Loss Curve")
     plt.xlabel("Epoch")
     plt.ylabel("MSE")
