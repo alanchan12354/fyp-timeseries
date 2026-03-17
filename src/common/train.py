@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
+import json
 import os
 import numpy as np
 
@@ -14,19 +15,25 @@ from .config import (
     MIN_EPOCHS,
     FIGURES_DIR,
     REPORTS_DIR,
+    TRAIN_LOG_EVERY,
 )
 from .metrics import evaluate_preds
 
 def train_model(model_name, model_cls, train_loader, val_loader, test_data, test_idx, **model_kwargs):
     print(f"\nTraining {model_name}...")
+    train_log_every = int(model_kwargs.pop("train_log_every", TRAIN_LOG_EVERY))
+    train_log_every = max(1, train_log_every)
     model = model_cls(**model_kwargs).to(DEVICE)
     opt = torch.optim.Adam(model.parameters(), lr=LR)
     loss_fn = nn.MSELoss()
     
     best_val = float("inf")
+    best_epoch = 0
+    stop_epoch = EPOCHS
     patience_left = PATIENCE
     train_losses, val_losses = [], []
     smooth_val_losses = []
+    epoch_diagnostics = []
     
     for epoch in range(1, EPOCHS + 1):
         model.train()
@@ -61,7 +68,32 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
         smooth_val_losses.append(va_loss_for_stop)
         
         in_warmup = epoch < MIN_EPOCHS
-        if epoch % 10 == 0 or in_warmup:
+        delta = (va_loss_for_stop - best_val) if np.isfinite(best_val) else float("nan")
+        improved = va_loss_for_stop < best_val - MIN_DELTA
+
+        if improved:
+            best_val = va_loss_for_stop
+            best_epoch = epoch
+            if epoch >= MIN_EPOCHS:
+                patience_left = PATIENCE
+            torch.save(model.state_dict(), os.path.join(REPORTS_DIR, f"{model_name}.pt"))
+        elif epoch >= MIN_EPOCHS:
+            patience_left -= 1
+
+        epoch_diag = {
+            "epoch": epoch,
+            "train_loss": float(tr_loss),
+            "val_loss": float(va_loss),
+            "val_loss_for_stop": float(va_loss_for_stop),
+            "best_val": float(best_val),
+            "delta": float(delta),
+            "patience_left": int(patience_left),
+            "improved": bool(improved),
+        }
+        epoch_diagnostics.append(epoch_diag)
+
+        should_log = train_log_every <= 1 or epoch % train_log_every == 0 or in_warmup
+        if should_log:
             warmup_msg = f" | Warmup: {epoch}/{MIN_EPOCHS}" if in_warmup else " | Warmup: done"
             smoothed_msg = (
                 f" | VaSmooth: {va_loss_for_stop:.6f}"
@@ -70,20 +102,20 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
             )
             print(
                 f"Epoch {epoch:03d} | Tr: {tr_loss:.6f} | Va: {va_loss:.6f}"
-                f"{smoothed_msg}{warmup_msg}"
+                f"{smoothed_msg} | best_val: {best_val:.6f} | delta: {delta:+.6f}"
+                f" | patience_left: {patience_left}{warmup_msg}"
             )
 
-        if va_loss_for_stop < best_val - MIN_DELTA:
-            best_val = va_loss_for_stop
-            if epoch >= MIN_EPOCHS:
-                patience_left = PATIENCE
-            torch.save(model.state_dict(), os.path.join(REPORTS_DIR, f"{model_name}.pt"))
-        elif epoch >= MIN_EPOCHS:
-            patience_left -= 1
-            if patience_left <= 0:
-                print(f"Early stopping at epoch {epoch}")
-                break
-                
+        if epoch >= MIN_EPOCHS and patience_left <= 0:
+            stop_epoch = epoch
+            break
+        stop_epoch = epoch
+
+    print(
+        f"Training stop summary | stop_epoch: {stop_epoch}"
+        f" | best_epoch: {best_epoch} | best_val: {best_val:.6f}"
+    )
+
     # Plot Learning Curve
     plt.figure()
     plt.plot(train_losses, label="Train Loss")
@@ -112,6 +144,22 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
         
     with torch.no_grad():
         preds = model(X_te_t).cpu().numpy()
+
+    diagnostics_payload = {
+        "model_name": model_name,
+        "stop_epoch": int(stop_epoch),
+        "best_epoch": int(best_epoch),
+        "best_val_loss": float(best_val),
+        "min_epochs": int(MIN_EPOCHS),
+        "patience": int(PATIENCE),
+        "min_delta": float(MIN_DELTA),
+        "val_loss_smooth_window": int(VAL_LOSS_SMOOTH_WINDOW),
+        "train_log_every": int(train_log_every),
+        "epochs": epoch_diagnostics,
+    }
+    diagnostics_path = os.path.join(REPORTS_DIR, f"{model_name.lower()}_diagnostics.json")
+    with open(diagnostics_path, "w", encoding="utf-8") as f:
+        json.dump(diagnostics_payload, f, indent=2)
 
     # Save plots
     try:
