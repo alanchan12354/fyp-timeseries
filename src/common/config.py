@@ -6,9 +6,9 @@ TICKER = "SPY"
 START = "2010-01-01"
 
 # Task Config
-SEQ_LEN = 10      # Lookback window
-HORIZON = 1       # Prediction horizon
-LAGS = 10         # For baseline models
+SEQ_LEN = 30      # Lookback window
+HORIZON = 10      # Prediction horizon
+LAGS = 30         # For baseline models
 
 # Training Config
 TRAIN_RATIO = 0.70
