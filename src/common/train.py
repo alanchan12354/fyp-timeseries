@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 
-from .config import DEVICE, EPOCHS, LR, PATIENCE, FIGURES_DIR, REPORTS_DIR
+from .config import DEVICE, EPOCHS, LR, PATIENCE, MIN_EPOCHS, FIGURES_DIR, REPORTS_DIR
 from .metrics import evaluate_preds
 
 def train_model(model_name, model_cls, train_loader, val_loader, test_data, test_idx, **model_kwargs):
@@ -40,14 +40,17 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
         va_loss /= len(val_loader.dataset)
         val_losses.append(va_loss)
         
-        if epoch % 10 == 0:
-            print(f"Epoch {epoch:03d} | Tr: {tr_loss:.6f} | Va: {va_loss:.6f}")
-            
+        in_warmup = epoch < MIN_EPOCHS
+        if epoch % 10 == 0 or in_warmup:
+            warmup_msg = f" | Warmup: {epoch}/{MIN_EPOCHS}" if in_warmup else " | Warmup: done"
+            print(f"Epoch {epoch:03d} | Tr: {tr_loss:.6f} | Va: {va_loss:.6f}{warmup_msg}")
+
         if va_loss < best_val - 1e-8:
             best_val = va_loss
-            patience_left = PATIENCE
+            if epoch >= MIN_EPOCHS:
+                patience_left = PATIENCE
             torch.save(model.state_dict(), os.path.join(REPORTS_DIR, f"{model_name}.pt"))
-        else:
+        elif epoch >= MIN_EPOCHS:
             patience_left -= 1
             if patience_left <= 0:
                 print(f"Early stopping at epoch {epoch}")
