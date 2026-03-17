@@ -20,6 +20,7 @@ PATIENCE = 25
 MIN_DELTA = 1e-6
 VAL_LOSS_SMOOTH_WINDOW = 3
 MIN_EPOCHS = 20
+TRAIN_LOG_EVERY = 1
 
 # Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
