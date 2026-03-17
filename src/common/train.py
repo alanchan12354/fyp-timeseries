@@ -23,18 +23,22 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
     print(f"\nTraining {model_name}...")
     train_log_every = int(model_kwargs.pop("train_log_every", TRAIN_LOG_EVERY))
     train_log_every = max(1, train_log_every)
+
     model = model_cls(**model_kwargs).to(DEVICE)
     opt = torch.optim.Adam(model.parameters(), lr=LR)
     loss_fn = nn.MSELoss()
-    
+
     best_val = float("inf")
+    best_train_loss = float("nan")
+    best_test_loss = float("nan")
     best_epoch = 0
     stop_epoch = EPOCHS
+
     patience_left = PATIENCE
     train_losses, val_losses = [], []
     smooth_val_losses = []
     epoch_diagnostics = []
-    
+
     for epoch in range(1, EPOCHS + 1):
         model.train()
         tr_loss = 0
@@ -45,10 +49,10 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
             loss.backward()
             opt.step()
             tr_loss += loss.item() * len(xb)
-        
+
         tr_loss /= len(train_loader.dataset)
         train_losses.append(tr_loss)
-        
+
         model.eval()
         va_loss = 0
         with torch.no_grad():
@@ -66,7 +70,7 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
         else:
             va_loss_for_stop = va_loss
         smooth_val_losses.append(va_loss_for_stop)
-        
+
         in_warmup = epoch < MIN_EPOCHS
         delta = (va_loss_for_stop - best_val) if np.isfinite(best_val) else float("nan")
         improved = va_loss_for_stop < best_val - MIN_DELTA
@@ -74,9 +78,27 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
         if improved:
             best_val = va_loss_for_stop
             best_epoch = epoch
+            best_train_loss = tr_loss
+
+            X_te_raw, y_te_raw = test_data
+            if not torch.is_tensor(X_te_raw):
+                X_te_eval = torch.tensor(X_te_raw, dtype=torch.float32).to(DEVICE)
+            else:
+                X_te_eval = X_te_raw.to(DEVICE)
+
+            if not torch.is_tensor(y_te_raw):
+                y_te_eval = torch.tensor(y_te_raw, dtype=torch.float32).to(DEVICE)
+            else:
+                y_te_eval = y_te_raw.to(DEVICE)
+
+            with torch.no_grad():
+                best_test_loss = loss_fn(model(X_te_eval), y_te_eval).item()
+
             if epoch >= MIN_EPOCHS:
                 patience_left = PATIENCE
+
             torch.save(model.state_dict(), os.path.join(REPORTS_DIR, f"{model_name}.pt"))
+
         elif epoch >= MIN_EPOCHS:
             patience_left -= 1
 
@@ -108,7 +130,9 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
 
         if epoch >= MIN_EPOCHS and patience_left <= 0:
             stop_epoch = epoch
+            print(f"Early stopping at epoch {epoch}")
             break
+
         stop_epoch = epoch
 
     print(
@@ -130,18 +154,17 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
     loss_path = os.path.join(FIGURES_DIR, f"loss_{model_name}.png")
     plt.savefig(loss_path)
     plt.close()
-    
+
     # Evaluate on Test
     model.load_state_dict(torch.load(os.path.join(REPORTS_DIR, f"{model_name}.pt"), map_location=DEVICE))
     model.eval()
     X_te, y_te = test_data
-    
-    # Ensure X_te is tensor
+
     if not torch.is_tensor(X_te):
         X_te_t = torch.tensor(X_te, dtype=torch.float32).to(DEVICE)
     else:
         X_te_t = X_te.to(DEVICE)
-        
+
     with torch.no_grad():
         preds = model(X_te_t).cpu().numpy()
 
@@ -165,6 +188,7 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
     try:
         n_plot = min(200, len(y_te))
         t = test_idx[:n_plot]
+
         plt.figure()
         plt.plot(t, y_te[:n_plot], label="true")
         plt.plot(t, preds[:n_plot], label=model_name)
@@ -180,7 +204,7 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
         plt.title(f"{model_name}: True vs Predicted")
         plt.xlabel("True")
         plt.ylabel("Pred")
-        plt.plot([y_te.min(), y_te.max()], [y_te.min(), y_te.max()], 'r--') # identify line
+        plt.plot([y_te.min(), y_te.max()], [y_te.min(), y_te.max()], "r--")
         plt.tight_layout()
         plt.savefig(os.path.join(FIGURES_DIR, f"{model_name.lower()}_scatter.png"))
         plt.close()
@@ -189,4 +213,6 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
 
     metrics = evaluate_preds(y_te, preds)
     metrics["best_val_MSE"] = float(best_val)
+    metrics["best_train_MSE"] = float(best_train_loss)
+    metrics["best_test_MSE"] = float(best_test_loss)
     return metrics
