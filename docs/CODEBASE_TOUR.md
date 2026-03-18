@@ -61,6 +61,7 @@ Most scripts follow the same sequence:
     - patience/min-delta logic.
   - Saves best weights: `reports/<Model>.pt`.
   - Writes epoch diagnostics: `reports/<model>_diagnostics.json`.
+  - Appends standardized experiment records to `reports/experiment_log.jsonl` and `reports/experiment_log.csv`.
   - Saves plots to `reports/figures/`:
     - loss curves,
     - test prediction slice,
@@ -93,6 +94,8 @@ These entrypoints are intentionally parallel so experiments stay comparable.
   - Saves:
     - `reports/metrics_comparison.csv`
     - `reports/metrics_comparison.json`
+    - `reports/model_comparison_record.json`
+    - `reports/model_comparison_record.csv`
     - `reports/figures/comparison_losses.png` (train/val/test MSE bar charts)
 
 ## 4) Important outputs in `reports/`
@@ -102,6 +105,8 @@ After running experiments, expect files such as:
 - Model checkpoints: `RNN.pt`, `LSTM.pt`, `GRU.pt`, `Transformer.pt`
 - Metrics JSON/CSV files (`metrics_*.json`, `metrics_*.csv`)
 - Diagnostics JSON per neural model (`*_diagnostics.json`)
+- Standardized experiment logs: `experiment_log.jsonl`, `experiment_log.csv`
+- Model-comparison summary records: `model_comparison_record.json`, `model_comparison_record.csv`
 - Figures in `reports/figures/`:
   - `loss_<Model>.png`
   - `<model>_pred_slice.png`

@@ -15,7 +15,7 @@ src/
   ├── comparison/      # Script to compare all models
   ├── common/          # Shared utilities (data loading, training loop, config)
   └── archive/         # Old scripts from previous experiments
-reports/               # Generated metrics, plots, and saved models
+reports/               # Generated metrics, plots, saved models, and experiment logs
 ```
 
 ## Setup
@@ -56,6 +56,14 @@ python -m src.comparison.main
 ## Configuration
 
 You can adjust hyperparameters (SEQ_LEN, LR, EPOCHS, etc.) in `src/common/config.py`.
+
+## Experiment Records
+
+Training and comparison scripts now also maintain standardized experiment records in `reports/`, including:
+- `experiment_log.jsonl` / `experiment_log.csv` for per-run tracking
+- `model_comparison_record.json` / `model_comparison_record.csv` for shared comparison summaries
+
+These files are intended to support FYP report writing, model comparison, and fine-tuning documentation.
 
 ## New to the Codebase?
 

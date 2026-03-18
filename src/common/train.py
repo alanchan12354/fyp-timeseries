@@ -18,11 +18,28 @@ from .config import (
     TRAIN_LOG_EVERY,
 )
 from .metrics import evaluate_preds
+from .reporting import append_experiment_record, build_experiment_record
 
-def train_model(model_name, model_cls, train_loader, val_loader, test_data, test_idx, **model_kwargs):
+def train_model(
+    model_name,
+    model_cls,
+    train_loader,
+    val_loader,
+    test_data,
+    test_idx,
+    *,
+    record_experiment=True,
+    experiment_context=None,
+    selection_metric="best_val_MSE",
+    selection_split="validation",
+    tuning_notes=None,
+    artifact_paths=None,
+    **model_kwargs,
+):
     print(f"\nTraining {model_name}...")
     train_log_every = int(model_kwargs.pop("train_log_every", TRAIN_LOG_EVERY))
     train_log_every = max(1, train_log_every)
+    model_hyperparameters = dict(model_kwargs)
 
     model = model_cls(**model_kwargs).to(DEVICE)
     opt = torch.optim.Adam(model.parameters(), lr=LR)
@@ -215,4 +232,29 @@ def train_model(model_name, model_cls, train_loader, val_loader, test_data, test
     metrics["best_val_MSE"] = float(best_val)
     metrics["best_train_MSE"] = float(best_train_loss)
     metrics["best_test_MSE"] = float(best_test_loss)
+
+    if record_experiment:
+        record = build_experiment_record(
+            model_name=model_name,
+            record_type="neural_model",
+            metrics=metrics,
+            hyperparameters=model_hyperparameters,
+            context=experiment_context,
+            selection_metric=selection_metric,
+            selection_split=selection_split,
+            tuning={
+                "best_epoch": int(best_epoch),
+                "stop_epoch": int(stop_epoch),
+                "train_log_every": int(train_log_every),
+                "tuning_notes": tuning_notes,
+            },
+            artifacts={
+                "checkpoint": os.path.join(REPORTS_DIR, f"{model_name}.pt"),
+                "diagnostics": diagnostics_path,
+                "loss_curve": loss_path,
+                **(artifact_paths or {}),
+            },
+        )
+        append_experiment_record(record)
+
     return metrics
