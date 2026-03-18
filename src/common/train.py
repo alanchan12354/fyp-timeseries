@@ -16,9 +16,42 @@ from .config import (
     FIGURES_DIR,
     REPORTS_DIR,
     TRAIN_LOG_EVERY,
+    SCHEDULER_TYPE,
+    SCHEDULER_FACTOR,
+    SCHEDULER_PATIENCE,
+    SCHEDULER_MIN_LR,
 )
 from .metrics import evaluate_preds
 from .reporting import append_experiment_record, build_experiment_record
+
+
+def _build_scheduler(optimizer):
+    scheduler_type = (SCHEDULER_TYPE or "none").strip().lower()
+    if scheduler_type == "plateau":
+        return torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            mode="min",
+            factor=SCHEDULER_FACTOR,
+            patience=SCHEDULER_PATIENCE,
+            min_lr=SCHEDULER_MIN_LR,
+        )
+    if scheduler_type == "cosine":
+        return torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=EPOCHS,
+            eta_min=SCHEDULER_MIN_LR,
+        )
+    return None
+
+
+def _step_scheduler(scheduler, scheduler_type, metric):
+    if scheduler is None:
+        return
+    if scheduler_type == "plateau":
+        scheduler.step(metric)
+    else:
+        scheduler.step()
+
 
 def train_model(
     model_name,
@@ -43,6 +76,8 @@ def train_model(
 
     model = model_cls(**model_kwargs).to(DEVICE)
     opt = torch.optim.Adam(model.parameters(), lr=LR)
+    scheduler = _build_scheduler(opt)
+    scheduler_type = (SCHEDULER_TYPE or "none").strip().lower()
     loss_fn = nn.MSELoss()
 
     best_val = float("inf")
@@ -88,6 +123,9 @@ def train_model(
             va_loss_for_stop = va_loss
         smooth_val_losses.append(va_loss_for_stop)
 
+        _step_scheduler(scheduler, scheduler_type, va_loss_for_stop)
+        current_lr = float(opt.param_groups[0]["lr"])
+
         in_warmup = epoch < MIN_EPOCHS
         delta = (va_loss_for_stop - best_val) if np.isfinite(best_val) else float("nan")
         improved = va_loss_for_stop < best_val - MIN_DELTA
@@ -128,6 +166,7 @@ def train_model(
             "delta": float(delta),
             "patience_left": int(patience_left),
             "improved": bool(improved),
+            "learning_rate": current_lr,
         }
         epoch_diagnostics.append(epoch_diag)
 
@@ -139,10 +178,11 @@ def train_model(
                 if VAL_LOSS_SMOOTH_WINDOW and VAL_LOSS_SMOOTH_WINDOW > 1
                 else ""
             )
+            scheduler_msg = f" | lr: {current_lr:.2e}"
             print(
                 f"Epoch {epoch:03d} | Tr: {tr_loss:.6f} | Va: {va_loss:.6f}"
                 f"{smoothed_msg} | best_val: {best_val:.6f} | delta: {delta:+.6f}"
-                f" | patience_left: {patience_left}{warmup_msg}"
+                f" | patience_left: {patience_left}{scheduler_msg}{warmup_msg}"
             )
 
         if epoch >= MIN_EPOCHS and patience_left <= 0:
@@ -195,6 +235,10 @@ def train_model(
         "min_delta": float(MIN_DELTA),
         "val_loss_smooth_window": int(VAL_LOSS_SMOOTH_WINDOW),
         "train_log_every": int(train_log_every),
+        "scheduler_type": scheduler_type,
+        "scheduler_factor": float(SCHEDULER_FACTOR),
+        "scheduler_patience": int(SCHEDULER_PATIENCE),
+        "scheduler_min_lr": float(SCHEDULER_MIN_LR),
         "epochs": epoch_diagnostics,
     }
     diagnostics_path = os.path.join(REPORTS_DIR, f"{model_name.lower()}_diagnostics.json")
@@ -246,6 +290,10 @@ def train_model(
                 "best_epoch": int(best_epoch),
                 "stop_epoch": int(stop_epoch),
                 "train_log_every": int(train_log_every),
+                "scheduler_type": scheduler_type,
+                "scheduler_factor": float(SCHEDULER_FACTOR),
+                "scheduler_patience": int(SCHEDULER_PATIENCE),
+                "scheduler_min_lr": float(SCHEDULER_MIN_LR),
                 "tuning_notes": tuning_notes,
             },
             artifacts={
