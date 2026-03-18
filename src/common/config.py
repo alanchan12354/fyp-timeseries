@@ -24,6 +24,12 @@ VAL_LOSS_SMOOTH_WINDOW = 3
 MIN_EPOCHS = 20
 TRAIN_LOG_EVERY = 1
 
+# Learning-rate scheduler config
+SCHEDULER_TYPE = "plateau"  # options: "none", "plateau", "cosine"
+SCHEDULER_FACTOR = 0.5
+SCHEDULER_PATIENCE = 5
+SCHEDULER_MIN_LR = 1e-6
+
 # Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 REPORTS_DIR = os.path.join(BASE_DIR, "reports")
