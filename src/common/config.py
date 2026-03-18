@@ -15,9 +15,11 @@ TRAIN_RATIO = 0.70
 VAL_RATIO = 0.15
 BATCH_SIZE = 64
 EPOCHS = 100
+# fine tuning: try different learning rates for different models
 LR = 1e-3
 PATIENCE = 25
-MIN_DELTA = 1e-6
+# fine tuning: min delta and min epochs for early stopping to avoid underfitting
+MIN_DELTA = 1e-5
 VAL_LOSS_SMOOTH_WINDOW = 3
 MIN_EPOCHS = 20
 TRAIN_LOG_EVERY = 1
