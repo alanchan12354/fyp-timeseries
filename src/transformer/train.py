@@ -7,6 +7,7 @@ import os
 
 from src.common.config import SEQ_LEN, HORIZON, TRAIN_RATIO, VAL_RATIO, BATCH_SIZE, REPORTS_DIR
 from src.common.data import load_data, build_sequences, chronological_split, SeqDataset
+from src.common.reporting import create_run_context, split_metadata
 from src.common.train import train_model
 from .model import TransformerModel
 
@@ -18,6 +19,12 @@ def main():
     X, y, idx = build_sequences(returns, SEQ_LEN, HORIZON)
     (X_tr, y_tr, _), (X_va, y_va, _), (X_te, y_te, idx_te) = chronological_split(X, y, idx, TRAIN_RATIO, VAL_RATIO)
     
+    run_context = create_run_context(
+        "transformer_experiment",
+        split_metadata(len(X_tr), len(X_va), len(X_te)),
+        notes="Single-model training run for Transformer.",
+    )
+
     # 2. Scale
     scaler = StandardScaler()
     N, T, D = X_tr.shape
@@ -30,7 +37,7 @@ def main():
     va_load = DataLoader(SeqDataset(X_va_s, y_va), batch_size=BATCH_SIZE)
     
     # 4. Train
-    metrics = train_model("Transformer", TransformerModel, tr_load, va_load, (X_te_s, y_te), idx_te, d_model=64, nhead=4, num_layers=2)
+    metrics = train_model("Transformer", TransformerModel, tr_load, va_load, (X_te_s, y_te), idx_te, experiment_context=run_context, tuning_notes="Single-model default configuration.", d_model=64, nhead=4, num_layers=2)
     
     print(metrics)
     with open(os.path.join(REPORTS_DIR, "metrics_transformer.json"), "w") as f:

@@ -18,6 +18,14 @@ from src.common.config import (
     VAL_RATIO,
 )
 from src.common.data import SeqDataset, build_sequences, chronological_split, load_data
+from src.common.metrics import directional_accuracy
+from src.common.reporting import (
+    append_experiment_record,
+    build_experiment_record,
+    create_run_context,
+    split_metadata,
+    write_model_comparison_record,
+)
 from src.common.train import train_model
 
 # Import Models
@@ -62,6 +70,15 @@ def main():
         X, y, idx, TRAIN_RATIO, VAL_RATIO
     )
 
+    run_context = create_run_context(
+        "model_comparison",
+        split_metadata(len(X_tr), len(X_va), len(X_te)),
+        comparison_group="shared_split_comparison",
+        notes="Shared neural/baseline comparison record for the FYP report.",
+    )
+
+    comparison_records = []
+
     # 2. Scale
     scaler = StandardScaler()
     _, _, D = X_tr.shape
@@ -93,8 +110,21 @@ def main():
             "best_train_MSE": float(mean_squared_error(y_tr, yhat_tr)),
             "best_val_MSE": float(mean_squared_error(y_va, yhat_va)),
             "best_test_MSE": float(mean_squared_error(y_te, yhat_te)),
+            "DA": directional_accuracy(y_te, yhat_te),
         }
     ]
+
+    baseline_record = build_experiment_record(
+        model_name="Baseline-LR",
+        record_type="baseline_model",
+        metrics={k: v for k, v in results[0].items() if k != "Model"},
+        hyperparameters={"model": "LinearRegression", "flattened_sequence": True, "lookback": SEQ_LEN},
+        context=run_context,
+        tuning={"best_epoch": None, "stop_epoch": None, "tuning_notes": "Default sklearn LinearRegression on flattened sequence inputs."},
+        artifacts={},
+    )
+    append_experiment_record(baseline_record)
+    comparison_records.append(baseline_record)
 
     models = [
         ("RNN", RNNModel, {"hidden": 64}),
@@ -104,7 +134,21 @@ def main():
     ]
 
     for name, cls, kwargs in models:
-        metrics = train_model(name, cls, tr_load, va_load, (X_te_s, y_te), idx_te, **kwargs)
+        metrics = train_model(
+            name,
+            cls,
+            tr_load,
+            va_load,
+            (X_te_s, y_te),
+            idx_te,
+            experiment_context=run_context,
+            tuning_notes="Final shared-comparison configuration.",
+            artifact_paths={
+                "prediction_slice": os.path.join(FIGURES_DIR, f"{name.lower()}_pred_slice.png"),
+                "scatter": os.path.join(FIGURES_DIR, f"{name.lower()}_scatter.png"),
+            },
+            **kwargs,
+        )
         results.append({"Model": name, **metrics})
 
     res_df = pd.DataFrame(results)
@@ -116,6 +160,41 @@ def main():
         json.dump(res_df.to_dict(orient="records"), f, indent=2)
 
     _plot_loss_comparison(res_df)
+
+    comparison_json = os.path.join(REPORTS_DIR, "metrics_comparison.json")
+    comparison_csv = os.path.join(REPORTS_DIR, "metrics_comparison.csv")
+
+    for row in results[1:]:
+        comparison_records.append(
+            build_experiment_record(
+                model_name=row["Model"],
+                record_type="comparison_summary",
+                metrics={k: v for k, v in row.items() if k != "Model"},
+                hyperparameters=next(kwargs for model, _cls, kwargs in models if model == row["Model"]),
+                context=run_context,
+                tuning={"best_epoch": None, "stop_epoch": None, "tuning_notes": "Summary row for shared comparison; epoch-level details are in the experiment log and diagnostics JSON."},
+                artifacts={
+                    "comparison_csv": comparison_csv,
+                    "comparison_json": comparison_json,
+                    "comparison_plot": os.path.join(FIGURES_DIR, "comparison_losses.png"),
+                    "diagnostics": os.path.join(REPORTS_DIR, f"{row['Model'].lower()}_diagnostics.json"),
+                },
+            )
+        )
+
+    best_row = res_df.sort_values("best_val_MSE", ascending=True).iloc[0].to_dict()
+    write_model_comparison_record(
+        comparison_records,
+        summary={
+            "selection_metric": "best_val_MSE",
+            "winner": best_row.get("Model"),
+            "winner_best_val_MSE": float(best_row.get("best_val_MSE")),
+            "num_models": int(len(res_df)),
+            "comparison_csv": comparison_csv,
+            "comparison_json": comparison_json,
+            "comparison_plot": os.path.join(FIGURES_DIR, "comparison_losses.png"),
+        },
+    )
 
 
 if __name__ == "__main__":
