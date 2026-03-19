@@ -106,7 +106,7 @@ def main():
         {
             "Model": "Baseline-LR",
             "MAE": float((abs(y_te - yhat_te)).mean()),
-            "RMSE": float(mean_squared_error(y_te, yhat_te) ** 0.5),
+            "MSE": float(mean_squared_error(y_te, yhat_te)),
             "best_train_MSE": float(mean_squared_error(y_tr, yhat_tr)),
             "best_val_MSE": float(mean_squared_error(y_va, yhat_va)),
             "best_test_MSE": float(mean_squared_error(y_te, yhat_te)),
