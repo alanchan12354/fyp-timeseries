@@ -103,6 +103,25 @@ ARTIFACT_RESET_PATTERNS = [
 FIGURE_RESET_PATTERNS = ["*.png"]
 
 
+def _format_note_value(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (list, tuple)):
+        return "|".join(_format_note_value(item) for item in value)
+    if isinstance(value, dict):
+        return "|".join(f"{key}:{_format_note_value(val)}" for key, val in sorted(value.items()))
+    return str(value)
+
+
+def format_structured_notes(metadata: Dict[str, Any]) -> str:
+    ordered_items = []
+    for key, value in metadata.items():
+        if value is None:
+            continue
+        ordered_items.append(f"{key}={_format_note_value(value)}")
+    return ";".join(ordered_items)
+
+
 def collect_tuning_artifacts_for_reset(*, reports_dir: str = REPORTS_DIR) -> List[str]:
     patterns = [os.path.join(reports_dir, pattern) for pattern in ARTIFACT_RESET_PATTERNS]
     figures_dir = os.path.join(reports_dir, os.path.basename(FIGURES_DIR))
@@ -224,7 +243,9 @@ def create_run_context(
     training_meta: Optional[Dict[str, Any]] = None,
     environment_meta: Optional[Dict[str, Any]] = None,
     notes: Optional[str] = None,
+    notes_metadata: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
+    normalized_notes = notes or (format_structured_notes(notes_metadata) if notes_metadata else None)
     return {
         "run_id": f"{experiment_name}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}",
         "experiment_name": experiment_name,
@@ -234,7 +255,8 @@ def create_run_context(
         "split": deepcopy(split_meta),
         "training": training_meta or default_training_metadata(),
         "environment": environment_meta or default_environment_metadata(),
-        "notes": notes,
+        "notes": normalized_notes,
+        "notes_metadata": deepcopy(notes_metadata or {}),
     }
 
 
@@ -270,6 +292,7 @@ def build_experiment_record(
         "tuning": deepcopy(tuning or {}),
         "artifacts": deepcopy(artifacts or {}),
         "notes": context.get("notes"),
+        "notes_metadata": deepcopy(context.get("notes_metadata", {})),
     }
     if extra:
         record.update(deepcopy(extra))
