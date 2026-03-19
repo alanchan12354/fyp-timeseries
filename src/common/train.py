@@ -3,6 +3,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 import json
 import os
+import re
 import numpy as np
 
 from .config import (
@@ -53,6 +54,32 @@ def _step_scheduler(scheduler, scheduler_type, metric):
         scheduler.step()
 
 
+def _slugify_path_component(value):
+    text = re.sub(r"[^A-Za-z0-9_.-]+", "-", str(value).strip())
+    text = re.sub(r"-+", "-", text).strip("-._")
+    return text or "run"
+
+
+def _build_figure_stem(model_name, run_id=None):
+    parts = [_slugify_path_component(model_name)]
+    if run_id:
+        parts.append(_slugify_path_component(run_id))
+    return "_".join(parts)
+
+
+def _format_plot_hyperparameters(model_hyperparameters, training_hyperparameters):
+    combined = {**training_hyperparameters, **model_hyperparameters}
+    if not combined:
+        return "Hyperparameters: none"
+    ordered_items = [f"{key}={combined[key]}" for key in sorted(combined)]
+    return "Hyperparameters: " + ", ".join(ordered_items)
+
+
+def _annotate_figure_with_hyperparameters(fig, text):
+    fig.text(0.5, 0.01, text, ha="center", va="bottom", fontsize=9, wrap=True)
+    fig.tight_layout(rect=(0, 0.05, 1, 0.98))
+
+
 def train_model(
     model_name,
     model_cls,
@@ -84,6 +111,21 @@ def train_model(
     scheduler_min_lr = float(model_kwargs.pop("scheduler_min_lr", SCHEDULER_MIN_LR))
     train_log_every = max(1, train_log_every)
     model_hyperparameters = dict(model_kwargs)
+    training_hyperparameters = {
+        "batch_size": getattr(train_loader, "batch_size", None),
+        "epochs": epochs,
+        "learning_rate": learning_rate,
+        "min_delta": min_delta,
+        "min_epochs": min_epochs,
+        "patience": patience,
+        "scheduler_factor": scheduler_factor,
+        "scheduler_min_lr": scheduler_min_lr,
+        "scheduler_patience": scheduler_patience,
+        "scheduler_type": scheduler_type,
+        "val_loss_smooth_window": val_loss_smooth_window,
+    }
+    training_hyperparameters = {k: v for k, v in training_hyperparameters.items() if v is not None}
+    plot_hyperparameters_text = _format_plot_hyperparameters(model_hyperparameters, training_hyperparameters)
 
     model = model_cls(**model_kwargs).to(DEVICE)
     opt = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -132,8 +174,6 @@ def train_model(
         va_loss /= len(val_loader.dataset)
         val_losses.append(va_loss)
 
-        # Optional smoothing for validation-loss based early stopping.
-        # Falls back to raw loss when the configured window is <= 1.
         if val_loss_smooth_window and val_loss_smooth_window > 1:
             window = min(val_loss_smooth_window, len(val_losses))
             va_loss_for_stop = float(np.mean(val_losses[-window:]))
@@ -215,8 +255,10 @@ def train_model(
         f" | best_epoch: {best_epoch} | best_val: {best_val:.6f}"
     )
 
-    # Plot Learning Curve
-    plt.figure()
+    run_id = (experiment_context or {}).get("run_id")
+    figure_stem = _build_figure_stem(model_name, run_id)
+
+    fig = plt.figure()
     plt.plot(train_losses, label="Train Loss")
     plt.plot(val_losses, label="Val Loss")
     if val_loss_smooth_window and val_loss_smooth_window > 1:
@@ -226,11 +268,11 @@ def train_model(
     plt.ylabel("MSE")
     plt.legend()
     plt.grid(True, alpha=0.3)
-    loss_path = os.path.join(FIGURES_DIR, f"loss_{model_name}.png")
+    _annotate_figure_with_hyperparameters(fig, plot_hyperparameters_text)
+    loss_path = os.path.join(FIGURES_DIR, f"loss_{figure_stem}.png")
     plt.savefig(loss_path)
-    plt.close()
+    plt.close(fig)
 
-    # Evaluate on Test
     model.load_state_dict(torch.load(os.path.join(REPORTS_DIR, f"{model_name}.pt"), map_location=DEVICE))
     model.eval()
     X_te, y_te = test_data
@@ -257,38 +299,42 @@ def train_model(
         "scheduler_factor": float(scheduler_factor),
         "scheduler_patience": int(scheduler_patience),
         "scheduler_min_lr": float(scheduler_min_lr),
+        "figure_hyperparameters": plot_hyperparameters_text,
         "epochs": epoch_diagnostics,
     }
     diagnostics_path = os.path.join(REPORTS_DIR, f"{model_name.lower()}_diagnostics.json")
     with open(diagnostics_path, "w", encoding="utf-8") as f:
         json.dump(diagnostics_payload, f, indent=2)
 
-    # Save plots
     try:
         n_plot = min(200, len(y_te))
         t = test_idx[:n_plot]
 
-        plt.figure()
+        fig = plt.figure()
         plt.plot(t, y_te[:n_plot], label="true")
         plt.plot(t, preds[:n_plot], label=model_name)
         plt.legend()
         plt.title(f"{model_name}: Test Prediction Slice")
         plt.xticks(rotation=45)
-        plt.tight_layout()
-        plt.savefig(os.path.join(FIGURES_DIR, f"{model_name.lower()}_pred_slice.png"))
-        plt.close()
+        _annotate_figure_with_hyperparameters(fig, plot_hyperparameters_text)
+        pred_slice_path = os.path.join(FIGURES_DIR, f"{figure_stem.lower()}_pred_slice.png")
+        plt.savefig(pred_slice_path)
+        plt.close(fig)
 
-        plt.figure()
+        fig = plt.figure()
         plt.scatter(y_te, preds, s=8, alpha=0.5)
         plt.title(f"{model_name}: True vs Predicted")
         plt.xlabel("True")
         plt.ylabel("Pred")
         plt.plot([y_te.min(), y_te.max()], [y_te.min(), y_te.max()], "r--")
-        plt.tight_layout()
-        plt.savefig(os.path.join(FIGURES_DIR, f"{model_name.lower()}_scatter.png"))
-        plt.close()
+        _annotate_figure_with_hyperparameters(fig, plot_hyperparameters_text)
+        scatter_path = os.path.join(FIGURES_DIR, f"{figure_stem.lower()}_scatter.png")
+        plt.savefig(scatter_path)
+        plt.close(fig)
     except Exception as e:
         print(f"Plotting failed: {e}")
+        pred_slice_path = None
+        scatter_path = None
 
     metrics = evaluate_preds(y_te, preds)
     metrics["best_val_MSE"] = float(best_val)
@@ -316,10 +362,12 @@ def train_model(
                 "notes_metadata": notes_metadata or {},
             },
             artifacts={
+                **(artifact_paths or {}),
                 "checkpoint": os.path.join(REPORTS_DIR, f"{model_name}.pt"),
                 "diagnostics": diagnostics_path,
                 "loss_curve": loss_path,
-                **(artifact_paths or {}),
+                "prediction_slice": pred_slice_path,
+                "scatter": scatter_path,
             },
         )
         append_experiment_record(record)
