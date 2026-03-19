@@ -6,7 +6,7 @@ import subprocess
 import sys
 from copy import deepcopy
 from datetime import datetime, timezone
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from importlib.metadata import PackageNotFoundError, version
 
@@ -38,12 +38,17 @@ EXPERIMENT_LOG_JSONL = os.path.join(REPORTS_DIR, "experiment_log.jsonl")
 EXPERIMENT_LOG_CSV = os.path.join(REPORTS_DIR, "experiment_log.csv")
 MODEL_COMPARISON_RECORD_JSON = os.path.join(REPORTS_DIR, "model_comparison_record.json")
 MODEL_COMPARISON_RECORD_CSV = os.path.join(REPORTS_DIR, "model_comparison_record.csv")
+TUNING_ALL_RUNS_CSV = os.path.join(REPORTS_DIR, "tuning_all_runs.csv")
+TUNING_BEST_CONFIGS_CSV = os.path.join(REPORTS_DIR, "tuning_best_configs.csv")
 
 
 SUMMARY_FIELDNAMES = [
     "timestamp_utc",
     "run_id",
     "model_name",
+    "record_type",
+    "selection_metric",
+    "selection_split",
     "hidden_size",
     "d_model",
     "nhead",
@@ -51,13 +56,35 @@ SUMMARY_FIELDNAMES = [
     "dropout",
     "lr",
     "batch_size",
+    "hyperparameters_json",
     "best_val_MSE",
     "MSE",
     "MAE",
     "DA",
     "best_epoch",
+    "tuning_notes",
     "notes",
 ]
+
+TUNING_REPORT_FIELDNAMES = [
+    "model",
+    "run_id",
+    "timestamp",
+    "hyperparameters",
+    "hidden_size",
+    "d_model",
+    "nhead",
+    "num_layers",
+    "best_val_MSE",
+    "test_MSE",
+    "MAE",
+    "DA",
+    "best_epoch",
+    "notes",
+    "selection_reason",
+]
+
+SELECTION_REASON_LOWEST_VAL_MSE = "selected_by=lowest_validation_MSE"
 
 
 def _utc_now() -> str:
@@ -205,6 +232,13 @@ def build_experiment_record(
     return record
 
 
+def _extract_num_layers(hyper: Dict[str, Any]) -> Any:
+    num_layers = hyper.get("layers")
+    if num_layers is None:
+        num_layers = hyper.get("num_layers")
+    return num_layers
+
+
 def _flatten_record_for_csv(record: Dict[str, Any]) -> Dict[str, Any]:
     training = record.get("training", {})
     metrics = record.get("metrics", {})
@@ -213,27 +247,228 @@ def _flatten_record_for_csv(record: Dict[str, Any]) -> Dict[str, Any]:
 
     hidden_size = hyper.get("hidden")
     d_model = hyper.get("d_model")
-    num_layers = hyper.get("layers")
-    if num_layers is None:
-        num_layers = hyper.get("num_layers")
 
     return {
         "timestamp_utc": record.get("timestamp_utc"),
         "run_id": record.get("run_id"),
         "model_name": record.get("model_name"),
-        "hidden_size": hidden_size if hidden_size is not None else d_model,
+        "record_type": record.get("record_type"),
+        "selection_metric": record.get("selection_metric"),
+        "selection_split": record.get("selection_split"),
+        "hidden_size": hidden_size,
         "d_model": d_model,
         "nhead": hyper.get("nhead"),
-        "num_layers": num_layers,
+        "num_layers": _extract_num_layers(hyper),
         "dropout": hyper.get("dropout"),
         "lr": training.get("lr"),
         "batch_size": training.get("batch_size"),
+        "hyperparameters_json": json.dumps(hyper, sort_keys=True),
         "best_val_MSE": metrics.get("best_val_MSE"),
         "MSE": metrics.get("MSE"),
         "MAE": metrics.get("MAE"),
         "DA": metrics.get("DA"),
         "best_epoch": tuning.get("best_epoch"),
+        "tuning_notes": tuning.get("tuning_notes"),
         "notes": record.get("notes"),
+    }
+
+
+def _stringify_hyperparameters(record: Dict[str, Any]) -> str:
+    hyper = deepcopy(record.get("hyperparameters", {}))
+    if not hyper:
+        return ""
+    return json.dumps(hyper, sort_keys=True, separators=(",", ":"))
+
+
+def _coerce_float(value: Any) -> Optional[float]:
+    if value in (None, "", "None"):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _coerce_int(value: Any) -> Optional[int]:
+    if value in (None, "", "None"):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _load_experiment_log_records(reports_dir: str = REPORTS_DIR) -> List[Dict[str, Any]]:
+    jsonl_path = os.path.join(reports_dir, os.path.basename(EXPERIMENT_LOG_JSONL))
+    csv_path = os.path.join(reports_dir, os.path.basename(EXPERIMENT_LOG_CSV))
+
+    if os.path.exists(jsonl_path) and os.path.getsize(jsonl_path) > 0:
+        records: List[Dict[str, Any]] = []
+        with open(jsonl_path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if line:
+                    records.append(json.loads(line))
+        return records
+
+    if os.path.exists(csv_path) and os.path.getsize(csv_path) > 0:
+        records = []
+        with open(csv_path, "r", encoding="utf-8", newline="") as handle:
+            for row in csv.DictReader(handle):
+                hyper = {}
+                if row.get("hyperparameters_json"):
+                    try:
+                        hyper = json.loads(row["hyperparameters_json"])
+                    except json.JSONDecodeError:
+                        hyper = {}
+                hidden_size = row.get("hidden_size")
+                d_model = row.get("d_model")
+                if hidden_size and "hidden" not in hyper and not d_model:
+                    hyper["hidden"] = _coerce_int(hidden_size)
+                if d_model and "d_model" not in hyper:
+                    hyper["d_model"] = _coerce_int(d_model)
+                if row.get("nhead") and "nhead" not in hyper:
+                    hyper["nhead"] = _coerce_int(row.get("nhead"))
+                if row.get("num_layers") and "num_layers" not in hyper and "layers" not in hyper:
+                    hyper["num_layers"] = _coerce_int(row.get("num_layers"))
+                records.append(
+                    {
+                        "timestamp_utc": row.get("timestamp_utc"),
+                        "run_id": row.get("run_id"),
+                        "model_name": row.get("model_name"),
+                        "record_type": row.get("record_type"),
+                        "selection_metric": row.get("selection_metric"),
+                        "selection_split": row.get("selection_split"),
+                        "hyperparameters": hyper,
+                        "metrics": {
+                            "best_val_MSE": _coerce_float(row.get("best_val_MSE")),
+                            "MSE": _coerce_float(row.get("MSE")),
+                            "MAE": _coerce_float(row.get("MAE")),
+                            "DA": _coerce_float(row.get("DA")),
+                        },
+                        "training": {
+                            "lr": _coerce_float(row.get("lr")),
+                            "batch_size": _coerce_int(row.get("batch_size")),
+                        },
+                        "tuning": {
+                            "best_epoch": _coerce_int(row.get("best_epoch")),
+                            "tuning_notes": row.get("tuning_notes"),
+                        },
+                        "notes": row.get("notes"),
+                    }
+                )
+        return records
+
+    return []
+
+
+def _is_tuning_record(record: Dict[str, Any]) -> bool:
+    if str(record.get("record_type") or "").lower() != "neural_model":
+        return False
+    note_fields = [
+        record.get("notes"),
+        record.get("tuning", {}).get("tuning_notes"),
+        record.get("training", {}).get("run_note"),
+    ]
+    note_blob = " ".join(str(value) for value in note_fields if value)
+    return "sweep" in note_blob.lower()
+
+
+def _tuning_row_from_record(record: Dict[str, Any], *, selection_reason: str = "") -> Dict[str, Any]:
+    hyper = deepcopy(record.get("hyperparameters", {}))
+    metrics = record.get("metrics", {})
+    tuning = record.get("tuning", {})
+    model_name = record.get("model_name")
+    is_transformer = str(model_name or "").strip().lower() == "transformer"
+
+    hidden_size = hyper.get("hidden")
+    d_model = hyper.get("d_model")
+    if is_transformer:
+        hidden_size = None
+    else:
+        d_model = None
+
+    return {
+        "model": model_name,
+        "run_id": record.get("run_id"),
+        "timestamp": record.get("timestamp_utc"),
+        "hyperparameters": _stringify_hyperparameters(record),
+        "hidden_size": hidden_size,
+        "d_model": d_model,
+        "nhead": hyper.get("nhead") if is_transformer else None,
+        "num_layers": _extract_num_layers(hyper),
+        "best_val_MSE": metrics.get("best_val_MSE"),
+        "test_MSE": metrics.get("MSE"),
+        "MAE": metrics.get("MAE"),
+        "DA": metrics.get("DA"),
+        "best_epoch": tuning.get("best_epoch"),
+        "notes": record.get("notes") or tuning.get("tuning_notes"),
+        "selection_reason": selection_reason,
+    }
+
+
+def generate_tuning_reports(*, reports_dir: str = REPORTS_DIR) -> Dict[str, Any]:
+    records = _load_experiment_log_records(reports_dir)
+    tuning_records = [record for record in records if _is_tuning_record(record)]
+
+    all_rows = [_tuning_row_from_record(record) for record in tuning_records]
+    all_rows.sort(
+        key=lambda row: (
+            str(row.get("model") or ""),
+            row.get("best_val_MSE") is None,
+            row.get("best_val_MSE") if row.get("best_val_MSE") is not None else float("inf"),
+            str(row.get("timestamp") or ""),
+            str(row.get("run_id") or ""),
+        )
+    )
+
+    best_rows: List[Dict[str, Any]] = []
+    rows_by_model: Dict[str, List[Dict[str, Any]]] = {}
+    for row in all_rows:
+        rows_by_model.setdefault(str(row.get("model")), []).append(row)
+
+    for model_name in sorted(rows_by_model):
+        model_rows = rows_by_model[model_name]
+        winner = min(
+            model_rows,
+            key=lambda row: (
+                row.get("best_val_MSE") is None,
+                row.get("best_val_MSE") if row.get("best_val_MSE") is not None else float("inf"),
+                str(row.get("timestamp") or ""),
+                str(row.get("run_id") or ""),
+            ),
+        )
+        winner_with_reason = deepcopy(winner)
+        winner_with_reason["selection_reason"] = SELECTION_REASON_LOWEST_VAL_MSE
+        best_rows.append(winner_with_reason)
+
+    all_rows_with_reason = []
+    best_keys = {(row["model"], row["run_id"], row["timestamp"]) for row in best_rows}
+    for row in all_rows:
+        row_copy = deepcopy(row)
+        if (row_copy["model"], row_copy["run_id"], row_copy["timestamp"]) in best_keys:
+            row_copy["selection_reason"] = SELECTION_REASON_LOWEST_VAL_MSE
+        all_rows_with_reason.append(row_copy)
+
+    os.makedirs(reports_dir, exist_ok=True)
+    all_runs_path = os.path.join(reports_dir, os.path.basename(TUNING_ALL_RUNS_CSV))
+    best_configs_path = os.path.join(reports_dir, os.path.basename(TUNING_BEST_CONFIGS_CSV))
+
+    with open(all_runs_path, "w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=TUNING_REPORT_FIELDNAMES)
+        writer.writeheader()
+        writer.writerows(all_rows_with_reason)
+
+    with open(best_configs_path, "w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=TUNING_REPORT_FIELDNAMES)
+        writer.writeheader()
+        writer.writerows(best_rows)
+
+    return {
+        "source_records": len(records),
+        "tuning_records": len(tuning_records),
+        "all_runs_path": all_runs_path,
+        "best_configs_path": best_configs_path,
     }
 
 
@@ -252,6 +487,8 @@ def append_experiment_record(record: Dict[str, Any], *, reports_dir: str = REPOR
         if needs_header:
             writer.writeheader()
         writer.writerow(row)
+
+    generate_tuning_reports(reports_dir=reports_dir)
 
 
 def write_model_comparison_record(
