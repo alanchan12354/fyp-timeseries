@@ -1,22 +1,42 @@
 # Model Analysis Report
 
-**Date:** February 24, 2026
-**Project:** SPY Daily Returns Forecasting
-**Metrics Source:** `reports/metrics_comparison.csv`, `reports/metrics_baselines.csv`
+**Snapshot date:** February 24, 2026
+**Document role:** historical analysis note tied to one recorded metrics snapshot, not a guarantee of current default outputs.
 
-## 1. Overview
-This report analyzes the performance of various time series forecasting models on SPY daily returns. The models range from simple baselines (Persistence, Linear Regression) to deep learning models (RNN, LSTM, GRU, Transformer).
+## 1. Scope of this note
 
-## 2. Methodology
-- **Target**: Next-day log return ($r_{t+1}$).
-- **Input**: Sequence of past 10 days' log returns.
-- **Data Period**: 2010-01-01 to present.
-- **Split**: 70% Train, 15% Validation, 15% Test.
-- **Loss Function**: Mean Squared Error (MSE).
+This document summarizes a specific reported result set for the SPY forecasting project.
+It should be read as a **point-in-time interpretation** of exported metrics, not as a source of truth for the repository's latest configuration.
 
-## 3. Results Summary
+The codebase has since evolved to support:
 
-### Neural Models (Test Set Metrics)
+- runtime-configurable neural training,
+- structured experiment logging,
+- model-comparison records,
+- staged tuning workflows,
+- richer reproducibility metadata.
+
+## 2. Metrics source used for this snapshot
+
+This write-up is based on the following generated artifacts from that run period:
+
+- `reports/metrics_comparison.csv`
+- `reports/metrics_baselines.csv`
+
+Because those files are generated outputs rather than version-controlled source files, you should verify the exact archived copies used in your report before citing any numeric values.
+
+## 3. Important interpretation warning
+
+The current repository contains **two forecasting setups**:
+
+- the standalone baseline script uses **next-day** targets,
+- the sequence-model workflow uses a configurable `HORIZON` target and currently defaults to **10 trading days ahead**.
+
+If the metrics underlying this historical note came from mixed workflows, then the comparison must be described carefully in any formal report.
+
+## 4. Snapshot results
+
+### Neural models (test-set metrics)
 
 | Model | MAE | MSE | Directional Accuracy (DA) | Best Val MSE |
 | :--- | :--- | :--- | :--- | :--- |
@@ -25,34 +45,45 @@ This report analyzes the performance of various time series forecasting models o
 | **GRU** | **0.00657** | 1.01e-4 | **54.28%** | 1.38e-4 |
 | **Transformer** | 0.00900 | 1.62e-4 | 46.71% | 1.96e-4 |
 
-*Note: Best Val MSE is the Mean Squared Error on the validation set during the epoch where the model performed best.*
-
-### Baselines (Test Set Metrics)
+### Baselines (test-set metrics)
 
 | Model | MAE | MSE | Directional Accuracy (DA) |
 | :--- | :--- | :--- | :--- |
 | **Persistence** | 0.00952 | 2.08e-4 | 52.63% |
 | **Linear Regression** | 0.00665 | 9.92e-5 | 52.14% |
 
-## 4. Analysis
+## 5. Snapshot interpretation
 
-### Training & Validation Loss (Generalization)
-- **LSTM** achieved the lowest validation MSE ($1.34 \times 10^{-4}$), indicating it generalized the best among the neural models continuously.
-- **Transformer** struggled significantly, with a validation MSE ($1.96 \times 10^{-4}$) nearly 46% higher than the LSTM. This suggests the Transformer model may require more data, better positional encoding tuning, or is overfitting to noise in this small-data regime.
+### Validation performance
 
-### Test Set Performance (MAE & MSE)
-- **Error Magnitude**: The **LSTM** and **Linear Regression** performed best in terms of minimizing error (MSE ~1.0e-4).
-- **Baselines**: The simple **Linear Regression** is extremely competitive, beating the RNN, GRU, and Transformer on MSE. This is a common finding in financial time series where the "signal" is very weak compared to noise.
-- **Deep Learning**: The **GRU** had the lowest Mean Absolute Error (MAE) of 0.00657, marginally beating the LSTM and Linear Regression.
+- **LSTM** achieved the lowest reported validation MSE in this snapshot.
+- **Transformer** underperformed relative to the recurrent models on this particular exported result set.
 
-### Directional Accuracy (DA)
-- **Best Directional Predictor**: **GRU** achieved the highest DA at **54.28%**, which is the only neural model to decisively beat the random walk/persistence baseline (52.63%).
-- **Poor Directional Performance**: RNN, LSTM, and Transformer all hovered around 46-47%, meaning they were worse than a coin flip for predicting the *direction* of the move, even if their magnitude error was low (for LSTM).
-- **Interpretation**: A low MSE but low DA (like LSTM) implies the model is predicting close to the mean (0) conservatively, effectively minimizing squared error but failing to capture the swing direction. The GRU managed to capture some trend dynamics.
+### Test-set error magnitude
 
-## 5. Conclusion
-1.  **Linear Regression is a tough baseline**: It performs similarly to the LSTM in terms of MSE and beat most neural models in Directional Accuracy.
-2.  **GRU is the most promising Neural Model**: It provided the best combination of low MAE and highest Directional Accuracy (>54%).
-3.  **Transformer Underperformance**: The current Transformer architecture is likely too complex or ill-suited for this specific univariate, small-window task without further regularization or pre-training.
+- **LSTM** and **Linear Regression** were the strongest by MSE in this snapshot.
+- The strong linear-regression result suggests the signal may be weak enough that simple models remain highly competitive.
 
-**Recommendation**: Proceed with **GRU** for further tuning if the goal is trading strategy (DA matters), or **LSTM/Linear Regression** if the goal is volatility/risk estimation (MSE matters).
+### Directional accuracy
+
+- **GRU** had the highest reported directional accuracy in this snapshot.
+- Several models appear to have achieved relatively low magnitude error without matching that with strong sign prediction.
+
+## 6. How to use this document safely
+
+Use this file as:
+
+- a narrative example of how to discuss a result set,
+- a historical note tied to a dated output snapshot.
+
+Do **not** use it as the authoritative definition of the current repository defaults.
+For that, consult:
+
+- `src/common/config.py` for default task/training settings,
+- `src/common/reporting.py` for current logging outputs,
+- `src/comparison/main.py` for the current shared comparison workflow,
+- `src/tuning/main.py` for the current staged tuning process.
+
+## 7. Recommended next step
+
+Before incorporating these numbers into a final report, rerun or verify the exact archived experiment artifacts and cite the corresponding run IDs, timestamps, and generated output files.
