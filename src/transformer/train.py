@@ -4,16 +4,15 @@ import os
 from src.common.config import REPORTS_DIR
 from src.common.neural_entrypoint import (
     build_runtime_parser,
-    prepare_sequence_training_data,
+    prepare_runtime_sequence_run,
     resolve_runtime_config,
 )
-from src.common.reporting import create_run_context, default_training_metadata
 from src.common.train import train_model
 
 from .model import TransformerModel
 
 
-def main(config=None, config_dict=None, cli_args=None, **overrides):
+def main(config=None, config_dict=None, cli_args=None, prepared_run=None, **overrides):
     print("Running Transformer Experiment...")
 
     runtime_config = resolve_runtime_config(
@@ -22,25 +21,21 @@ def main(config=None, config_dict=None, cli_args=None, **overrides):
         cli_args=cli_args,
         **overrides,
     )
-    tr_load, va_load, test_data, idx_te, split_meta = prepare_sequence_training_data(
-        runtime_config.batch_size
-    )
-
-    run_context = create_run_context(
-        "transformer_experiment",
-        split_meta,
-        training_meta=default_training_metadata(**runtime_config.training_metadata()),
-        notes=runtime_config.run_note or "Single-model training run for Transformer.",
+    prepared_run = prepared_run or prepare_runtime_sequence_run(
+        experiment_name="transformer_experiment",
+        batch_size=runtime_config.batch_size,
+        run_note=runtime_config.run_note or "Single-model training run for Transformer.",
+        training_metadata=runtime_config.training_metadata(),
     )
 
     metrics = train_model(
         "Transformer",
         TransformerModel,
-        tr_load,
-        va_load,
-        test_data,
-        idx_te,
-        experiment_context=run_context,
+        prepared_run.train_loader,
+        prepared_run.val_loader,
+        prepared_run.test_data,
+        prepared_run.test_index,
+        experiment_context=prepared_run.run_context,
         tuning_notes=runtime_config.run_note or "Runtime-configurable single-model training run.",
         learning_rate=runtime_config.learning_rate,
         **runtime_config.transformer_model_kwargs(),
