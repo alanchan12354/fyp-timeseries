@@ -37,7 +37,7 @@ def main():
     va_load = DataLoader(SeqDataset(X_va_s, y_va), batch_size=BATCH_SIZE)
     
     # 4. Train
-    metrics = train_model("Transformer", TransformerModel, tr_load, va_load, (X_te_s, y_te), idx_te, experiment_context=run_context, tuning_notes="Single-model default configuration.", d_model=64, nhead=4, num_layers=2)
+    metrics = train_model("Transformer", TransformerModel, tr_load, va_load, (X_te_s, y_te), idx_te, experiment_context=run_context, tuning_notes="Single-model default configuration.", d_model=64, nhead=4, num_layers=2, dropout=0.1)
     
     print(metrics)
     with open(os.path.join(REPORTS_DIR, "metrics_transformer.json"), "w") as f:

@@ -45,7 +45,10 @@ SUMMARY_FIELDNAMES = [
     "run_id",
     "model_name",
     "hidden_size",
+    "d_model",
+    "nhead",
     "num_layers",
+    "dropout",
     "lr",
     "batch_size",
     "best_val_MSE",
@@ -207,12 +210,22 @@ def _flatten_record_for_csv(record: Dict[str, Any]) -> Dict[str, Any]:
     metrics = record.get("metrics", {})
     hyper = record.get("hyperparameters", {})
     tuning = record.get("tuning", {})
+
+    hidden_size = hyper.get("hidden")
+    d_model = hyper.get("d_model")
+    num_layers = hyper.get("layers")
+    if num_layers is None:
+        num_layers = hyper.get("num_layers")
+
     return {
         "timestamp_utc": record.get("timestamp_utc"),
         "run_id": record.get("run_id"),
         "model_name": record.get("model_name"),
-        "hidden_size": hyper.get("hidden"),
-        "num_layers": hyper.get("layers"),
+        "hidden_size": hidden_size if hidden_size is not None else d_model,
+        "d_model": d_model,
+        "nhead": hyper.get("nhead"),
+        "num_layers": num_layers,
+        "dropout": hyper.get("dropout"),
         "lr": training.get("lr"),
         "batch_size": training.get("batch_size"),
         "best_val_MSE": metrics.get("best_val_MSE"),
