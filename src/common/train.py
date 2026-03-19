@@ -66,6 +66,7 @@ def train_model(
     selection_metric="best_val_MSE",
     selection_split="validation",
     tuning_notes=None,
+    notes_metadata=None,
     artifact_paths=None,
     **model_kwargs,
 ):
@@ -312,6 +313,7 @@ def train_model(
                 "scheduler_patience": int(scheduler_patience),
                 "scheduler_min_lr": float(scheduler_min_lr),
                 "tuning_notes": tuning_notes,
+                "notes_metadata": notes_metadata or {},
             },
             artifacts={
                 "checkpoint": os.path.join(REPORTS_DIR, f"{model_name}.pt"),
