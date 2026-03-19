@@ -8,7 +8,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader
 
-from .config import HORIZON, SEQ_LEN, TRAIN_RATIO, VAL_RATIO
+from .config import HORIZON, SEQ_LEN, TRAIN_RATIO, VAL_RATIO, TICKER, START
 from .data import SeqDataset, build_sequences, chronological_split, load_data
 from .reporting import create_run_context, default_training_metadata, split_metadata
 
@@ -45,7 +45,10 @@ def prepare_sequence_experiment_run(
     train_ratio: float = TRAIN_RATIO,
     val_ratio: float = VAL_RATIO,
 ) -> PreparedSequenceRun:
-    raw_returns = load_data(ticker=ticker, start=start)
+    raw_returns = load_data(
+    ticker=ticker or TICKER,
+    start=start or START,
+    )
     sequences, targets, sequence_index = build_sequences(raw_returns, seq_len, horizon)
     (X_tr, y_tr, idx_tr), (X_va, y_va, idx_va), (X_te, y_te, idx_te) = chronological_split(
         sequences,
