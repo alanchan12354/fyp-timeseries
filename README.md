@@ -59,11 +59,18 @@ You can adjust hyperparameters (SEQ_LEN, LR, EPOCHS, etc.) in `src/common/config
 
 ## Experiment Records
 
-Training and comparison scripts now also maintain standardized experiment records in `reports/`, including:
-- `experiment_log.jsonl` / `experiment_log.csv` for per-run tracking
+Training and comparison scripts now also maintain experiment records in `reports/`, including:
+- `experiment_log.jsonl`, which keeps the full structured record for each run
+- `experiment_log.csv`, which is intentionally simplified for the FYP fine-tuning section
 - `model_comparison_record.json` / `model_comparison_record.csv` for shared comparison summaries
 
-These files are intended to support FYP report writing, model comparison, and fine-tuning documentation.
+For the fine-tuning write-up, the simplified CSV view keeps the four tuned hyperparameters front and center:
+- hidden size
+- number of layers
+- learning rate
+- batch size
+
+It also keeps a reduced set of result columns for quick comparison, such as validation/test metrics and the best epoch, while the JSONL log preserves the richer per-run metadata. If you want to relog experiments from a clean slate, delete the previous files under `reports/` before re-running training.
 
 ## New to the Codebase?
 

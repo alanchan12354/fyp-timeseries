@@ -61,7 +61,10 @@ Most scripts follow the same sequence:
     - patience/min-delta logic.
   - Saves best weights: `reports/<Model>.pt`.
   - Writes epoch diagnostics: `reports/<model>_diagnostics.json`.
-  - Appends standardized experiment records to `reports/experiment_log.jsonl` and `reports/experiment_log.csv`.
+  - Appends experiment records to `reports/experiment_log.jsonl` and `reports/experiment_log.csv`.
+  - The JSONL file keeps the full structured run metadata, while the CSV is intentionally simplified for the FYP fine-tuning section.
+  - The simplified comparison view highlights the four tuned hyperparameters: hidden size, number of layers, learning rate, and batch size.
+  - It also keeps reduced comparison columns such as validation/test metrics and the best epoch.
   - Saves plots to `reports/figures/`:
     - loss curves,
     - test prediction slice,
@@ -105,7 +108,9 @@ After running experiments, expect files such as:
 - Model checkpoints: `RNN.pt`, `LSTM.pt`, `GRU.pt`, `Transformer.pt`
 - Metrics JSON/CSV files (`metrics_*.json`, `metrics_*.csv`)
 - Diagnostics JSON per neural model (`*_diagnostics.json`)
-- Standardized experiment logs: `experiment_log.jsonl`, `experiment_log.csv`
+- Experiment logs: `experiment_log.jsonl`, `experiment_log.csv`
+  - `experiment_log.jsonl` keeps the richer structured record for each run.
+  - `experiment_log.csv` is the intentionally simplified FYP fine-tuning view, centered on hidden size, number of layers, learning rate, batch size, validation/test metrics, and best epoch.
 - Model-comparison summary records: `model_comparison_record.json`, `model_comparison_record.csv`
 - Figures in `reports/figures/`:
   - `loss_<Model>.png`
@@ -131,6 +136,8 @@ python -m src.rnn.train
 python -m src.lstm.train
 python -m src.transformer.train
 ```
+
+If you want to regenerate the experiment logs cleanly, remove old files under `reports/` before re-running training so the relogged runs do not append onto previous entries.
 
 ## 6) What to tweak first
 
