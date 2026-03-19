@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Iterable, List, Mapping, Sequence
 
 from src.common.config import BATCH_SIZE, LR, REPORTS_DIR
 from src.common.runtime_config import RuntimeTrainingConfig
-from src.common.reporting import reset_tuning_artifacts
+from src.common.reporting import format_structured_notes, reset_tuning_artifacts
 from src.gru import train as gru_train
 from src.lstm import train as lstm_train
 from src.rnn import train as rnn_train
@@ -228,23 +228,49 @@ def _config_to_runtime_dict(model_name: str, frozen_config: Mapping[str, Any], n
     return runtime
 
 
-def _note_for_candidate(spec: ModelSpec, stage_name: str, candidate_config: Mapping[str, Any]) -> str:
-    if spec.cli_name in RECURRENT_MODELS:
-        return (
-            f"{spec.display_name} {stage_name} sweep: "
-            f"hidden={candidate_config['hidden']} "
-            f"layers={candidate_config['layers']} "
-            f"lr={candidate_config['lr']} "
-            f"batch={candidate_config['batch_size']}"
-        )
-    return (
-        f"{spec.display_name} {stage_name} sweep: "
-        f"d_model={candidate_config['d_model']} "
-        f"num_layers={candidate_config['num_layers']} "
-        f"nhead={candidate_config['nhead']} "
-        f"lr={candidate_config['lr']} "
-        f"batch={candidate_config['batch_size']}"
-    )
+def _note_alias_map(model_name: str) -> Dict[str, str]:
+    if model_name in RECURRENT_MODELS:
+        return {
+            "hidden": "hidden",
+            "layers": "layers",
+            "lr": "lr",
+            "batch_size": "batch",
+        }
+    return {
+        "d_model": "d_model",
+        "num_layers": "layers",
+        "nhead": "nhead",
+        "lr": "lr",
+        "batch_size": "batch",
+    }
+
+
+def _structured_note_metadata(
+    spec: ModelSpec,
+    stage_name: str,
+    *,
+    candidates: Sequence[Any],
+    candidate_config: Mapping[str, Any],
+    selection_metric: str = "best_val_MSE",
+) -> Dict[str, Any]:
+    alias_map = _note_alias_map(spec.cli_name)
+    fixed_baseline = {
+        alias_map[key]: candidate_config[key]
+        for key in spec.baseline
+        if key != stage_name and key in candidate_config and key in alias_map
+    }
+    metadata: Dict[str, Any] = {
+        "model": spec.display_name,
+        "stage": f"{stage_name}_sweep",
+        "candidate_param": alias_map.get(stage_name, stage_name),
+        "candidates": list(candidates),
+        "fixed": fixed_baseline,
+        "selection": selection_metric,
+    }
+    for key, alias in alias_map.items():
+        if key in candidate_config:
+            metadata[alias] = candidate_config[key]
+    return metadata
 
 
 def _ensure_parent(path: str) -> None:
@@ -318,7 +344,13 @@ def tune_model(model_name: str, plan: Mapping[str, List[Any]], *, dry_run: bool 
         for candidate_index, candidate_value in enumerate(candidates, start=1):
             candidate_config = deepcopy(frozen_config)
             candidate_config[stage_name] = candidate_value
-            note = _note_for_candidate(spec, stage_name, candidate_config)
+            note_metadata = _structured_note_metadata(
+                spec,
+                stage_name,
+                candidates=candidates,
+                candidate_config=candidate_config,
+            )
+            note = format_structured_notes(note_metadata)
             runtime_config = _config_to_runtime_dict(model_name, candidate_config, note)
             metrics = spec.train_entrypoint(config_dict=runtime_config)
             best_val = float(metrics["best_val_MSE"])

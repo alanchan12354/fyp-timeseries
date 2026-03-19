@@ -90,6 +90,53 @@ class TuningArtifactResetTests(unittest.TestCase):
         self.assertIn("removed experiment_log.csv", text)
         self.assertIn("removed figures/loss_lstm.png", text)
 
+    def test_format_structured_notes_is_csv_friendly(self):
+        note = self.reporting.format_structured_notes({
+            "model": "LSTM",
+            "stage": "lr_sweep",
+            "candidate_param": "lr",
+            "candidates": [1e-3, 5e-4, 1e-4],
+            "fixed": {"hidden": 64, "layers": 2, "batch": 64},
+            "selection": "best_val_MSE",
+        })
+        self.assertEqual(
+            note,
+            "model=LSTM;stage=lr_sweep;candidate_param=lr;candidates=0.001|0.0005|0.0001;fixed=batch:64|hidden:64|layers:2;selection=best_val_MSE",
+        )
+
+    def test_tune_model_writes_structured_notes_for_candidate_runs(self):
+        captured_notes = []
+
+        def _fake_train_entrypoint(*, config_dict=None, **kwargs):
+            captured_notes.append(config_dict["run_note"])
+            return {"best_val_MSE": 0.123}
+
+        spec = self.tuning_main.MODEL_SPECS["lstm"]
+        patched_spec = self.tuning_main.ModelSpec(
+            cli_name=spec.cli_name,
+            display_name=spec.display_name,
+            train_entrypoint=_fake_train_entrypoint,
+            baseline=spec.baseline,
+            stage_order=["lr"],
+            default_plan={"lr": [1e-3, 5e-4]},
+        )
+
+        with mock.patch.dict(self.tuning_main.MODEL_SPECS, {"lstm": patched_spec}, clear=False), mock.patch.object(
+            self.tuning_main,
+            "_append_csv",
+        ):
+            summary = self.tuning_main.tune_model("lstm", {"lr": [1e-3, 5e-4]})
+
+        self.assertEqual(summary["final_config"]["lr"], 1e-3)
+        self.assertEqual(
+            captured_notes[0],
+            "model=LSTM;stage=lr_sweep;candidate_param=lr;candidates=0.001|0.0005;fixed=batch:64|hidden:64|layers:2;selection=best_val_MSE;hidden=64;layers=2;lr=0.001;batch=64",
+        )
+        self.assertEqual(
+            captured_notes[1],
+            "model=LSTM;stage=lr_sweep;candidate_param=lr;candidates=0.001|0.0005;fixed=batch:64|hidden:64|layers:2;selection=best_val_MSE;hidden=64;layers=2;lr=0.0005;batch=64",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
