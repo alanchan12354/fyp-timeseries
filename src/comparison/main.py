@@ -127,10 +127,10 @@ def main():
     comparison_records.append(baseline_record)
 
     models = [
-        ("RNN", RNNModel, {"hidden": 64}),
-        ("LSTM", LSTMModel, {"hidden": 64}),
-        ("GRU", GRUModel, {"hidden": 64}),
-        ("Transformer", TransformerModel, {"d_model": 64}),
+        ("RNN", RNNModel, {"hidden": 64, "layers": 2}),
+        ("LSTM", LSTMModel, {"hidden": 64, "layers": 2}),
+        ("GRU", GRUModel, {"hidden": 64, "layers": 2}),
+        ("Transformer", TransformerModel, {"d_model": 64, "nhead": 4, "num_layers": 2, "dropout": 0.1}),
     ]
 
     for name, cls, kwargs in models:
