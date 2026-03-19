@@ -63,7 +63,7 @@ Most scripts follow the same sequence:
   - Writes epoch diagnostics: `reports/<model>_diagnostics.json`.
   - Appends experiment records to `reports/experiment_log.jsonl` and `reports/experiment_log.csv`.
   - The JSONL file keeps the full structured run metadata, while the CSV is intentionally simplified for the FYP fine-tuning section.
-  - The simplified comparison view highlights the four tuned hyperparameters: hidden size, number of layers, learning rate, and batch size.
+  - The simplified comparison view highlights the main tuning knobs across architectures: hidden size, Transformer `d_model`/`nhead`/`dropout`, number of layers, learning rate, and batch size.
   - It also keeps reduced comparison columns such as validation/test metrics and the best epoch.
   - Saves plots to `reports/figures/`:
     - loss curves,
@@ -110,7 +110,7 @@ After running experiments, expect files such as:
 - Diagnostics JSON per neural model (`*_diagnostics.json`)
 - Experiment logs: `experiment_log.jsonl`, `experiment_log.csv`
   - `experiment_log.jsonl` keeps the richer structured record for each run.
-  - `experiment_log.csv` is the intentionally simplified FYP fine-tuning view, centered on hidden size, number of layers, learning rate, batch size, validation/test metrics, and best epoch.
+  - `experiment_log.csv` is the intentionally simplified FYP fine-tuning view, centered on hidden size, Transformer `d_model`/`nhead`/`dropout`, number of layers, learning rate, batch size, validation/test metrics, and best epoch.
 - Model-comparison summary records: `model_comparison_record.json`, `model_comparison_record.csv`
 - Figures in `reports/figures/`:
   - `loss_<Model>.png`

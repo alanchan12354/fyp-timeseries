@@ -64,9 +64,10 @@ Training and comparison scripts now also maintain experiment records in `reports
 - `experiment_log.csv`, which is intentionally simplified for the FYP fine-tuning section
 - `model_comparison_record.json` / `model_comparison_record.csv` for shared comparison summaries
 
-For the fine-tuning write-up, the simplified CSV view keeps the four tuned hyperparameters front and center:
-- hidden size
-- number of layers
+For the fine-tuning write-up, the simplified CSV view keeps the core tuning knobs front and center:
+- hidden size for recurrent models, mirrored from `d_model` for Transformer rows
+- Transformer-specific `d_model`, `nhead`, and `dropout` columns
+- number of layers (works for both recurrent and Transformer runs)
 - learning rate
 - batch size
 
