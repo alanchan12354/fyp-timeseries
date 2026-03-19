@@ -25,21 +25,21 @@ from .metrics import evaluate_preds
 from .reporting import append_experiment_record, build_experiment_record
 
 
-def _build_scheduler(optimizer):
-    scheduler_type = (SCHEDULER_TYPE or "none").strip().lower()
+def _build_scheduler(optimizer, *, scheduler_type, epochs, scheduler_factor, scheduler_patience, scheduler_min_lr):
+    scheduler_type = (scheduler_type or "none").strip().lower()
     if scheduler_type == "plateau":
         return torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
             mode="min",
-            factor=SCHEDULER_FACTOR,
-            patience=SCHEDULER_PATIENCE,
-            min_lr=SCHEDULER_MIN_LR,
+            factor=scheduler_factor,
+            patience=scheduler_patience,
+            min_lr=scheduler_min_lr,
         )
     if scheduler_type == "cosine":
         return torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer,
-            T_max=EPOCHS,
-            eta_min=SCHEDULER_MIN_LR,
+            T_max=epochs,
+            eta_min=scheduler_min_lr,
         )
     return None
 
@@ -70,28 +70,45 @@ def train_model(
     **model_kwargs,
 ):
     print(f"\nTraining {model_name}...")
+    learning_rate = float(model_kwargs.pop("learning_rate", LR))
+    epochs = int(model_kwargs.pop("epochs", EPOCHS))
+    patience = int(model_kwargs.pop("patience", PATIENCE))
+    min_delta = float(model_kwargs.pop("min_delta", MIN_DELTA))
+    val_loss_smooth_window = int(model_kwargs.pop("val_loss_smooth_window", VAL_LOSS_SMOOTH_WINDOW))
+    min_epochs = int(model_kwargs.pop("min_epochs", MIN_EPOCHS))
     train_log_every = int(model_kwargs.pop("train_log_every", TRAIN_LOG_EVERY))
+    scheduler_type = model_kwargs.pop("scheduler_type", SCHEDULER_TYPE)
+    scheduler_factor = float(model_kwargs.pop("scheduler_factor", SCHEDULER_FACTOR))
+    scheduler_patience = int(model_kwargs.pop("scheduler_patience", SCHEDULER_PATIENCE))
+    scheduler_min_lr = float(model_kwargs.pop("scheduler_min_lr", SCHEDULER_MIN_LR))
     train_log_every = max(1, train_log_every)
     model_hyperparameters = dict(model_kwargs)
 
     model = model_cls(**model_kwargs).to(DEVICE)
-    opt = torch.optim.Adam(model.parameters(), lr=LR)
-    scheduler = _build_scheduler(opt)
-    scheduler_type = (SCHEDULER_TYPE or "none").strip().lower()
+    opt = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    scheduler = _build_scheduler(
+        opt,
+        scheduler_type=scheduler_type,
+        epochs=epochs,
+        scheduler_factor=scheduler_factor,
+        scheduler_patience=scheduler_patience,
+        scheduler_min_lr=scheduler_min_lr,
+    )
+    scheduler_type = (scheduler_type or "none").strip().lower()
     loss_fn = nn.MSELoss()
 
     best_val = float("inf")
     best_train_loss = float("nan")
     best_test_loss = float("nan")
     best_epoch = 0
-    stop_epoch = EPOCHS
+    stop_epoch = epochs
 
-    patience_left = PATIENCE
+    patience_left = patience
     train_losses, val_losses = [], []
     smooth_val_losses = []
     epoch_diagnostics = []
 
-    for epoch in range(1, EPOCHS + 1):
+    for epoch in range(1, epochs + 1):
         model.train()
         tr_loss = 0
         for xb, yb in train_loader:
@@ -116,8 +133,8 @@ def train_model(
 
         # Optional smoothing for validation-loss based early stopping.
         # Falls back to raw loss when the configured window is <= 1.
-        if VAL_LOSS_SMOOTH_WINDOW and VAL_LOSS_SMOOTH_WINDOW > 1:
-            window = min(VAL_LOSS_SMOOTH_WINDOW, len(val_losses))
+        if val_loss_smooth_window and val_loss_smooth_window > 1:
+            window = min(val_loss_smooth_window, len(val_losses))
             va_loss_for_stop = float(np.mean(val_losses[-window:]))
         else:
             va_loss_for_stop = va_loss
@@ -126,9 +143,9 @@ def train_model(
         _step_scheduler(scheduler, scheduler_type, va_loss_for_stop)
         current_lr = float(opt.param_groups[0]["lr"])
 
-        in_warmup = epoch < MIN_EPOCHS
+        in_warmup = epoch < min_epochs
         delta = (va_loss_for_stop - best_val) if np.isfinite(best_val) else float("nan")
-        improved = va_loss_for_stop < best_val - MIN_DELTA
+        improved = va_loss_for_stop < best_val - min_delta
 
         if improved:
             best_val = va_loss_for_stop
@@ -149,12 +166,12 @@ def train_model(
             with torch.no_grad():
                 best_test_loss = loss_fn(model(X_te_eval), y_te_eval).item()
 
-            if epoch >= MIN_EPOCHS:
-                patience_left = PATIENCE
+            if epoch >= min_epochs:
+                patience_left = patience
 
             torch.save(model.state_dict(), os.path.join(REPORTS_DIR, f"{model_name}.pt"))
 
-        elif epoch >= MIN_EPOCHS:
+        elif epoch >= min_epochs:
             patience_left -= 1
 
         epoch_diag = {
@@ -172,10 +189,10 @@ def train_model(
 
         should_log = train_log_every <= 1 or epoch % train_log_every == 0 or in_warmup
         if should_log:
-            warmup_msg = f" | Warmup: {epoch}/{MIN_EPOCHS}" if in_warmup else " | Warmup: done"
+            warmup_msg = f" | Warmup: {epoch}/{min_epochs}" if in_warmup else " | Warmup: done"
             smoothed_msg = (
                 f" | VaSmooth: {va_loss_for_stop:.6f}"
-                if VAL_LOSS_SMOOTH_WINDOW and VAL_LOSS_SMOOTH_WINDOW > 1
+                if val_loss_smooth_window and val_loss_smooth_window > 1
                 else ""
             )
             scheduler_msg = f" | lr: {current_lr:.2e}"
@@ -185,7 +202,7 @@ def train_model(
                 f" | patience_left: {patience_left}{scheduler_msg}{warmup_msg}"
             )
 
-        if epoch >= MIN_EPOCHS and patience_left <= 0:
+        if epoch >= min_epochs and patience_left <= 0:
             stop_epoch = epoch
             print(f"Early stopping at epoch {epoch}")
             break
@@ -201,8 +218,8 @@ def train_model(
     plt.figure()
     plt.plot(train_losses, label="Train Loss")
     plt.plot(val_losses, label="Val Loss")
-    if VAL_LOSS_SMOOTH_WINDOW and VAL_LOSS_SMOOTH_WINDOW > 1:
-        plt.plot(smooth_val_losses, label=f"Val Loss (MA{VAL_LOSS_SMOOTH_WINDOW})")
+    if val_loss_smooth_window and val_loss_smooth_window > 1:
+        plt.plot(smooth_val_losses, label=f"Val Loss (MA{val_loss_smooth_window})")
     plt.title(f"{model_name} Loss Curve")
     plt.xlabel("Epoch")
     plt.ylabel("MSE")
@@ -230,15 +247,15 @@ def train_model(
         "stop_epoch": int(stop_epoch),
         "best_epoch": int(best_epoch),
         "best_val_loss": float(best_val),
-        "min_epochs": int(MIN_EPOCHS),
-        "patience": int(PATIENCE),
-        "min_delta": float(MIN_DELTA),
-        "val_loss_smooth_window": int(VAL_LOSS_SMOOTH_WINDOW),
+        "min_epochs": int(min_epochs),
+        "patience": int(patience),
+        "min_delta": float(min_delta),
+        "val_loss_smooth_window": int(val_loss_smooth_window),
         "train_log_every": int(train_log_every),
         "scheduler_type": scheduler_type,
-        "scheduler_factor": float(SCHEDULER_FACTOR),
-        "scheduler_patience": int(SCHEDULER_PATIENCE),
-        "scheduler_min_lr": float(SCHEDULER_MIN_LR),
+        "scheduler_factor": float(scheduler_factor),
+        "scheduler_patience": int(scheduler_patience),
+        "scheduler_min_lr": float(scheduler_min_lr),
         "epochs": epoch_diagnostics,
     }
     diagnostics_path = os.path.join(REPORTS_DIR, f"{model_name.lower()}_diagnostics.json")
@@ -291,9 +308,9 @@ def train_model(
                 "stop_epoch": int(stop_epoch),
                 "train_log_every": int(train_log_every),
                 "scheduler_type": scheduler_type,
-                "scheduler_factor": float(SCHEDULER_FACTOR),
-                "scheduler_patience": int(SCHEDULER_PATIENCE),
-                "scheduler_min_lr": float(SCHEDULER_MIN_LR),
+                "scheduler_factor": float(scheduler_factor),
+                "scheduler_patience": int(scheduler_patience),
+                "scheduler_min_lr": float(scheduler_min_lr),
                 "tuning_notes": tuning_notes,
             },
             artifacts={
