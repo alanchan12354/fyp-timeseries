@@ -3,11 +3,12 @@ import csv
 import json
 import os
 from copy import deepcopy
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Sequence
 
 from src.common.config import BATCH_SIZE, LR, REPORTS_DIR
 from src.common.runtime_config import RuntimeTrainingConfig
+from src.common.reporting import reset_tuning_artifacts
 from src.gru import train as gru_train
 from src.lstm import train as lstm_train
 from src.rnn import train as rnn_train
@@ -140,14 +141,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="Inline JSON object with per-model tuning plans.",
     )
     parser.add_argument(
+        "--session-mode",
+        choices=["reset", "append"],
+        default="append",
+        help="Choose whether to clear prior tuning artifacts before running or append to existing history.",
+    )
+    parser.add_argument(
         "--clear-outputs",
         action="store_true",
-        help="Delete prior tuning summary CSV outputs before running.",
+        help="Deprecated alias for --session-mode reset.",
     )
     parser.add_argument(
         "--keep-outputs",
         action="store_true",
-        help="Keep prior tuning summary CSV outputs even when re-running.",
+        help="Deprecated alias for --session-mode append.",
     )
     parser.add_argument(
         "--dry-run",
@@ -244,10 +251,26 @@ def _ensure_parent(path: str) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
 
-def _clear_outputs() -> None:
-    for path in (TUNING_RUNS_CSV, TUNING_WINNERS_CSV):
-        if os.path.exists(path):
-            os.remove(path)
+def _resolve_session_mode(args: argparse.Namespace) -> str:
+    if args.clear_outputs and args.keep_outputs:
+        raise ValueError("Choose either --clear-outputs or --keep-outputs, not both.")
+    if args.clear_outputs:
+        return "reset"
+    if args.keep_outputs:
+        return "append"
+    return args.session_mode
+
+
+def _print_reset_summary(summary: Mapping[str, Any]) -> None:
+    removed_files = list(summary.get("removed_files", []))
+    reports_dir = str(summary.get("reports_dir", REPORTS_DIR))
+    print("Artifact reset summary:")
+    if removed_files:
+        for path in removed_files:
+            print(f"- removed {os.path.relpath(path, reports_dir)}")
+    else:
+        print("- no prior tuning artifacts found under reports/")
+    print(f"Removed {summary.get('removed_count', 0)} file(s) from {reports_dir}")
 
 
 def _append_csv(path: str, fieldnames: List[str], row: Dict[str, Any]) -> None:
@@ -348,8 +371,7 @@ def tune_model(model_name: str, plan: Mapping[str, List[Any]], *, dry_run: bool 
 
 def main(cli_args: argparse.Namespace | None = None) -> List[Dict[str, Any]]:
     args = cli_args or build_parser().parse_args()
-    if args.clear_outputs and args.keep_outputs:
-        raise ValueError("Choose either --clear-outputs or --keep-outputs, not both.")
+    session_mode = _resolve_session_mode(args)
 
     selected_models = _resolve_models(args.model)
     plan_overrides = _load_plan_overrides(args)
@@ -358,10 +380,8 @@ def main(cli_args: argparse.Namespace | None = None) -> List[Dict[str, Any]]:
         for model_name in selected_models
     }
 
-    if args.clear_outputs:
-        _clear_outputs()
-
     _print_resolved_plan(selected_models, plan_by_model)
+    print(f"Session mode: {session_mode}")
     if args.dry_run:
         print("Dry run enabled; no training jobs were started.")
         return [
@@ -372,6 +392,11 @@ def main(cli_args: argparse.Namespace | None = None) -> List[Dict[str, Any]]:
             }
             for model_name in selected_models
         ]
+
+    if session_mode == "reset":
+        _print_reset_summary(reset_tuning_artifacts())
+    else:
+        print("Append mode selected; keeping prior reports/ artifacts and extending history.")
 
     summaries = [tune_model(model_name, plan_by_model[model_name]) for model_name in selected_models]
     print("Completed tuning workflow.")

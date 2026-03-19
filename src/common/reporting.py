@@ -1,4 +1,5 @@
 import csv
+import glob
 import json
 import os
 import platform
@@ -17,6 +18,7 @@ from .config import (
     BATCH_SIZE,
     DEVICE,
     EPOCHS,
+    FIGURES_DIR,
     HORIZON,
     LAGS,
     LR,
@@ -85,6 +87,48 @@ TUNING_REPORT_FIELDNAMES = [
 ]
 
 SELECTION_REASON_LOWEST_VAL_MSE = "selected_by=lowest_validation_MSE"
+
+
+ARTIFACT_RESET_PATTERNS = [
+    "experiment_log.csv",
+    "experiment_log.jsonl",
+    "*_diagnostics.json",
+    "*.pt",
+    "tuning_runs.csv",
+    "tuning_winners.csv",
+    "tuning_all_runs.csv",
+    "tuning_best_configs.csv",
+    "tuning_summary*.csv",
+]
+FIGURE_RESET_PATTERNS = ["*.png"]
+
+
+def collect_tuning_artifacts_for_reset(*, reports_dir: str = REPORTS_DIR) -> List[str]:
+    patterns = [os.path.join(reports_dir, pattern) for pattern in ARTIFACT_RESET_PATTERNS]
+    figures_dir = os.path.join(reports_dir, os.path.basename(FIGURES_DIR))
+    patterns.extend(os.path.join(figures_dir, pattern) for pattern in FIGURE_RESET_PATTERNS)
+
+    matches = set()
+    for pattern in patterns:
+        matches.update(path for path in glob.glob(pattern) if os.path.isfile(path))
+    return sorted(matches)
+
+
+def reset_tuning_artifacts(*, reports_dir: str = REPORTS_DIR) -> Dict[str, Any]:
+    removed_files: List[str] = []
+    for path in collect_tuning_artifacts_for_reset(reports_dir=reports_dir):
+        os.remove(path)
+        removed_files.append(path)
+
+    figures_dir = os.path.join(reports_dir, os.path.basename(FIGURES_DIR))
+    empty_figures_dir = os.path.isdir(figures_dir) and not any(os.scandir(figures_dir))
+
+    return {
+        "reports_dir": reports_dir,
+        "removed_count": len(removed_files),
+        "removed_files": removed_files,
+        "empty_figures_dir": empty_figures_dir,
+    }
 
 
 def _utc_now() -> str:

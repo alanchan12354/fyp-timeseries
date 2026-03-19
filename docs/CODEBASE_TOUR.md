@@ -137,7 +137,7 @@ python -m src.lstm.train
 python -m src.transformer.train
 ```
 
-If you want to regenerate the experiment logs cleanly, remove old files under `reports/` before re-running training so the relogged runs do not append onto previous entries.
+If you want to regenerate tuning artifacts cleanly, run `python -m src.tuning.main --session-mode reset`. That mode clears prior experiment logs, diagnostics JSON files, figures, checkpoints, and tuning summary CSVs under `reports/`, then prints a file-by-file removal summary before training starts. Use `--session-mode append` to keep the historical artifacts and extend the existing record instead.
 
 ## 6) What to tweak first
 
