@@ -71,7 +71,13 @@ For the fine-tuning write-up, the simplified CSV view keeps the core tuning knob
 - learning rate
 - batch size
 
-It also keeps a reduced set of result columns for quick comparison, such as validation/test metrics and the best epoch, while the JSONL log preserves the richer per-run metadata. If you want to relog experiments from a clean slate, delete the previous files under `reports/` before re-running training.
+It also keeps a reduced set of result columns for quick comparison, such as validation/test metrics and the best epoch, while the JSONL log preserves the richer per-run metadata.
+
+For tuning runs, you can now choose between:
+- `python -m src.tuning.main --session-mode reset` for a full reset that removes old `reports/` artifacts before a fresh session
+- `python -m src.tuning.main --session-mode append` to keep prior history and add new runs on top
+
+The reset mode prints every removed file so you can confirm that the new tuning session started from a clean slate.
 
 ## New to the Codebase?
 
