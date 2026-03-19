@@ -24,7 +24,7 @@ Most scripts follow the same sequence:
 4. Split data chronologically into train/val/test.
 5. Fit scaler on train inputs and transform val/test.
 6. Train model(s).
-7. Evaluate with MAE, RMSE, and Directional Accuracy (DA).
+7. Evaluate with MAE, MSE, and Directional Accuracy (DA).
 8. Save metrics, diagnostics, and figures into `reports/`.
 
 ## 3) Directory walkthrough
@@ -49,7 +49,7 @@ Most scripts follow the same sequence:
 - `metrics.py`
   - `evaluate_preds(...)` returns:
     - `MAE`
-    - `RMSE`
+    - `MSE`
     - `DA` (directional sign accuracy)
 
 - `train.py`

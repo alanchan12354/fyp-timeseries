@@ -24,7 +24,7 @@ However, for a stronger academic report, the project still needs a clearer **exp
 - This is useful evidence for a **Fine-Tuning / Training Dynamics** subsection.
 
 ### 3. Standard evaluation metrics are present
-- The project computes MAE, RMSE, and directional accuracy.
+- The project computes MAE, MSE, and directional accuracy.
 - These are acceptable baseline metrics for a forecasting comparison section.
 
 ### 4. Visual outputs are supported
@@ -94,7 +94,7 @@ Create one table for every run with columns such as:
 - min_delta,
 - best_epoch,
 - best_val_MSE,
-- test_RMSE,
+- test_MSE,
 - test_MAE,
 - DA,
 - notes.
@@ -162,7 +162,7 @@ For the final report, include at least one of these:
 - directional accuracy discussion.
 
 ### 5. Discussion
-- strongest model by RMSE,
+- strongest model by MSE,
 - strongest model by DA,
 - why linear baselines are competitive,
 - limitations of the Transformer in this setup,
