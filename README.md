@@ -151,6 +151,19 @@ The tuning runner performs staged sweeps over model-specific parameter groups an
 
 If `--session-mode reset` is used, the runner clears prior tuning artifacts in `reports/` before starting a fresh session.
 
+### 6. Generate the hyper-parameter impact report
+
+```bash
+python -m src.tuning.report
+```
+
+This report reads the existing tuning artifacts and generates:
+
+- `reports/hyperparameter_impact_report.md`
+- `reports/figures/hyperparameter_model_loss_summary.svg`
+
+The figure places the tuned models' training, testing, and validation losses in three side-by-side subplots that share the same y-axis.
+
 ## Experiment logging and reproducibility
 
 The reporting utilities now capture more than just final metrics.
