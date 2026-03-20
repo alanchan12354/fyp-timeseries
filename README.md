@@ -153,8 +153,10 @@ python -m src.comparison.best_tuned_main --config-source tuning_best_configs
 This workflow:
 
 - loads tuned per-model hyperparameters from `reports/tuning_winners.csv` by default,
+- computes the same flattened-sequence linear-regression baseline on the shared split,
 - reuses the shared sequence experiment-preparation flow,
 - calls the existing model training entrypoints with the tuned settings,
+- reports train / validation / test MSE summary columns for every row,
 - writes `reports/best_tuned_comparison.csv` and `reports/best_tuned_comparison.md`.
 
 ### 6. Generate the hyper-parameter impact report

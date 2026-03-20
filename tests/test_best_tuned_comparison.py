@@ -89,13 +89,13 @@ class BestTunedComparisonReportTests(unittest.TestCase):
             model_name="LSTM",
             config_source="tuning_winners.csv",
             tuned_config={"lr": 0.0005, "batch_size": 32, "hidden": 128, "layers": 1},
-            metrics={"best_val_MSE": 0.1, "best_test_MSE": 0.2, "MSE": 0.2, "MAE": 0.3, "DA": 0.4},
+            metrics={"best_train_MSE": 0.05, "best_val_MSE": 0.1, "best_test_MSE": 0.2, "MSE": 0.2, "MAE": 0.3, "DA": 0.4},
             run_id="best_tuned_lstm_comparison-20260320T000000Z",
         )
 
         self.assertEqual(
             set(row),
-            {"model", "tuned_hyperparameters", "best_val_MSE", "best_test_MSE", "MSE", "MAE", "DA", "run_id", "config_source"},
+            {"model", "tuned_hyperparameters", "best_train_MSE", "best_val_MSE", "best_test_MSE", "MSE", "MAE", "DA", "run_id", "config_source"},
         )
         self.assertEqual(row["config_source"], "tuning_winners.csv")
 
@@ -111,23 +111,34 @@ class BestTunedComparisonReportTests(unittest.TestCase):
             "transformer": {"lr": 0.001, "batch_size": 64, "d_model": 32, "num_layers": 1, "nhead": 8},
         }
 
-        prepared_runs = {
-            model: mock.Mock(run_context={"run_id": f"{model}-run"})
-            for model in selection.configs
-        }
+        prepared_runs = {model: mock.Mock(run_context={"run_id": f"{model}-run"}) for model in selection.configs}
         captured_calls = []
 
         def fake_run(entrypoint, *, config_dict, prepared_run):
             captured_calls.append((entrypoint, config_dict, prepared_run.run_context["run_id"]))
-            return {"best_val_MSE": 0.1, "best_test_MSE": 0.2, "MSE": 0.2, "MAE": 0.3, "DA": 0.4}
+            return {"best_train_MSE": 0.05, "best_val_MSE": 0.1, "best_test_MSE": 0.2, "MSE": 0.2, "MAE": 0.3, "DA": 0.4}
 
         with mock.patch("src.comparison.best_tuned_main._prepare_runs", return_value=prepared_runs), mock.patch(
             "src.comparison.best_tuned_main._run_entrypoint", side_effect=fake_run
+        ), mock.patch(
+            "src.comparison.best_tuned_main._build_baseline_row",
+            return_value={
+                "model": "Baseline-LR",
+                "tuned_hyperparameters": "{\"flattened_sequence\": true, \"model\": \"LinearRegression\"}",
+                "best_train_MSE": 0.07,
+                "best_val_MSE": 0.15,
+                "best_test_MSE": 0.16,
+                "MSE": 0.16,
+                "MAE": 0.25,
+                "DA": 0.45,
+                "run_id": "baseline-run",
+                "config_source": "tuning_winners.csv",
+            },
         ):
             with mock.patch("src.comparison.best_tuned_main._load_entrypoints", return_value={model: mock.Mock() for model in selection.configs}):
                 results = run_best_tuned_comparison(selection=selection)
 
-        self.assertEqual([row["model"] for row in results], ["GRU", "LSTM", "RNN", "Transformer"])
+        self.assertEqual([row["model"] for row in results], ["GRU", "LSTM", "RNN", "Transformer", "Baseline-LR"])
         self.assertEqual(len(captured_calls), 4)
         transformer_call = next(call for call in captured_calls if call[2] == "transformer-run")
         self.assertEqual(transformer_call[1]["d_model"], 32)
@@ -145,14 +156,21 @@ class BestTunedComparisonReportTests(unittest.TestCase):
                     model_name="LSTM",
                     config_source="tuning_winners.csv",
                     tuned_config={"lr": 0.0005, "batch_size": 32, "hidden": 128, "layers": 1},
-                    metrics={"best_val_MSE": 0.1, "best_test_MSE": 0.3, "MSE": 0.3, "MAE": 0.2, "DA": 0.6},
+                    metrics={"best_train_MSE": 0.08, "best_val_MSE": 0.1, "best_test_MSE": 0.3, "MSE": 0.3, "MAE": 0.2, "DA": 0.6},
                     run_id="lstm-run",
+                ),
+                build_report_row(
+                    model_name="Baseline-LR",
+                    config_source="tuning_winners.csv",
+                    tuned_config={"model": "LinearRegression", "flattened_sequence": True},
+                    metrics={"best_train_MSE": 0.09, "best_val_MSE": 0.15, "best_test_MSE": 0.11, "MSE": 0.11, "MAE": 0.25, "DA": 0.52},
+                    run_id="baseline-run",
                 ),
                 build_report_row(
                     model_name="GRU",
                     config_source="tuning_winners.csv",
                     tuned_config={"lr": 0.001, "batch_size": 64, "hidden": 32, "layers": 3},
-                    metrics={"best_val_MSE": 0.2, "best_test_MSE": 0.1, "MSE": 0.1, "MAE": 0.3, "DA": 0.5},
+                    metrics={"best_train_MSE": 0.07, "best_val_MSE": 0.2, "best_test_MSE": 0.1, "MSE": 0.1, "MAE": 0.3, "DA": 0.5},
                     run_id="gru-run",
                 ),
             ]
@@ -161,6 +179,8 @@ class BestTunedComparisonReportTests(unittest.TestCase):
 
         self.assertIn("Best model by validation MSE: **LSTM**", markdown)
         self.assertIn("Best model by test MSE: **GRU**", markdown)
+        self.assertIn("Baseline: shared flattened-sequence linear regression on the same split", markdown)
+        self.assertIn("Train MSE", markdown)
         self.assertIn("Ranking by validation MSE", markdown)
         self.assertIn("This comparison uses the final frozen staged winners", markdown)
 

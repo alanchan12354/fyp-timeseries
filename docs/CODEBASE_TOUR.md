@@ -169,13 +169,15 @@ By default it treats `reports/tuning_winners.csv` as the canonical source of "be
 `reports/tuning_best_configs.csv` is also supported when you want the single best archived run per model instead.
 
 #### `best_tuned_main.py`
-Runs a neural-only comparison using the tuned-best settings recovered from the tuning artifacts.
+Runs a tuned-model comparison using the tuned-best settings recovered from the tuning artifacts plus the shared linear-regression baseline.
 
 What it does:
 
 - selects a tuning source (`tuning_winners.csv` by default),
 - rebuilds prepared sequence runs using the shared experiment helper,
+- computes the flattened-sequence linear-regression baseline on the same shared split,
 - reuses each model's existing training entrypoint,
+- includes train / validation / test MSE summary columns in the final report,
 - writes `reports/best_tuned_comparison.csv` and `reports/best_tuned_comparison.md`,
 - summarizes the best model by validation and test MSE.
 
