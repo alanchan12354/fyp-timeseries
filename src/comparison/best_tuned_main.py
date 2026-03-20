@@ -13,6 +13,7 @@ from .best_configs import CANONICAL_SOURCE, BestConfigSelection, load_best_confi
 CSV_REPORT_PATH = Path(REPORTS_DIR) / "best_tuned_comparison.csv"
 MD_REPORT_PATH = Path(REPORTS_DIR) / "best_tuned_comparison.md"
 MODEL_ORDER = ("lstm", "gru", "rnn", "transformer")
+BASELINE_NAME = "Baseline-LR"
 DISPLAY_NAMES = {
     "lstm": "LSTM",
     "gru": "GRU",
@@ -38,7 +39,8 @@ def build_parser() -> argparse.ArgumentParser:
 def run_best_tuned_comparison(*, selection: BestConfigSelection) -> list[dict[str, Any]]:
     entrypoints = _load_entrypoints()
     prepared_runs = _prepare_runs(selection.configs)
-    rows = []
+    shared_run = prepared_runs[MODEL_ORDER[0]]
+    rows = [_build_baseline_row(shared_run=shared_run, selection=selection)]
     for model_key in MODEL_ORDER:
         runtime_config = dict(selection.configs[model_key])
         prepared_run = prepared_runs[model_key]
@@ -65,6 +67,42 @@ def run_best_tuned_comparison(*, selection: BestConfigSelection) -> list[dict[st
         )
 
     return sorted(rows, key=lambda row: (row["best_val_MSE"], row["best_test_MSE"], row["model"]))
+
+
+def _build_baseline_row(*, shared_run: Any, selection: BestConfigSelection) -> dict[str, Any]:
+    from sklearn.linear_model import LinearRegression
+    from sklearn.metrics import mean_squared_error
+    from src.common.metrics import directional_accuracy
+
+    X_tr, y_tr = shared_run.train_data
+    X_va, y_va = shared_run.val_data
+    X_te, y_te = shared_run.test_data
+
+    X_tr_flat = X_tr.reshape(len(X_tr), -1)
+    X_va_flat = X_va.reshape(len(X_va), -1)
+    X_te_flat = X_te.reshape(len(X_te), -1)
+
+    baseline = LinearRegression()
+    baseline.fit(X_tr_flat, y_tr)
+
+    yhat_tr = baseline.predict(X_tr_flat)
+    yhat_va = baseline.predict(X_va_flat)
+    yhat_te = baseline.predict(X_te_flat)
+
+    return build_report_row(
+        model_name=BASELINE_NAME,
+        config_source=selection.source_path.name,
+        tuned_config={"model": "LinearRegression", "flattened_sequence": True},
+        metrics={
+            "best_train_MSE": float(mean_squared_error(y_tr, yhat_tr)),
+            "best_val_MSE": float(mean_squared_error(y_va, yhat_va)),
+            "best_test_MSE": float(mean_squared_error(y_te, yhat_te)),
+            "MSE": float(mean_squared_error(y_te, yhat_te)),
+            "MAE": float(abs(y_te - yhat_te).mean()),
+            "DA": directional_accuracy(y_te, yhat_te),
+        },
+        run_id=f"{shared_run.run_context['run_id']}-baseline-lr",
+    )
 
 
 
@@ -107,6 +145,7 @@ def build_report_row(*, model_name: str, config_source: str, tuned_config: dict[
     return {
         "model": model_name,
         "tuned_hyperparameters": json.dumps(tuned_config, sort_keys=True),
+        "best_train_MSE": float(metrics.get("best_train_MSE", float("nan"))),
         "best_val_MSE": float(metrics["best_val_MSE"]),
         "best_test_MSE": float(metrics.get("best_test_MSE", metrics.get("MSE"))),
         "MSE": float(metrics["MSE"]),
@@ -138,6 +177,7 @@ def build_markdown_report(results: list[dict[str, Any]], *, selection: BestConfi
         "",
         f"- Config source: `{selection.source_path.name}`",
         f"- Source note: {selection.note}",
+        "- Baseline: shared flattened-sequence linear regression on the same split",
         "",
         "## Summary",
         "",
@@ -153,15 +193,16 @@ def build_markdown_report(results: list[dict[str, Any]], *, selection: BestConfi
             "",
             "## Results",
             "",
-            "| Model | Tuned hyperparameters | Validation MSE | Test MSE | MAE | Directional Accuracy | Run ID | Config source |",
-            "| --- | --- | ---: | ---: | ---: | ---: | --- | --- |",
+            "| Model | Hyperparameters | Train MSE | Validation MSE | Test MSE | MAE | Directional Accuracy | Run ID | Config source |",
+            "| --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |",
         ]
     )
     for row in results:
         lines.append(
-            "| {model} | `{params}` | {best_val_MSE:.12f} | {best_test_MSE:.12f} | {MAE:.12f} | {DA:.6f} | `{run_id}` | `{config_source}` |".format(
+            "| {model} | `{params}` | {best_train_MSE:.12f} | {best_val_MSE:.12f} | {best_test_MSE:.12f} | {MAE:.12f} | {DA:.6f} | `{run_id}` | `{config_source}` |".format(
                 model=row["model"],
                 params=row["tuned_hyperparameters"],
+                best_train_MSE=row["best_train_MSE"],
                 best_val_MSE=row["best_val_MSE"],
                 best_test_MSE=row["best_test_MSE"],
                 MAE=row["MAE"],

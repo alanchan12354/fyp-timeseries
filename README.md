@@ -1,14 +1,14 @@
 # Time Series Neural Models Project
 
-This repository benchmarks baseline and neural approaches for forecasting **SPY daily log returns**.
+This repository benchmarks neural approaches for forecasting **SPY daily log returns**, with a linear-regression reference included in the shared comparison workflow.
 The codebase now includes shared experiment-preparation utilities, runtime-configurable training entrypoints, structured experiment logging, and a sequential tuning workflow.
 
 ## What the project does
 
-The repository currently supports a shared forecasting setup across baseline and neural workflows:
+The repository currently supports a shared forecasting setup across the neural training and comparison workflows:
 
-- **Baseline workflow** (`src/baselines/main.py`): predicts the log return at `t + HORIZON` from the last `SEQ_LEN` returns using persistence and linear regression baselines.
 - **Sequence-model workflow** (`src/*/train.py`, `src/comparison/main.py`, `src/tuning/main.py`): predicts the log return at `t + HORIZON` from the last `SEQ_LEN` returns.
+- **Comparison reference baseline** (`src/comparison/main.py`): fits a flattened-sequence linear regression on that same shared `SEQ_LEN` / `HORIZON` dataset.
 
 With the default configuration in `src/common/config.py`:
 
@@ -16,15 +16,12 @@ With the default configuration in `src/common/config.py`:
 - `START = "2010-01-01"`
 - `SEQ_LEN = 30`
 - `HORIZON = 10`
-- `LAGS = 30`
-
-That means both the baseline and neural experiments are, by default, forecasting **10 trading days ahead** from a **30-return lookback window**.
+That means the default experiments are forecasting **10 trading days ahead** from a **30-return lookback window**.
 
 ## Repository structure
 
 ```text
 src/
-  baselines/       Benchmark baselines (Persistence, Linear Regression)
   common/          Shared config, data prep, training, reporting, runtime config
   comparison/      Shared-split comparison pipeline across models
   gru/             GRU model and entrypoint
@@ -58,19 +55,7 @@ tests/
 
 ## Main workflows
 
-### 1. Run baseline benchmarks
-
-```bash
-python -m src.baselines.main
-```
-
-Outputs include:
-
-- `reports/metrics_baselines.csv`
-- `reports/metrics_baselines.json`
-- experiment-log rows in `reports/experiment_log.jsonl` and `reports/experiment_log.csv`
-
-### 2. Train a single neural model
+### 1. Train a single neural model
 
 ```bash
 python -m src.lstm.train
@@ -87,7 +72,7 @@ Each training entrypoint uses the shared sequence pipeline and writes:
 - plots in `reports/figures/`
 - structured experiment-log rows
 
-### 3. Override runtime hyperparameters from the CLI
+### 2. Override runtime hyperparameters from the CLI
 
 The neural entrypoints accept runtime configuration flags without editing source files.
 For example:
@@ -113,7 +98,7 @@ python -m src.transformer.train \
   --run-note "manual_transformer_sweep"
 ```
 
-### 4. Run the shared model-comparison pipeline
+### 3. Run the shared model-comparison pipeline
 
 ```bash
 python -m src.comparison.main
@@ -127,7 +112,7 @@ This workflow:
 - saves comparison metrics and a loss-comparison figure,
 - writes a model-comparison record summarizing the winner by validation MSE.
 
-### 5. Run the tuning workflow
+### 4. Run the tuning workflow
 
 ```bash
 python -m src.tuning.main --model all --session-mode append
@@ -153,7 +138,7 @@ The tuning runner performs staged sweeps over model-specific parameter groups an
 
 If `--session-mode reset` is used, the runner clears prior tuning artifacts in `reports/` before starting a fresh session.
 
-### 6. Compare models with their tuned-best configurations
+### 5. Compare models with their tuned-best configurations
 
 ```bash
 python -m src.comparison.best_tuned_main
@@ -168,11 +153,13 @@ python -m src.comparison.best_tuned_main --config-source tuning_best_configs
 This workflow:
 
 - loads tuned per-model hyperparameters from `reports/tuning_winners.csv` by default,
+- computes the same flattened-sequence linear-regression baseline on the shared split,
 - reuses the shared sequence experiment-preparation flow,
 - calls the existing model training entrypoints with the tuned settings,
+- reports train / validation / test MSE summary columns for every row,
 - writes `reports/best_tuned_comparison.csv` and `reports/best_tuned_comparison.md`.
 
-### 7. Generate the hyper-parameter impact report
+### 6. Generate the hyper-parameter impact report
 
 ```bash
 python -m src.tuning.report
@@ -210,14 +197,10 @@ Key generated files include:
 - `reports/tuning_all_runs.csv`
 - `reports/tuning_best_configs.csv`
 
-## Important caveat about comparisons
+## Comparison framing
 
-There is an intentional documentation caveat you should keep in mind when writing results:
-
-- `src/baselines/main.py` now uses the shared `SEQ_LEN` / `HORIZON` task definition for persistence and linear regression.
-- `src/comparison/main.py` compares neural models against a **flattened-sequence linear regression** built on that same `SEQ_LEN` / `HORIZON` dataset.
-
-So the baseline script and the comparison workflow now refer to the same target definition when you report results.
+Use `src/comparison/main.py` as the canonical apples-to-apples benchmark workflow.
+It compares the neural models against a **flattened-sequence linear regression** built on the same `SEQ_LEN` / `HORIZON` dataset, so the reported targets stay aligned when you discuss results.
 
 ## New to the codebase?
 

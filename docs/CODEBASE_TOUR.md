@@ -1,20 +1,12 @@
 # Codebase Tour (Beginner-Friendly)
 
-This guide explains the current repository structure and workflow for forecasting **SPY daily log returns** with baseline and neural models.
+This guide explains the current repository structure and workflow for forecasting **SPY daily log returns** with neural models plus a shared linear-regression comparison baseline.
 
 ## 1) Project goal (current behavior)
 
-The repository now supports **two related experiment families**.
+The repository now supports **one primary experiment family** with one shared comparison reference.
 
-### A. Baseline lag-feature workflow
-
-The standalone baseline script uses lag features and predicts the **next-day** return:
-
-- Input: `LAGS` recent daily log returns.
-- Target: `r_(t+1)`.
-- Entrypoint: `src/baselines/main.py`.
-
-### B. Sequence-model workflow
+### A. Sequence-model workflow
 
 The neural-model pipeline uses a fixed lookback sequence and predicts a configurable horizon ahead:
 
@@ -22,13 +14,19 @@ The neural-model pipeline uses a fixed lookback sequence and predicts a configur
 - Target: the return at `t + HORIZON`.
 - Entrypoints: `src/rnn/train.py`, `src/lstm/train.py`, `src/gru/train.py`, `src/transformer/train.py`, `src/comparison/main.py`, `src/comparison/best_tuned_main.py`, `src/tuning/main.py`.
 
+### B. Shared comparison baseline
+
+The comparison pipeline also fits a flattened-sequence linear regression on the exact same prepared dataset:
+
+- Input: the last `SEQ_LEN` returns, flattened into one tabular row.
+- Target: the return at `t + HORIZON`.
+- Entrypoint: `src/comparison/main.py`.
+
 With the current defaults in `src/common/config.py`:
 
 - `SEQ_LEN = 30`
 - `HORIZON = 10`
-- `LAGS = 30`
-
-So the repository is **not using one single forecasting target everywhere**. That distinction matters when interpreting results.
+So the repository's user-facing workflows use one shared forecasting target definition. That makes the comparison outputs easier to interpret consistently.
 
 ## 2) End-to-end pipeline
 
@@ -36,9 +34,7 @@ Most experiment scripts follow a shared sequence:
 
 1. Download SPY data with `yfinance`.
 2. Compute daily log returns from adjusted close data.
-3. Build either:
-   - lag-feature matrices for baseline models, or
-   - sequence tensors for neural models.
+3. Build sequence tensors for neural models and flattened versions of those same sequences for the linear-regression reference.
 4. Split data chronologically into train/validation/test.
 5. Fit a scaler on training inputs and apply it to validation/test inputs.
 6. Train the model or baseline.
@@ -74,7 +70,7 @@ It also defines the shared command-line flags used by the neural training script
 Core data utilities:
 
 - `load_data(...)`: downloads SPY data and computes log returns.
-- `make_lag_features(...)`: builds the lag-table baseline dataset.
+- `make_lag_features(...)`: helper for lag-feature tabular inputs retained as a reusable data utility.
 - `build_sequences(...)`: builds `(N, seq_len, 1)` sequence inputs with a configurable horizon target.
 - `chronological_split(...)`: performs time-ordered splitting.
 - `SeqDataset`: thin PyTorch dataset wrapper.
@@ -140,21 +136,6 @@ A thin helper layer that standardizes:
 - runtime-config resolution,
 - shared sequence-data preparation for neural models.
 
-### `src/baselines/`
-
-#### `main.py`
-Runs the standalone baseline benchmark workflow:
-
-1. download returns,
-2. create lag features,
-3. split chronologically,
-4. evaluate:
-   - `Persistence`,
-   - `LinearRegression`,
-5. save baseline metrics and experiment-log rows.
-
-Important nuance: this baseline script is configured for **next-day prediction**, not `HORIZON`-ahead prediction.
-
 ### `src/rnn/`, `src/lstm/`, `src/gru/`, `src/transformer/`
 
 Each model directory has:
@@ -188,13 +169,15 @@ By default it treats `reports/tuning_winners.csv` as the canonical source of "be
 `reports/tuning_best_configs.csv` is also supported when you want the single best archived run per model instead.
 
 #### `best_tuned_main.py`
-Runs a neural-only comparison using the tuned-best settings recovered from the tuning artifacts.
+Runs a tuned-model comparison using the tuned-best settings recovered from the tuning artifacts plus the shared linear-regression baseline.
 
 What it does:
 
 - selects a tuning source (`tuning_winners.csv` by default),
 - rebuilds prepared sequence runs using the shared experiment helper,
+- computes the flattened-sequence linear-regression baseline on the same shared split,
 - reuses each model's existing training entrypoint,
+- includes train / validation / test MSE summary columns in the final report,
 - writes `reports/best_tuned_comparison.csv` and `reports/best_tuned_comparison.md`,
 - summarizes the best model by validation and test MSE.
 
@@ -223,8 +206,6 @@ Depending on which workflows you run, you may see files such as:
 - checkpoints: `RNN.pt`, `LSTM.pt`, `GRU.pt`, `Transformer.pt`
 - per-model metrics: `metrics_gru.json`, `metrics_lstm.json`, etc.
 - summary metrics:
-  - `metrics_baselines.csv`
-  - `metrics_baselines.json`
   - `metrics_comparison.csv`
   - `metrics_comparison.json`
 - diagnostics JSON: `*_diagnostics.json`
@@ -251,7 +232,6 @@ From the repository root:
 
 ```bash
 pip install -r requirements.txt
-python -m src.baselines.main
 python -m src.gru.train --learning-rate 5e-4 --recurrent-hidden-size 128
 python -m src.comparison.main
 python -m src.comparison.best_tuned_main
@@ -264,7 +244,7 @@ Start with `src/common/config.py` if you want to change global defaults:
 
 - `HORIZON`: how far ahead sequence models predict.
 - `SEQ_LEN`: neural-model lookback window.
-- `LAGS`: baseline lag window.
+- `LAGS`: retained lag-window helper setting for tabular-feature utilities.
 - `TRAIN_RATIO`, `VAL_RATIO`: chronological split proportions.
 - `EPOCHS`, `PATIENCE`, `MIN_DELTA`, `MIN_EPOCHS`: early-stopping behavior.
 - `LR`, `BATCH_SIZE`: default optimization settings.
@@ -279,6 +259,6 @@ A useful way to think about the project is in four layers:
 1. **Task and data definition** — `src/common/config.py`, `src/common/data.py`
 2. **Prepared experiment workflows** — `src/common/experiment.py`, `src/common/neural_entrypoint.py`
 3. **Training/reporting orchestration** — `src/common/train.py`, `src/common/reporting.py`
-4. **User-facing entrypoints** — `src/baselines/main.py`, `src/*/train.py`, `src/comparison/main.py`, `src/tuning/main.py`
+4. **User-facing entrypoints** — `src/*/train.py`, `src/comparison/main.py`, `src/tuning/main.py`
 
 Once you keep those layers separate, the refactored codebase is much easier to navigate.
