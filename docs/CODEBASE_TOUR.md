@@ -20,7 +20,7 @@ The neural-model pipeline uses a fixed lookback sequence and predicts a configur
 
 - Input: the last `SEQ_LEN` returns, shaped `(N, T, 1)`.
 - Target: the return at `t + HORIZON`.
-- Entrypoints: `src/rnn/train.py`, `src/lstm/train.py`, `src/gru/train.py`, `src/transformer/train.py`, `src/comparison/main.py`, `src/tuning/main.py`.
+- Entrypoints: `src/rnn/train.py`, `src/lstm/train.py`, `src/gru/train.py`, `src/transformer/train.py`, `src/comparison/main.py`, `src/comparison/best_tuned_main.py`, `src/tuning/main.py`.
 
 With the current defaults in `src/common/config.py`:
 
@@ -180,6 +180,24 @@ What it does:
 
 This file is the best source for the repository's **apples-to-apples sequence comparison**.
 
+#### `best_configs.py`
+Loads a tuning artifact and normalizes the best per-model hyperparameters into the runtime aliases accepted by the shared neural entrypoints.
+
+By default it treats `reports/tuning_winners.csv` as the canonical source of "best parameters" because that file captures the final frozen configuration produced by sequential staged tuning.
+
+`reports/tuning_best_configs.csv` is also supported when you want the single best archived run per model instead.
+
+#### `best_tuned_main.py`
+Runs a neural-only comparison using the tuned-best settings recovered from the tuning artifacts.
+
+What it does:
+
+- selects a tuning source (`tuning_winners.csv` by default),
+- rebuilds prepared sequence runs using the shared experiment helper,
+- reuses each model's existing training entrypoint,
+- writes `reports/best_tuned_comparison.csv` and `reports/best_tuned_comparison.md`,
+- summarizes the best model by validation and test MSE.
+
 ### `src/tuning/`
 
 #### `main.py`
@@ -236,6 +254,7 @@ pip install -r requirements.txt
 python -m src.baselines.main
 python -m src.gru.train --learning-rate 5e-4 --recurrent-hidden-size 128
 python -m src.comparison.main
+python -m src.comparison.best_tuned_main
 python -m src.tuning.main --model all --session-mode append
 ```
 

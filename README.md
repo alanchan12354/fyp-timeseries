@@ -149,9 +149,30 @@ The tuning runner performs staged sweeps over model-specific parameter groups an
 - `reports/tuning_all_runs.csv`
 - `reports/tuning_best_configs.csv`
 
+`reports/tuning_winners.csv` is the canonical source of "best parameters" for downstream comparison because it stores the final frozen winner after each sequential tuning stage. `reports/tuning_best_configs.csv` remains available when you want the single best archived run per model instead.
+
 If `--session-mode reset` is used, the runner clears prior tuning artifacts in `reports/` before starting a fresh session.
 
-### 6. Generate the hyper-parameter impact report
+### 6. Compare models with their tuned-best configurations
+
+```bash
+python -m src.comparison.best_tuned_main
+```
+
+Optional variant if you want to compare the single best archived run per model instead of the final staged winners:
+
+```bash
+python -m src.comparison.best_tuned_main --config-source tuning_best_configs
+```
+
+This workflow:
+
+- loads tuned per-model hyperparameters from `reports/tuning_winners.csv` by default,
+- reuses the shared sequence experiment-preparation flow,
+- calls the existing model training entrypoints with the tuned settings,
+- writes `reports/best_tuned_comparison.csv` and `reports/best_tuned_comparison.md`.
+
+### 7. Generate the hyper-parameter impact report
 
 ```bash
 python -m src.tuning.report
@@ -184,6 +205,8 @@ Key generated files include:
 - `reports/experiment_log.csv`: flattened summary view
 - `reports/model_comparison_record.json`
 - `reports/model_comparison_record.csv`
+- `reports/best_tuned_comparison.csv`
+- `reports/best_tuned_comparison.md`
 - `reports/tuning_all_runs.csv`
 - `reports/tuning_best_configs.csv`
 
