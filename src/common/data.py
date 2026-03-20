@@ -23,17 +23,18 @@ def load_data(ticker=TICKER, start=START):
     returns = np.log(price / price.shift(1)).dropna()
     return returns
 
-def make_lag_features(returns: pd.Series, lags: int):
+def make_lag_features(returns: pd.Series, lags: int, horizon: int = 1):
     """
-    For Baseline Models
+    For baseline models using lagged tabular features.
+
     returns: r_t
-    target: y_t = r_{t+1}
+    target: y_t = r_{t+horizon}
     features at time t: [r_t, r_{t-1}, ..., r_{t-lags+1}]
     """
     df = pd.DataFrame({"r": returns})
     for i in range(1, lags + 1):
         df[f"lag_{i}"] = df["r"].shift(i - 1)
-    df["y"] = df["r"].shift(-1)
+    df["y"] = df["r"].shift(-horizon)
     df = df.dropna()
     
     X = df[[f"lag_{i}" for i in range(1, lags + 1)]].values

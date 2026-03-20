@@ -5,9 +5,9 @@ The codebase now includes shared experiment-preparation utilities, runtime-confi
 
 ## What the project does
 
-The repository currently supports **two related forecasting setups**:
+The repository currently supports a shared forecasting setup across baseline and neural workflows:
 
-- **Baseline workflow** (`src/baselines/main.py`): predicts the **next-day** log return from `LAGS` previous returns.
+- **Baseline workflow** (`src/baselines/main.py`): predicts the log return at `t + HORIZON` from the last `SEQ_LEN` returns using persistence and linear regression baselines.
 - **Sequence-model workflow** (`src/*/train.py`, `src/comparison/main.py`, `src/tuning/main.py`): predicts the log return at `t + HORIZON` from the last `SEQ_LEN` returns.
 
 With the default configuration in `src/common/config.py`:
@@ -18,7 +18,7 @@ With the default configuration in `src/common/config.py`:
 - `HORIZON = 10`
 - `LAGS = 30`
 
-That means the neural experiments are, by default, **10 trading days ahead**, while the standalone baseline script remains a **next-day baseline benchmark**.
+That means both the baseline and neural experiments are, by default, forecasting **10 trading days ahead** from a **30-return lookback window**.
 
 ## Repository structure
 
@@ -214,10 +214,10 @@ Key generated files include:
 
 There is an intentional documentation caveat you should keep in mind when writing results:
 
-- `src/baselines/main.py` is a **next-day lag-feature baseline**.
-- `src/comparison/main.py` compares neural models against a **flattened-sequence linear regression** built on the same `SEQ_LEN` / `HORIZON` dataset.
+- `src/baselines/main.py` now uses the shared `SEQ_LEN` / `HORIZON` task definition for persistence and linear regression.
+- `src/comparison/main.py` compares neural models against a **flattened-sequence linear regression** built on that same `SEQ_LEN` / `HORIZON` dataset.
 
-So if you are writing an academic comparison section, be explicit about **which comparison table uses which target definition**.
+So the baseline script and the comparison workflow now refer to the same target definition when you report results.
 
 ## New to the codebase?
 

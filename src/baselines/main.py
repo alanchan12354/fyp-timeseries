@@ -1,13 +1,13 @@
+import json
+import os
+
 import pandas as pd
 from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import StandardScaler
-import os
-import json
-
 from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import StandardScaler
 
-from src.common.config import LAGS, TRAIN_RATIO, VAL_RATIO, REPORTS_DIR
-from src.common.data import load_data, make_lag_features, chronological_split
+from src.common.config import HORIZON, REPORTS_DIR, SEQ_LEN, TRAIN_RATIO, VAL_RATIO
+from src.common.data import chronological_split, load_data, make_lag_features
 from src.common.metrics import evaluate_preds
 from src.common.reporting import (
     append_experiment_record,
@@ -18,27 +18,32 @@ from src.common.reporting import (
     split_metadata,
 )
 
+
 def main():
     print("Running Baselines...")
     # 1. Data
     returns = load_data()
-    X, y, idx = make_lag_features(returns, LAGS)
-    
+    X, y, idx = make_lag_features(returns, SEQ_LEN, HORIZON)
+
     # 2. Split
-    (X_tr, y_tr, _), (X_va, y_va, _), (X_te, y_te, idx_te) = chronological_split(X, y, idx, TRAIN_RATIO, VAL_RATIO)
-    
+    (X_tr, y_tr, _), (X_va, y_va, _), (X_te, y_te, idx_te) = chronological_split(
+        X, y, idx, TRAIN_RATIO, VAL_RATIO
+    )
+
     run_context = create_run_context(
         "baselines",
         split_metadata(len(X_tr), len(X_va), len(X_te)),
         task_meta={
             **default_task_metadata(),
-            "target": "next-day log return (baseline lag setup)",
-            "input_description": f"previous {LAGS} daily log returns",
-            "prediction_horizon": 1,
-            "input_window": LAGS,
+            "target": f"log return at t + {HORIZON} (aligned baseline setup)",
+            "input_description": f"previous {SEQ_LEN} daily log returns",
+            "prediction_horizon": HORIZON,
+            "input_window": SEQ_LEN,
         },
-        training_meta=default_training_metadata(lr=None, epochs=None, patience=None, min_delta=None, min_epochs=None),
-        notes="Baseline benchmark record for persistence and linear regression.",
+        training_meta=default_training_metadata(
+            lr=None, epochs=None, patience=None, min_delta=None, min_epochs=None
+        ),
+        notes="Baseline benchmark record aligned to the shared neural-model horizon and lookback.",
     )
 
     # 3. Scale
@@ -46,18 +51,18 @@ def main():
     X_tr_s = scaler.fit_transform(X_tr)
     X_va_s = scaler.transform(X_va)
     X_te_s = scaler.transform(X_te)
-    
+
     results = []
-    
+
     # --- Persistence ---
-    # yhat = r_t (first column of X, since X = [r_t, r_{t-1}...])
+    # yhat = r_t (first column of X, since X = [r_t, r_{t-1}, ...])
     yhat_persist = X_te[:, 0]
     m_persist = evaluate_preds(y_te, yhat_persist)
     m_persist["best_train_MSE"] = float(mean_squared_error(y_tr, X_tr[:, 0]))
     m_persist["best_val_MSE"] = float(mean_squared_error(y_va, X_va[:, 0]))
     m_persist["best_test_MSE"] = float(mean_squared_error(y_te, yhat_persist))
     results.append({"Model": "Persistence", **m_persist})
-    
+
     # --- Linear Regression ---
     lr = LinearRegression()
     lr.fit(X_tr_s, y_tr)
@@ -73,11 +78,19 @@ def main():
             model_name="Persistence",
             record_type="baseline_model",
             metrics=m_persist,
-            hyperparameters={"rule": "y_hat = latest observed return"},
+            hyperparameters={
+                "rule": "y_hat = latest observed return",
+                "lookback": SEQ_LEN,
+                "prediction_horizon": HORIZON,
+            },
             context=run_context,
             selection_metric="best_test_MSE",
             selection_split="test",
-            tuning={"best_epoch": None, "stop_epoch": None, "tuning_notes": "No tuning for persistence baseline."},
+            tuning={
+                "best_epoch": None,
+                "stop_epoch": None,
+                "tuning_notes": "No tuning for persistence baseline.",
+            },
         )
     )
     append_experiment_record(
@@ -85,21 +98,31 @@ def main():
             model_name="LinearRegression",
             record_type="baseline_model",
             metrics=m_lr,
-            hyperparameters={"model": "LinearRegression", "lags": LAGS, "scaled_inputs": True},
+            hyperparameters={
+                "model": "LinearRegression",
+                "lookback": SEQ_LEN,
+                "prediction_horizon": HORIZON,
+                "scaled_inputs": True,
+            },
             context=run_context,
             selection_metric="best_val_MSE",
             selection_split="validation",
-            tuning={"best_epoch": None, "stop_epoch": None, "tuning_notes": "Default sklearn LinearRegression baseline."},
+            tuning={
+                "best_epoch": None,
+                "stop_epoch": None,
+                "tuning_notes": "Default sklearn LinearRegression baseline aligned to the shared horizon/lookback task.",
+            },
         )
     )
-    
+
     # Save
     df = pd.DataFrame(results)
     print(df)
     df.to_csv(os.path.join(REPORTS_DIR, "metrics_baselines.csv"), index=False)
-    
+
     with open(os.path.join(REPORTS_DIR, "metrics_baselines.json"), "w") as f:
         json.dump(df.to_dict(orient="records"), f, indent=2)
+
 
 if __name__ == "__main__":
     main()
