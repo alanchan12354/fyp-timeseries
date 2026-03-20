@@ -85,14 +85,14 @@ These are useful raw materials for methodology and results chapters.
 
 ## What still needs care in the final report
 
-### 1. The repository still contains two task definitions
+### 1. Use the shared comparison workflow as the canonical task definition
 
-This is the most important issue to explain clearly.
+The cleanest methodology story in this repository is now the shared-sequence setup used by the neural-training and comparison workflows.
 
-- `src/baselines/main.py` is a **next-day lag-feature** workflow.
-- The neural-training and comparison workflow is, by default, a **30-step input / 10-step-ahead target** workflow.
+- `src/comparison/main.py` compares all reported models on one aligned `SEQ_LEN` / `HORIZON` dataset.
+- That includes the flattened-sequence linear-regression reference as the baseline comparator.
 
-So the report must not casually claim that every result table compares the exact same target unless that is actually true for the specific table.
+So the report should treat those shared comparison artifacts as the main evidence for apples-to-apples performance claims.
 
 ### 2. One analysis document is still a historical snapshot, not a guaranteed live truth
 
@@ -137,7 +137,7 @@ State explicitly:
 ## 2. Comparison Section
 
 Use `src/comparison/main.py` artifacts when you want the cleanest shared-target model comparison.
-If you also include the standalone baseline script, label it separately as a **next-day lag baseline benchmark** unless you reconfigure the project so the targets align.
+That workflow already includes the baseline comparator, so it is the simplest canonical results table for the report.
 
 ## 3. Hyperparameter Tuning Section
 
@@ -165,7 +165,7 @@ Use the logged metadata to state:
 1. **Freeze a final result set** by running the final experiments once, then archive the exact output files used in the report.
 2. **Reference run IDs** in the report when discussing tuning winners and final comparisons.
 3. **Add repeated runs** if time permits, especially for neural models.
-4. **Keep terminology consistent** everywhere: next-day baseline vs. horizon-ahead sequence forecast.
+4. **Keep terminology consistent** everywhere: shared `SEQ_LEN` / `HORIZON` forecasting setup with a flattened-sequence linear-regression reference.
 5. **Promote one canonical results table** for the main comparison section, ideally from `src/comparison/main.py`.
 
 ## Bottom line
