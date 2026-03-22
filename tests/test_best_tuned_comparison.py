@@ -11,6 +11,8 @@ from src.common.runtime_config import RuntimeTrainingConfig
 from src.comparison.best_configs import BestConfigError, load_best_configs
 from src.comparison.best_tuned_main import build_markdown_report, build_report_row, run_best_tuned_comparison
 
+from src.comparison.best_tuned_charts import BestTunedChartError, generate_best_tuned_svg_charts
+
 
 class BestConfigsTests(unittest.TestCase):
     def test_load_best_configs_from_winners_normalizes_each_model(self):
@@ -183,6 +185,39 @@ class BestTunedComparisonReportTests(unittest.TestCase):
         self.assertIn("Train MSE", markdown)
         self.assertIn("Ranking by validation MSE", markdown)
         self.assertIn("This comparison uses the final frozen staged winners", markdown)
+
+
+class BestTunedChartTests(unittest.TestCase):
+    def test_generate_best_tuned_svg_charts_creates_expected_svg_files(self):
+        csv_text = """model,tuned_hyperparameters,best_train_MSE,best_val_MSE,best_test_MSE,MSE,MAE,DA,run_id,config_source
+LSTM,{},0.2,0.1,0.3,0.3,0.2,0.6,lstm-run,tuning_winners.csv
+GRU,{},0.1,0.15,0.2,0.2,0.3,0.5,gru-run,tuning_winners.csv
+Baseline-LR,{},0.05,0.12,0.11,0.11,0.25,0.52,baseline-run,tuning_winners.csv
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_path = Path(tmpdir) / "best_tuned_comparison.csv"
+            output_dir = Path(tmpdir) / "figures"
+            csv_path.write_text(csv_text, encoding="utf-8")
+
+            artifacts = generate_best_tuned_svg_charts(csv_path, output_dir=output_dir)
+
+            self.assertEqual(len(artifacts), 3)
+            self.assertEqual([artifact.metric for artifact in artifacts], ["best_train_MSE", "best_test_MSE", "best_val_MSE"])
+            for artifact in artifacts:
+                self.assertTrue(artifact.output_path.exists())
+                self.assertEqual(artifact.output_path.suffix, ".svg")
+                self.assertIn("<svg", artifact.output_path.read_text(encoding="utf-8"))
+
+    def test_generate_best_tuned_svg_charts_raises_for_missing_metric_column(self):
+        csv_text = """model,best_train_MSE,best_val_MSE
+LSTM,0.1,0.2
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_path = Path(tmpdir) / "best_tuned_comparison.csv"
+            csv_path.write_text(csv_text, encoding="utf-8")
+
+            with self.assertRaisesRegex(BestTunedChartError, "best_test_MSE"):
+                generate_best_tuned_svg_charts(csv_path, output_dir=Path(tmpdir) / "figures")
 
 
 if __name__ == "__main__":
