@@ -181,6 +181,17 @@ What it does:
 - writes `reports/best_tuned_comparison.csv` and `reports/best_tuned_comparison.md`,
 - summarizes the best model by validation and test MSE.
 
+#### `best_tuned_charts.py`
+Generates standalone SVG summary charts from the best-tuned comparison CSV.
+
+What it does:
+
+- reads `reports/best_tuned_comparison.csv`,
+- validates that the `model`, `best_train_MSE`, `best_test_MSE`, and `best_val_MSE` columns are present,
+- renders one SVG bar chart per metric with all best-tuned models shown together,
+- writes the charts to `reports/figures/` by default,
+- exposes a CLI entrypoint through `python -m src.comparison.best_tuned_charts`.
+
 ### `src/tuning/`
 
 #### `main.py`
@@ -225,6 +236,9 @@ Depending on which workflows you run, you may see files such as:
   - `<model>_pred_slice.png`
   - `<model>_scatter.png`
   - `comparison_losses.png`
+  - `best_tuned_training_loss.svg`
+  - `best_tuned_testing_loss.svg`
+  - `best_tuned_validation_loss.svg`
 
 ## 5) How to run
 
@@ -235,6 +249,7 @@ pip install -r requirements.txt
 python -m src.gru.train --learning-rate 5e-4 --recurrent-hidden-size 128
 python -m src.comparison.main
 python -m src.comparison.best_tuned_main
+python -m src.comparison.best_tuned_charts
 python -m src.tuning.main --model all --session-mode append
 ```
 
