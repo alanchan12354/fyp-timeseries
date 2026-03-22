@@ -159,7 +159,31 @@ This workflow:
 - reports train / validation / test MSE summary columns for every row,
 - writes `reports/best_tuned_comparison.csv` and `reports/best_tuned_comparison.md`.
 
-### 6. Generate the hyper-parameter impact report
+### 6. Generate SVG charts for the best-tuned comparison
+
+```bash
+python -m src.comparison.best_tuned_charts
+```
+
+Optional variant if you want to point at a different comparison CSV or output folder:
+
+```bash
+python -m src.comparison.best_tuned_charts \
+  --csv-path reports/best_tuned_comparison.csv \
+  --output-dir reports/figures
+```
+
+This workflow:
+
+- reads `reports/best_tuned_comparison.csv`,
+- validates that the best-tuned comparison includes model, training, testing, and validation MSE columns,
+- generates one SVG bar chart per metric with all best-tuned models shown on the same graph,
+- writes:
+  - `reports/figures/best_tuned_training_loss.svg`
+  - `reports/figures/best_tuned_testing_loss.svg`
+  - `reports/figures/best_tuned_validation_loss.svg`
+
+### 7. Generate the hyper-parameter impact report
 
 ```bash
 python -m src.tuning.report
@@ -170,7 +194,7 @@ This report reads the existing tuning artifacts and generates:
 - `reports/hyperparameter_impact_report.md`
 - `reports/figures/hyperparameter_model_loss_summary.svg`
 
-The figure places the tuned models' training, testing, and validation losses in three side-by-side subplots that share the same y-axis.
+The figure places the tuned models' training, testing, and validation losses in three side-by-side subplots that share the same y-axis. This report is separate from `src.comparison.best_tuned_charts`, which writes individual SVG charts from `reports/best_tuned_comparison.csv`.
 
 ## Experiment logging and reproducibility
 
