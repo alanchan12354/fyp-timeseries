@@ -1,10 +1,30 @@
-# Final Report: Forecasting SPY Daily Log Returns with Neural Sequence Models
+The Hong Kong Polytechnic University
+Department of Computing
 
-**Author:** Chan Cheung Hong  
-**Project:** Time Series Neural Models Project  
-**Repository:** `fyp-timeseries`
+COMP4913 Capstone Project
+Report (Final)
 
----
+Financial Time-Series Prediction Using Advanced Neural Network Models
+
+Student Name:
+CHAN Cheung Hong
+Student ID No.:
+22081328D
+Programme-Stream Code:
+61435-FCS
+Supervisor:
+Dr Yujie Wu
+Co-Examiner:
+
+
+2nd Assessor:
+
+
+Submission Date:
+XX April 2026
+
+
+
 
 ## Abstract
 
