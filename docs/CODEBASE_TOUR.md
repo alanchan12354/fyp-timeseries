@@ -16,11 +16,13 @@ The neural-model pipeline uses a fixed lookback sequence and predicts a configur
 
 ### B. Shared comparison baseline
 
-The comparison pipeline also fits a flattened-sequence linear regression on the exact same prepared dataset:
+The comparison workflows also fit a flattened-sequence linear regression on the exact same prepared dataset used by both comparison entrypoints:
 
 - Input: the last `SEQ_LEN` returns, flattened into one tabular row.
 - Target: the return at `t + HORIZON`.
-- Entrypoint: `src/comparison/main.py`.
+- Entrypoints: `src/comparison/main.py`, `src/comparison/best_tuned_main.py`.
+
+That flattened-sequence linear-regression baseline is part of both the shared comparison workflow and the best-tuned comparison workflow.
 
 With the current defaults in `src/common/config.py`:
 
