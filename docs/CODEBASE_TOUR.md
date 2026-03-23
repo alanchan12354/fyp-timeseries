@@ -33,7 +33,7 @@ So the repository's user-facing workflows use one shared forecasting target defi
 Most experiment scripts follow a shared sequence:
 
 1. Download SPY data with `yfinance`.
-2. Compute daily log returns from adjusted close data.
+2. Compute daily log returns from the `Close` column returned by `yfinance` (matching `src/common/data.py::load_data`).
 3. Build sequence tensors for neural models and flattened versions of those same sequences for the linear-regression reference.
 4. Split data chronologically into train/validation/test.
 5. Fit a scaler on training inputs and apply it to validation/test inputs.
