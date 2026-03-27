@@ -246,6 +246,14 @@ For each task it:
 - exports tuned-comparison charts (`src.comparison.best_tuned_charts`),
 - writes outputs into a dedicated task folder under one shared root bundle for easier final-report use.
 
+### `scripts/run_multitask_final_reports.ps1`
+PowerShell equivalent of `run_multitask_final_reports.sh` for Windows environments (especially Windows 11 + PowerShell):
+
+- accepts `-RootDir` (default: `reports/final_report_tasks/<UTC timestamp>`),
+- runs the same four tasks and module entrypoints,
+- writes per-task outputs and aggregate summary files to the same folder structure,
+- emits a bundle README that includes both PowerShell and Bash rerun commands.
+
 ## 4) Important outputs in `<reports_dir>`
 
 By default, `<reports_dir>` means `reports/sessions/run_<UTC timestamp>/`. You can force legacy direct output to `reports/` by setting `FYP_REPORTS_DISABLE_SESSION_DIR=1`, or set `FYP_REPORTS_DIR` to a custom path.
@@ -290,6 +298,7 @@ python -m src.tuning.main --model all --session-mode append
 python -m src.comparison.best_tuned_main
 python -m src.comparison.best_tuned_charts
 bash scripts/run_multitask_final_reports.sh
+pwsh -File scripts/run_multitask_final_reports.ps1
 ```
 
 ## 6) What to tweak first
