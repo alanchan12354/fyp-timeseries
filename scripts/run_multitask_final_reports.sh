@@ -31,7 +31,12 @@ run_task() {
       --target-smooth-window "${smooth_window}"
 
   FYP_REPORTS_DIR="${task_dir}" FYP_REPORTS_DISABLE_SESSION_DIR=1 \
-    python -m src.comparison.best_tuned_main --task-id "${task_id}"
+    python -m src.comparison.best_tuned_main \
+      --task-id "${task_id}" \
+      --horizon 1 \
+      --data-source "${data_source}" \
+      --target-mode "${target_mode}" \
+      --target-smooth-window "${smooth_window}"
 
   FYP_REPORTS_DIR="${task_dir}" FYP_REPORTS_DISABLE_SESSION_DIR=1 \
     python -m src.tuning.report --task-ids "${task_id}"
