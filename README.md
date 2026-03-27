@@ -101,7 +101,10 @@ Each training entrypoint uses the shared sequence pipeline and writes:
 - `<reports_dir>/<Model>.pt`
 - `<reports_dir>/<model>_diagnostics.json`
 - `<reports_dir>/metrics_<model>.json`
-- plots in `<reports_dir>/figures/`
+- plots in `<reports_dir>/figures/`, including pattern examples:
+  - `loss_<Model>.png` (pattern example; `src/common/train.py` may append run-context identifiers via `_build_figure_stem`, e.g. `loss_<model>_<run_id>.png`)
+  - `<model>_pred_slice.png` (pattern example; actual files may include run-context suffixes, e.g. `<model>_<run_id>_pred_slice.png`)
+  - `<model>_scatter.png` (pattern example; actual files may include run-context suffixes, e.g. `<model>_<run_id>_scatter.png`)
 - structured experiment-log rows
 
 ### 2. Override runtime hyperparameters from the CLI

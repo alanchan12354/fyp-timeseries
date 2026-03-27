@@ -122,9 +122,9 @@ Saved neural artifacts include:
 - checkpoint: `<reports_dir>/<Model>.pt`
 - diagnostics: `<reports_dir>/<model>_diagnostics.json`
 - plots in `<reports_dir>/figures/`:
-  - `loss_<Model>.png`
-  - `<model>_pred_slice.png`
-  - `<model>_scatter.png`
+  - `loss_<Model>.png` (pattern example; `src/common/train.py` may append run-context identifiers via `_build_figure_stem`, e.g. `loss_<model>_<run_id>.png`)
+  - `<model>_pred_slice.png` (pattern example; actual files may include run-context suffixes, e.g. `<model>_<run_id>_pred_slice.png`)
+  - `<model>_scatter.png` (pattern example; actual files may include run-context suffixes, e.g. `<model>_<run_id>_scatter.png`)
 
 #### `reporting.py`
 Owns experiment logging, comparison records, and tuning-artifact reset utilities.
@@ -250,9 +250,9 @@ Depending on which workflows you run, you may see files such as:
   - `tuning_all_runs.csv`
   - `tuning_best_configs.csv`
 - figures:
-  - `loss_<Model>.png`
-  - `<model>_pred_slice.png`
-  - `<model>_scatter.png`
+  - `loss_<Model>.png` (pattern example; `src/common/train.py` may append run-context identifiers via `_build_figure_stem`, e.g. `loss_<model>_<run_id>.png`)
+  - `<model>_pred_slice.png` (pattern example; actual files may include run-context suffixes, e.g. `<model>_<run_id>_pred_slice.png`)
+  - `<model>_scatter.png` (pattern example; actual files may include run-context suffixes, e.g. `<model>_<run_id>_scatter.png`)
   - `comparison_losses.png`
   - `best_tuned_training_loss.svg`
   - `best_tuned_testing_loss.svg`
