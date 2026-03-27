@@ -215,6 +215,9 @@ def default_task_metadata(
         "horizon_return": f"log return at t+{horizon}",
         "next_return": "next-day log return (r_{t+1})",
         "next3_mean_return": f"mean of next {target_smooth_window} daily log returns",
+        "next_mean_return": f"moving-average target: mean of next {target_smooth_window} daily log returns",
+        "next_volatility": f"rolling volatility target: std of next {target_smooth_window} daily log returns",
+        "sine_next_day": "sine task: next-step value (r_{t+1})",
     }
     normalized_mode = (target_mode or TARGET_MODE).strip().lower()
     target_description = target_descriptions.get(
@@ -239,7 +242,7 @@ def default_task_metadata(
         "target_smooth_window": target_smooth_window,
         "baseline_lags": baseline_lags,
         "target": target_description,
-        "input_description": f"previous {input_window} daily log returns",
+        "input_description": f"previous {input_window} timesteps of the shared 8-feature sequence frame",
         "split": {
             "train_ratio": TRAIN_RATIO,
             "val_ratio": VAL_RATIO,

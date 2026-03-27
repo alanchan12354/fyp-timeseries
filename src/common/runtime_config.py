@@ -125,7 +125,14 @@ def add_runtime_config_args(parser: argparse.ArgumentParser) -> argparse.Argumen
     )
     parser.add_argument(
         "--target-mode",
-        choices=["horizon_return", "next_return", "next3_mean_return"],
+        choices=[
+            "horizon_return",
+            "next_return",
+            "next3_mean_return",
+            "next_mean_return",
+            "next_volatility",
+            "sine_next_day",
+        ],
         dest="target_mode",
         help="Training target definition.",
     )
@@ -133,7 +140,7 @@ def add_runtime_config_args(parser: argparse.ArgumentParser) -> argparse.Argumen
         "--target-smooth-window",
         type=int,
         dest="target_smooth_window",
-        help="Forward averaging window used by next3_mean_return mode.",
+        help="Forward window used by rolling target modes (next_mean_return / next_volatility / next3_mean_return).",
     )
     parser.add_argument(
         "--task-id",

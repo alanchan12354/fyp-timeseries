@@ -123,6 +123,9 @@ def build_sequences(
       - horizon_return: r_{t+horizon}
       - next_return: r_{t+1}
       - next3_mean_return: mean(r_{t+1}, ..., r_{t+smooth_window})
+      - next_mean_return: mean(r_{t+1}, ..., r_{t+smooth_window})
+      - next_volatility: std(r_{t+1}, ..., r_{t+smooth_window})
+      - sine_next_day: same as next_return (clear task naming for sine data)
     """
     if "log_ret" not in features.columns:
         raise ValueError("Expected features to include a 'log_ret' column for target construction.")
@@ -138,22 +141,30 @@ def build_sequences(
             raise ValueError("horizon must be >= 1 for horizon_return mode.")
     elif mode == "next_return":
         offset = 1
-    elif mode == "next3_mean_return":
+    elif mode in {"next3_mean_return", "next_mean_return", "next_volatility"}:
         offset = int(smooth_window)
-        if offset < 1:
-            raise ValueError("smooth_window must be >= 1 for next3_mean_return mode.")
+        if offset < 2 and mode == "next_volatility":
+            raise ValueError("smooth_window must be >= 2 for next_volatility mode.")
+        if offset < 1 and mode in {"next3_mean_return", "next_mean_return"}:
+            raise ValueError("smooth_window must be >= 1 for next_mean_return mode.")
+    elif mode == "sine_next_day":
+        offset = 1
     else:
         raise ValueError(
             f"Unsupported target_mode '{target_mode}'. "
-            "Expected one of: horizon_return, next_return, next3_mean_return."
+            "Expected one of: horizon_return, next_return, next3_mean_return, "
+            "next_mean_return, next_volatility, sine_next_day."
         )
 
     X_list, y_list, y_dates = [], [], []
     for t in range(seq_len - 1, len(r) - offset):
         X_list.append(feature_values[t - seq_len + 1: t + 1, :])
-        if mode == "next3_mean_return":
+        if mode in {"next3_mean_return", "next_mean_return"}:
             forward_window = r[t + 1: t + offset + 1]
             y_list.append(float(np.mean(forward_window)))
+        elif mode == "next_volatility":
+            forward_window = r[t + 1: t + offset + 1]
+            y_list.append(float(np.std(forward_window, ddof=0)))
         else:
             y_list.append(r[t + offset])
         y_dates.append(dates[t + offset])
