@@ -7,7 +7,7 @@ The codebase now includes shared experiment-preparation utilities, runtime-confi
 
 The repository currently supports a shared forecasting setup across the neural training and comparison workflows:
 
-- **Sequence-model workflow** (`src/*/train.py`, `src/comparison/main.py`, `src/tuning/main.py`): predicts a configurable return target from the last `SEQ_LEN` returns.
+- **Sequence-model workflow** (`src/*/train.py`, `src/comparison/main.py`, `src/tuning/main.py`): predicts a configurable return target from the last `SEQ_LEN` windows of an 8-feature SPY input schema.
 - **Comparison reference baseline** (`src/comparison/main.py`): fits a flattened-sequence linear regression on that same shared `SEQ_LEN` / `HORIZON` dataset.
 
 With the default configuration in `src/common/config.py`:
@@ -19,7 +19,20 @@ With the default configuration in `src/common/config.py`:
 - `TARGET_MODE = "horizon_return"`
 - `TARGET_SMOOTH_WINDOW = 3`
 
-So, by default, experiments forecast the **next trading day's** return from a **30-return lookback window**.
+So, by default, experiments forecast the **next trading day's** return from a **30-step multivariate lookback window**.
+
+The default per-step input feature schema is:
+
+- `log_ret = log(Close / Close.shift(1))`
+- `oc_ret = log(Close / Open)`
+- `hl_range = (High - Low) / Close`
+- `vol_chg = log(Volume / Volume.shift(1))`
+- `ma_5_gap = (Close / Close.rolling(5).mean()) - 1`
+- `ma_20_gap = (Close / Close.rolling(20).mean()) - 1`
+- `volatility_5 = log_ret.rolling(5).std()`
+- `volatility_20 = log_ret.rolling(20).std()`
+
+Targets remain based on future **`log_ret`** values (`horizon_return`, `next_return`, or `next3_mean_return`), so feature engineering and labels stay clearly separated.
 
 Available neural target modes are:
 - `horizon_return`: `r_{t+horizon}`
@@ -133,9 +146,9 @@ python -m src.comparison.main
 
 This workflow:
 
-- builds one shared sequence split,
+- builds one shared sequence split from the 8-feature SPY frame,
 - trains RNN, LSTM, GRU, and Transformer on that split,
-- computes a flattened-sequence linear-regression reference,
+- computes a flattened-sequence linear-regression reference across all sequence features,
 - saves comparison metrics and a loss-comparison figure,
 - writes a model-comparison record summarizing the winner by validation MSE.
 
