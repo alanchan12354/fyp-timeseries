@@ -10,19 +10,19 @@ The repository now supports **one primary experiment family** with one shared co
 
 The neural-model pipeline uses a fixed lookback sequence and predicts a configurable return target:
 
-- Input: the last `SEQ_LEN` returns, shaped `(N, T, 1)`.
+- Input: the last `SEQ_LEN` timesteps of 8 engineered SPY features, shaped `(N, T, 8)`.
 - Target: one of:
-  - `horizon_return`: return at `t + HORIZON`
-  - `next_return`: return at `t + 1`
-  - `next3_mean_return`: mean return over the next `TARGET_SMOOTH_WINDOW` steps
+  - `horizon_return`: `log_ret` at `t + HORIZON`
+  - `next_return`: `log_ret` at `t + 1`
+  - `next3_mean_return`: mean `log_ret` over the next `TARGET_SMOOTH_WINDOW` steps
 - Entrypoints: `src/rnn/train.py`, `src/lstm/train.py`, `src/gru/train.py`, `src/transformer/train.py`, `src/comparison/main.py`, `src/comparison/best_tuned_main.py`, `src/tuning/main.py`.
 
 ### B. Shared comparison baseline
 
 The comparison workflows also fit a flattened-sequence linear regression on the exact same prepared dataset used by both comparison entrypoints:
 
-- Input: the last `SEQ_LEN` returns, flattened into one tabular row.
-- Target: the return at `t + HORIZON`.
+- Input: the last `SEQ_LEN` timesteps of all 8 features, flattened into one tabular row.
+- Target: future `log_ret` at `t + HORIZON`.
 - Entrypoints: `src/comparison/main.py`, `src/comparison/best_tuned_main.py`.
 
 That flattened-sequence linear-regression baseline is part of both the shared comparison workflow and the best-tuned comparison workflow.
@@ -40,8 +40,8 @@ So the default user-facing workflow predicts one-day-ahead returns from a 30-ste
 Most experiment scripts follow a shared sequence:
 
 1. Download SPY data with `yfinance`.
-2. Compute daily log returns from the `Close` column returned by `yfinance` (matching `src/common/data.py::load_data`).
-3. Build sequence tensors for neural models and flattened versions of those same sequences for the linear-regression reference.
+2. Compute an 8-column SPY feature frame from `Open`, `High`, `Low`, `Close`, and `Volume` returned by `yfinance`.
+3. Build sequence tensors for neural models and flattened versions of those same multi-feature sequences for the linear-regression reference.
 4. Split data chronologically into train/validation/test.
 5. Fit a scaler on training inputs and apply it to validation/test inputs.
 6. Train the model or baseline.
@@ -76,9 +76,18 @@ It also defines the shared command-line flags used by the neural training script
 #### `data.py`
 Core data utilities:
 
-- `load_data(...)`: downloads SPY data and computes log returns.
+- `load_data(...)`: downloads SPY data and computes close-to-close log returns (legacy utility retained for compatibility).
+- `build_spy_feature_frame(...)`: builds the shared 8-feature input frame:
+  - `log_ret = log(Close / Close.shift(1))`
+  - `oc_ret = log(Close / Open)`
+  - `hl_range = (High - Low) / Close`
+  - `vol_chg = log(Volume / Volume.shift(1))`
+  - `ma_5_gap = (Close / Close.rolling(5).mean()) - 1`
+  - `ma_20_gap = (Close / Close.rolling(20).mean()) - 1`
+  - `volatility_5 = log_ret.rolling(5).std()`
+  - `volatility_20 = log_ret.rolling(20).std()`
 - `make_lag_features(...)`: helper for lag-feature tabular inputs retained as a reusable data utility.
-- `build_sequences(...)`: builds `(N, seq_len, 1)` sequence inputs with configurable target modes (`horizon_return`, `next_return`, `next3_mean_return`).
+- `build_sequences(...)`: builds `(N, seq_len, 8)` sequence inputs with configurable target modes (`horizon_return`, `next_return`, `next3_mean_return`) while keeping labels tied to future `log_ret`.
 - `chronological_split(...)`: performs time-ordered splitting.
 - `SeqDataset`: thin PyTorch dataset wrapper.
 

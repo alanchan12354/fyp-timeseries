@@ -14,6 +14,7 @@ class RuntimeTrainingConfig:
     transformer_d_model: int = 64
     transformer_num_layers: int = 2
     transformer_nhead: int = 4
+    input_size: int = 8
     horizon: int = HORIZON
     target_mode: str = TARGET_MODE
     target_smooth_window: int = TARGET_SMOOTH_WINDOW
@@ -44,6 +45,7 @@ class RuntimeTrainingConfig:
         return {
             "hidden": self.recurrent_hidden_size,
             "layers": self.recurrent_layer_count,
+            "input_size": self.input_size,
         }
 
     def transformer_model_kwargs(self) -> dict[str, Any]:
@@ -52,6 +54,7 @@ class RuntimeTrainingConfig:
             "nhead": self.transformer_nhead,
             "num_layers": self.transformer_num_layers,
             "dropout": 0.1,
+            "input_size": self.input_size,
         }
 
     def training_metadata(self) -> dict[str, Any]:
@@ -61,6 +64,7 @@ class RuntimeTrainingConfig:
             "horizon": self.horizon,
             "target_mode": self.target_mode,
             "target_smooth_window": self.target_smooth_window,
+            "input_size": self.input_size,
         }
         if self.run_note:
             metadata["run_note"] = self.run_note
@@ -90,6 +94,7 @@ def add_runtime_config_args(parser: argparse.ArgumentParser) -> argparse.Argumen
         help="Number of Transformer encoder layers.",
     )
     parser.add_argument("--nhead", type=int, dest="transformer_nhead", help="Transformer attention head count.")
+    parser.add_argument("--input-size", type=int, dest="input_size", help="Number of input channels per sequence step.")
     parser.add_argument("--horizon", type=int, dest="horizon", help="Target horizon for horizon_return mode.")
     parser.add_argument(
         "--target-mode",
@@ -123,6 +128,7 @@ _ALIAS_MAP = {
     "nhead": "transformer_nhead",
     "transformer_nhead": "transformer_nhead",
     "transformer_num_layers": "transformer_num_layers",
+    "input_size": "input_size",
     "horizon": "horizon",
     "target_mode": "target_mode",
     "target_smooth_window": "target_smooth_window",

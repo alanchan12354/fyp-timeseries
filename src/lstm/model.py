@@ -1,9 +1,9 @@
 import torch.nn as nn
 
 class LSTMModel(nn.Module):
-    def __init__(self, hidden=64, layers=2):
+    def __init__(self, hidden=64, layers=2, input_size=8):
         super().__init__()
-        self.lstm = nn.LSTM(1, hidden, layers, batch_first=True)
+        self.lstm = nn.LSTM(input_size, hidden, layers, batch_first=True)
         self.fc = nn.Linear(hidden, 1)
         
     def forward(self, x):

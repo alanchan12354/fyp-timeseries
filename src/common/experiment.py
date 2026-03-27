@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader
 
 from .config import HORIZON, SEQ_LEN, TRAIN_RATIO, VAL_RATIO, TICKER, START
-from .data import SeqDataset, build_sequences, chronological_split, load_data
+from .data import SeqDataset, build_sequences, build_spy_feature_frame, chronological_split
 from .reporting import (
     create_run_context,
     default_task_metadata,
@@ -52,12 +52,13 @@ def prepare_sequence_experiment_run(
     train_ratio: float = TRAIN_RATIO,
     val_ratio: float = VAL_RATIO,
 ) -> PreparedSequenceRun:
-    raw_returns = load_data(
-    ticker=ticker or TICKER,
-    start=start or START,
+    feature_frame = build_spy_feature_frame(
+        ticker=ticker or TICKER,
+        start=start or START,
     )
+    raw_returns = feature_frame["log_ret"]
     sequences, targets, sequence_index = build_sequences(
-        raw_returns,
+        feature_frame,
         seq_len,
         horizon,
         target_mode=target_mode,
@@ -73,6 +74,8 @@ def prepare_sequence_experiment_run(
 
     scaler = StandardScaler()
     _, _, feature_count = X_tr.shape
+    if feature_count != 8:
+        raise ValueError(f"Expected 8 input features, got {feature_count}.")
     X_tr_scaled = scaler.fit_transform(X_tr.reshape(-1, feature_count)).reshape(X_tr.shape)
     X_va_scaled = scaler.transform(X_va.reshape(-1, feature_count)).reshape(X_va.shape)
     X_te_scaled = scaler.transform(X_te.reshape(-1, feature_count)).reshape(X_te.shape)

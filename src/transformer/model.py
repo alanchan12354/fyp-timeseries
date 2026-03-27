@@ -3,16 +3,16 @@ import torch.nn as nn
 import math
 
 class TransformerModel(nn.Module):
-    def __init__(self, d_model=64, nhead=4, num_layers=2, dropout=0.1):
+    def __init__(self, d_model=64, nhead=4, num_layers=2, dropout=0.1, input_size=8):
         super().__init__()
-        self.input_proj = nn.Linear(1, d_model)
+        self.input_proj = nn.Linear(input_size, d_model)
         self.pos_encoder = nn.Parameter(torch.randn(1, 100, d_model) * 0.02)
         encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True, norm_first=True)
         self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
         self.fc = nn.Linear(d_model, 1)
         
     def forward(self, x):
-        # x: (B, Seq, 1) -> (B, Seq, d_model)
+        # x: (B, Seq, input_size) -> (B, Seq, d_model)
         x = self.input_proj(x)
         seq_len = x.size(1)
         base_pos_len = self.pos_encoder.size(1)

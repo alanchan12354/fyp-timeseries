@@ -17,7 +17,7 @@ from src.common.config import (
     TRAIN_RATIO,
     VAL_RATIO,
 )
-from src.common.data import SeqDataset, build_sequences, chronological_split, load_data
+from src.common.data import SeqDataset, build_sequences, build_spy_feature_frame, chronological_split
 from src.common.metrics import directional_accuracy
 from src.common.reporting import (
     append_experiment_record,
@@ -64,8 +64,8 @@ def main():
     print("Running Model Comparison...")
 
     # 1. Data
-    returns = load_data()
-    X, y, idx = build_sequences(returns, SEQ_LEN, HORIZON)
+    feature_frame = build_spy_feature_frame()
+    X, y, idx = build_sequences(feature_frame, SEQ_LEN, HORIZON)
     (X_tr, y_tr, _), (X_va, y_va, _), (X_te, y_te, idx_te) = chronological_split(
         X, y, idx, TRAIN_RATIO, VAL_RATIO
     )
@@ -118,19 +118,19 @@ def main():
         model_name="Baseline-LR",
         record_type="baseline_model",
         metrics={k: v for k, v in results[0].items() if k != "Model"},
-        hyperparameters={"model": "LinearRegression", "flattened_sequence": True, "lookback": SEQ_LEN},
+        hyperparameters={"model": "LinearRegression", "flattened_sequence": True, "flattened_multifeature": True, "lookback": SEQ_LEN},
         context=run_context,
-        tuning={"best_epoch": None, "stop_epoch": None, "tuning_notes": "Default sklearn LinearRegression on flattened sequence inputs."},
+        tuning={"best_epoch": None, "stop_epoch": None, "tuning_notes": "Default sklearn LinearRegression on flattened multi-feature sequence inputs."},
         artifacts={},
     )
     append_experiment_record(baseline_record)
     comparison_records.append(baseline_record)
 
     models = [
-        ("RNN", RNNModel, {"hidden": 64, "layers": 2}),
-        ("LSTM", LSTMModel, {"hidden": 64, "layers": 2}),
-        ("GRU", GRUModel, {"hidden": 64, "layers": 2}),
-        ("Transformer", TransformerModel, {"d_model": 64, "nhead": 4, "num_layers": 2, "dropout": 0.1}),
+        ("RNN", RNNModel, {"hidden": 64, "layers": 2, "input_size": D}),
+        ("LSTM", LSTMModel, {"hidden": 64, "layers": 2, "input_size": D}),
+        ("GRU", GRUModel, {"hidden": 64, "layers": 2, "input_size": D}),
+        ("Transformer", TransformerModel, {"d_model": 64, "nhead": 4, "num_layers": 2, "dropout": 0.1, "input_size": D}),
     ]
 
     for name, cls, kwargs in models:
