@@ -206,6 +206,7 @@ python -m src.tuning.main --model gru --session-mode reset
 python -m src.tuning.main --model transformer --dry-run
 python -m src.tuning.main --plan-file path/to/plan.json
 python -m src.tuning.main --plan-json '{"gru": {"hidden": [32, 64]}}'
+python -m src.tuning.main --model all --task-id spy_next5_volatility --target-mode next_volatility --target-smooth-window 5 --horizon 1
 ```
 
 The tuning runner performs staged sweeps over model-specific parameter groups and writes summary CSVs such as:
@@ -218,6 +219,16 @@ The tuning runner performs staged sweeps over model-specific parameter groups an
 `<reports_dir>/tuning_winners.csv` is the canonical source of "best parameters" for downstream comparison because it stores the final frozen winner after each sequential tuning stage. `<reports_dir>/tuning_best_configs.csv` remains available when you want the single best archived run per model instead.
 
 If `--session-mode reset` is used, the runner clears prior tuning artifacts in the active `<reports_dir>` before starting a fresh session.
+
+Task-scoping flags are available directly on the tuning runner:
+
+- `--task-id`
+- `--horizon`
+- `--data-source {spy,sine}`
+- `--target-mode {horizon_return,next_return,next3_mean_return,next_mean_return,next_volatility,sine_next_day}`
+- `--target-smooth-window`
+- `--epochs`
+- `--scheduler-type {none,plateau,cosine}`
 
 ### 5. Compare models with their tuned-best configurations
 
@@ -384,6 +395,27 @@ Outputs include:
 > report directory, the later workflow will overwrite that summary file.
 
 For one consolidated cross-task view in your write-up, combine key rows from the per-task `best_tuned_comparison_<task_id>.csv` files into a single results table in `docs/final_report.md`.
+
+### One-click final-report pipeline (all 3 requested tasks)
+
+Use the helper script below to run all three tasks end-to-end (tune all models, compare tuned best models, generate impact reports, generate charts) in one command:
+
+```bash
+bash scripts/run_multitask_final_reports.sh
+```
+
+Optional: provide an explicit output root folder:
+
+```bash
+bash scripts/run_multitask_final_reports.sh reports/final_report_tasks/my_final_bundle
+```
+
+The script creates a clear task-by-task structure:
+
+- `<root>/sine_next_day/`
+- `<root>/spy_next5_volatility/`
+- `<root>/spy_next5_mean_return/`
+- `<root>/README.md` (index of generated artifacts and rerun command)
 
 ## Experiment logging and reproducibility
 

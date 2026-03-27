@@ -225,9 +225,25 @@ Capabilities include:
 
 - tune one model or all models,
 - provide overrides from a JSON file or inline JSON,
+- pass task-scoping runtime settings (`task_id`, `target_mode`, `target_smooth_window`, `horizon`, `data_source`, etc.) so tuning rows are tied to one forecast task,
 - reset or append tuning outputs,
 - dry-run the resolved plan,
 - write per-stage run logs and winner summaries.
+
+### `scripts/run_multitask_final_reports.sh`
+One-click orchestration script for final-report packaging across the three target tasks:
+
+1. `sine_next_day`
+2. `next_volatility` with a 5-step forward window
+3. `next_mean_return` with a 5-step forward window
+
+For each task it:
+
+- tunes all four neural models (`src.tuning.main`),
+- runs tuned-best comparison (`src.comparison.best_tuned_main`),
+- builds hyperparameter impact report (`src.tuning.report`),
+- exports tuned-comparison charts (`src.comparison.best_tuned_charts`),
+- writes outputs into a dedicated task folder under one shared root bundle for easier final-report use.
 
 ## 4) Important outputs in `<reports_dir>`
 
@@ -272,6 +288,7 @@ python -m src.comparison.main
 python -m src.tuning.main --model all --session-mode append
 python -m src.comparison.best_tuned_main
 python -m src.comparison.best_tuned_charts
+bash scripts/run_multitask_final_reports.sh
 ```
 
 ## 6) What to tweak first

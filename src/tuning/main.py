@@ -163,6 +163,43 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print the resolved tuning plan without starting training.",
     )
+    parser.add_argument("--horizon", type=int, help="Task horizon passed to each tuned training run.")
+    parser.add_argument(
+        "--data-source",
+        choices=["spy", "sine"],
+        help="Dataset source passed to each tuned training run.",
+    )
+    parser.add_argument(
+        "--target-mode",
+        choices=[
+            "horizon_return",
+            "next_return",
+            "next3_mean_return",
+            "next_mean_return",
+            "next_volatility",
+            "sine_next_day",
+        ],
+        help="Target definition passed to each tuned training run.",
+    )
+    parser.add_argument(
+        "--target-smooth-window",
+        type=int,
+        help="Forward window passed to rolling target modes during tuning.",
+    )
+    parser.add_argument(
+        "--task-id",
+        help="Stable task identifier to persist on all tuning rows for this run.",
+    )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        help="Epoch budget override passed to each tuned training run.",
+    )
+    parser.add_argument(
+        "--scheduler-type",
+        choices=["none", "plateau", "cosine"],
+        help="Scheduler override passed to each tuned training run.",
+    )
     return parser
 
 
@@ -216,8 +253,17 @@ def _stage_display_name(spec: ModelSpec, stage_name: str) -> str:
     return f"{spec.display_name} {stage_name} sweep"
 
 
-def _config_to_runtime_dict(model_name: str, frozen_config: Mapping[str, Any], note: str) -> Dict[str, Any]:
-    runtime = RuntimeTrainingConfig(run_note=note).to_dict()
+def _config_to_runtime_dict(
+    model_name: str,
+    frozen_config: Mapping[str, Any],
+    note: str,
+    *,
+    runtime_overrides: Mapping[str, Any] | None = None,
+) -> Dict[str, Any]:
+    runtime = RuntimeTrainingConfig.from_sources(
+        config_dict=runtime_overrides or {},
+        run_note=note,
+    ).to_dict()
     runtime["learning_rate"] = frozen_config["lr"]
     runtime["batch_size"] = frozen_config["batch_size"]
     if model_name in RECURRENT_MODELS:
@@ -321,7 +367,13 @@ def _print_resolved_plan(models: Iterable[str], plan_by_model: Mapping[str, Dict
             print(f"  {stage_name}: {plan_by_model[model_name][stage_name]}")
 
 
-def tune_model(model_name: str, plan: Mapping[str, List[Any]], *, dry_run: bool = False) -> Dict[str, Any]:
+def tune_model(
+    model_name: str,
+    plan: Mapping[str, List[Any]],
+    *,
+    dry_run: bool = False,
+    runtime_overrides: Mapping[str, Any] | None = None,
+) -> Dict[str, Any]:
     spec = MODEL_SPECS[model_name]
     frozen_config = deepcopy(spec.baseline)
     winners: List[Dict[str, Any]] = []
@@ -353,7 +405,12 @@ def tune_model(model_name: str, plan: Mapping[str, List[Any]], *, dry_run: bool 
                 candidate_config=candidate_config,
             )
             note = format_structured_notes(note_metadata)
-            runtime_config = _config_to_runtime_dict(model_name, candidate_config, note)
+            runtime_config = _config_to_runtime_dict(
+                model_name,
+                candidate_config,
+                note,
+                runtime_overrides=runtime_overrides,
+            )
             metrics = spec.train_entrypoint(config_dict=runtime_config)
             best_val = float(metrics["best_val_MSE"])
             stage_results.append({
@@ -415,6 +472,19 @@ def main(cli_args: argparse.Namespace | None = None) -> List[Dict[str, Any]]:
         model_name: _merge_plan(MODEL_SPECS[model_name], plan_overrides.get(model_name))
         for model_name in selected_models
     }
+    runtime_overrides = {
+        key: value
+        for key, value in {
+            "horizon": args.horizon,
+            "data_source": args.data_source,
+            "target_mode": args.target_mode,
+            "target_smooth_window": args.target_smooth_window,
+            "task_id": args.task_id,
+            "epochs": args.epochs,
+            "scheduler_type": args.scheduler_type,
+        }.items()
+        if value is not None
+    }
 
     _print_resolved_plan(selected_models, plan_by_model)
     print(f"Session mode: {session_mode}")
@@ -435,7 +505,14 @@ def main(cli_args: argparse.Namespace | None = None) -> List[Dict[str, Any]]:
     else:
         print("Append mode selected; keeping prior reports/ artifacts and extending history.")
 
-    summaries = [tune_model(model_name, plan_by_model[model_name]) for model_name in selected_models]
+    summaries = [
+        tune_model(
+            model_name,
+            plan_by_model[model_name],
+            runtime_overrides=runtime_overrides,
+        )
+        for model_name in selected_models
+    ]
     print("Completed tuning workflow.")
     print(json.dumps(summaries, indent=2))
     return summaries
