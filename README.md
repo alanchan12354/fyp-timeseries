@@ -13,7 +13,7 @@ The repository currently supports a shared forecasting setup across the neural t
 With the default configuration in `src/common/config.py`:
 
 - `TICKER = "SPY"`
-- `START = "2010-01-01"`
+- `START = "2005-01-01"`
 - `SEQ_LEN = 30`
 - `HORIZON = 1`
 - `TARGET_MODE = "horizon_return"`

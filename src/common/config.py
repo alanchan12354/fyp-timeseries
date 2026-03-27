@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 # Data Config
 TICKER = "SPY"
-START = "2010-01-01"
+START = "2005-01-01"
 
 # Task Config
 SEQ_LEN = 30      # Lookback window
