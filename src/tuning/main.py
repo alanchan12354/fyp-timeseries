@@ -21,6 +21,7 @@ TUNING_WINNERS_CSV = os.path.join(REPORTS_DIR, "tuning_winners.csv")
 RECURRENT_MODELS = {"lstm", "gru", "rnn"}
 DEFAULT_MODEL_ORDER = ["lstm", "gru", "rnn", "transformer"]
 RUNS_FIELDNAMES = [
+    "task_id",
     "model",
     "stage_index",
     "stage_name",
@@ -32,6 +33,7 @@ RUNS_FIELDNAMES = [
     "config_json",
 ]
 WINNERS_FIELDNAMES = [
+    "task_id",
     "model",
     "stage_index",
     "stage_name",
@@ -355,6 +357,7 @@ def tune_model(model_name: str, plan: Mapping[str, List[Any]], *, dry_run: bool 
             metrics = spec.train_entrypoint(config_dict=runtime_config)
             best_val = float(metrics["best_val_MSE"])
             stage_results.append({
+                "task_id": runtime_config["task_id"],
                 "model": model_name,
                 "stage_index": stage_index,
                 "stage_name": _stage_display_name(spec, stage_name),
@@ -375,6 +378,7 @@ def tune_model(model_name: str, plan: Mapping[str, List[Any]], *, dry_run: bool 
         frozen_config[stage_name] = winner["candidate_value"]
 
         winner_row = {
+            "task_id": winner["task_id"],
             "model": model_name,
             "stage_index": stage_index,
             "stage_name": _stage_display_name(spec, stage_name),

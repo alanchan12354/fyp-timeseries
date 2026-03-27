@@ -1,10 +1,12 @@
+import argparse
 import csv
 import json
 import math
 import os
 from collections import defaultdict
 from html import escape
-from typing import Any, Dict, Iterable, List, Tuple
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Sequence, Tuple
 
 from src.common.config import FIGURES_DIR, REPORTS_DIR
 
@@ -13,6 +15,7 @@ EXPERIMENT_LOG_JSONL = os.path.join(REPORTS_DIR, "experiment_log.jsonl")
 TUNING_WINNERS_CSV = os.path.join(REPORTS_DIR, "tuning_winners.csv")
 REPORT_PATH = os.path.join(REPORTS_DIR, "hyperparameter_impact_report.md")
 FIGURE_PATH = os.path.join(FIGURES_DIR, "hyperparameter_model_loss_summary.svg")
+MULTI_TASK_SUMMARY_PATH = os.path.join(REPORTS_DIR, "multi_task_summary.md")
 
 
 def _load_experiment_rows(path: str = EXPERIMENT_LOG_JSONL) -> List[Dict[str, Any]]:
@@ -27,6 +30,63 @@ def _load_experiment_rows(path: str = EXPERIMENT_LOG_JSONL) -> List[Dict[str, An
 def _load_csv_rows(path: str) -> List[Dict[str, str]]:
     with open(path, "r", encoding="utf-8", newline="") as handle:
         return list(csv.DictReader(handle))
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Generate hyper-parameter impact report(s).")
+    parser.add_argument("--task-id", help="Single task identifier to filter rows before computing report metrics.")
+    parser.add_argument(
+        "--task-ids",
+        nargs="+",
+        help="One or more task identifiers to generate task-scoped reports. Overrides --task-id.",
+    )
+    return parser
+
+
+def _resolve_task_filters(args: argparse.Namespace) -> list[str] | None:
+    if args.task_ids:
+        task_ids = [task_id.strip() for task_id in args.task_ids if task_id and task_id.strip()]
+    elif args.task_id:
+        task_ids = [args.task_id.strip()]
+    else:
+        task_ids = []
+    unique = list(dict.fromkeys(task_ids))
+    return unique or None
+
+
+def _filter_rows_by_task_id(rows: Iterable[Dict[str, Any]], task_id: str | None) -> List[Dict[str, Any]]:
+    if task_id is None:
+        return list(rows)
+    return [row for row in rows if str(row.get("task_id") or "").strip() == task_id]
+
+
+def _slugify_task_id(task_id: str) -> str:
+    return "".join(ch if ch.isalnum() or ch in {"-", "_"} else "_" for ch in task_id.strip()) or "unknown_task"
+
+
+def _task_aware_paths(task_id: str | None) -> tuple[str, str]:
+    if not task_id:
+        return REPORT_PATH, FIGURE_PATH
+    suffix = _slugify_task_id(task_id)
+    return (
+        os.path.join(REPORTS_DIR, f"hyperparameter_impact_report_{suffix}.md"),
+        os.path.join(FIGURES_DIR, f"hyperparameter_model_loss_summary_{suffix}.svg"),
+    )
+
+
+def _ensure_requested_tasks_have_winners(tuning_rows: Sequence[Dict[str, str]], task_ids: Sequence[str]) -> None:
+    if not task_ids:
+        return
+    available = {
+        str(row.get("task_id") or "").strip()
+        for row in tuning_rows
+        if str(row.get("task_id") or "").strip()
+    }
+    missing = [task_id for task_id in task_ids if task_id not in available]
+    if missing:
+        raise ValueError(
+            "No matching tuning winners were found for requested task_id(s): " + ", ".join(missing)
+        )
 
 
 def _is_tuning_run(row: Dict[str, Any]) -> bool:
@@ -180,6 +240,8 @@ def _write_report(
     figure_path: str = FIGURE_PATH,
 ) -> None:
     ordered_models = sorted(best_by_model.values(), key=lambda row: row["metrics"]["best_val_MSE"])
+    if not ordered_models:
+        raise ValueError("No tuning experiment rows matched the selected task filter(s).")
     lines: List[str] = [
         "# Hyper-Parameter Impact Report",
         "",
@@ -255,13 +317,51 @@ def _write_report(
         handle.write("\n".join(lines) + "\n")
 
 
-def main() -> Dict[str, str]:
+def _write_multi_task_summary(entries: Sequence[Dict[str, str]], out_path: str = MULTI_TASK_SUMMARY_PATH) -> None:
+    lines: List[str] = [
+        "# Multi-task tuning summary",
+        "",
+        "| Task ID | Hyper-parameter impact report | Figure |",
+        "| --- | --- | --- |",
+    ]
+    for entry in entries:
+        report_rel = os.path.relpath(entry["report_path"], os.path.dirname(out_path))
+        figure_rel = os.path.relpath(entry["figure_path"], os.path.dirname(out_path))
+        lines.append(f"| `{entry['task_id']}` | [{Path(report_rel).name}]({report_rel}) | [{Path(figure_rel).name}]({figure_rel}) |")
+    with open(out_path, "w", encoding="utf-8") as handle:
+        handle.write("\n".join(lines) + "\n")
+
+
+def main(argv: list[str] | None = None) -> Dict[str, Any]:
+    args = build_parser().parse_args(argv)
+    requested_task_ids = _resolve_task_filters(args)
+    tuning_rows = _load_csv_rows(TUNING_WINNERS_CSV)
+    _ensure_requested_tasks_have_winners(tuning_rows, requested_task_ids or [])
     experiment_rows = _load_experiment_rows()
-    best_by_model = _collect_best_runs(experiment_rows)
-    stage_impacts = _collect_stage_impacts(_load_csv_rows(TUNING_WINNERS_CSV))
-    _build_comparison_figure(best_by_model)
-    _write_report(best_by_model, stage_impacts)
-    return {"report_path": REPORT_PATH, "figure_path": FIGURE_PATH}
+
+    outputs: List[Dict[str, str]] = []
+    task_scope = requested_task_ids or [None]
+    for task_id in task_scope:
+        filtered_experiment_rows = _filter_rows_by_task_id(experiment_rows, task_id)
+        filtered_tuning_rows = _filter_rows_by_task_id(tuning_rows, task_id)
+        best_by_model = _collect_best_runs(filtered_experiment_rows)
+        stage_impacts = _collect_stage_impacts(filtered_tuning_rows)
+        report_path, figure_path = _task_aware_paths(task_id)
+        _build_comparison_figure(best_by_model, out_path=figure_path)
+        _write_report(best_by_model, stage_impacts, out_path=report_path, figure_path=figure_path)
+        outputs.append(
+            {
+                "task_id": task_id or "all",
+                "report_path": report_path,
+                "figure_path": figure_path,
+            }
+        )
+
+    result: Dict[str, Any] = {"outputs": outputs}
+    if requested_task_ids and len(requested_task_ids) > 1:
+        _write_multi_task_summary(outputs)
+        result["multi_task_summary_path"] = MULTI_TASK_SUMMARY_PATH
+    return result
 
 
 if __name__ == "__main__":
