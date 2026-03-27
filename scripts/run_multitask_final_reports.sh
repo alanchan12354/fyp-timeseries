@@ -31,7 +31,12 @@ run_task() {
       --target-smooth-window "${smooth_window}"
 
   FYP_REPORTS_DIR="${task_dir}" FYP_REPORTS_DISABLE_SESSION_DIR=1 \
-    python -m src.comparison.best_tuned_main --task-id "${task_id}"
+    python -m src.comparison.best_tuned_main \
+      --task-id "${task_id}" \
+      --horizon 1 \
+      --data-source "${data_source}" \
+      --target-mode "${target_mode}" \
+      --target-smooth-window "${smooth_window}"
 
   FYP_REPORTS_DIR="${task_dir}" FYP_REPORTS_DISABLE_SESSION_DIR=1 \
     python -m src.tuning.report --task-ids "${task_id}"
@@ -53,12 +58,18 @@ import os
 import sys
 
 root_dir = sys.argv[1]
-tasks = ["sine_next_day", "next_return", "next_volatility", "next_mean_return"]
+tasks = [
+    {"task_id": "sine_next_day", "target_mode": "sine_next_day", "horizon": "1", "target_smooth_window": "1"},
+    {"task_id": "next_return", "target_mode": "next_return", "horizon": "1", "target_smooth_window": "1"},
+    {"task_id": "next_volatility", "target_mode": "next_volatility", "horizon": "1", "target_smooth_window": "5"},
+    {"task_id": "next_mean_return", "target_mode": "next_mean_return", "horizon": "1", "target_smooth_window": "5"},
+]
 summary_csv = os.path.join(root_dir, "overall_task_summary.csv")
 summary_md = os.path.join(root_dir, "overall_task_summary.md")
 
 rows = []
-for task_id in tasks:
+for task in tasks:
+    task_id = task["task_id"]
     comparison_path = os.path.join(root_dir, task_id, f"best_tuned_comparison_{task_id}.csv")
     if not os.path.exists(comparison_path):
         continue
@@ -66,17 +77,27 @@ for task_id in tasks:
         model_rows = list(csv.DictReader(f))
     if not model_rows:
         continue
-    best_row = min(model_rows, key=lambda row: float(row["test_mse"]))
+    if "best_test_MSE" in model_rows[0]:
+        best_row = min(model_rows, key=lambda row: float(row["best_test_MSE"]))
+        best_test_mse = best_row.get("best_test_MSE", "")
+        best_val_mse = best_row.get("best_val_MSE", "")
+        best_train_mse = best_row.get("best_train_MSE", "")
+    else:
+        # Backward compatibility with older schema.
+        best_row = min(model_rows, key=lambda row: float(row["test_mse"]))
+        best_test_mse = best_row.get("test_mse", "")
+        best_val_mse = best_row.get("val_mse", "")
+        best_train_mse = best_row.get("train_mse", "")
     rows.append(
         {
             "task_id": task_id,
-            "target_mode": best_row.get("target_mode", ""),
-            "horizon": best_row.get("horizon", ""),
-            "target_smooth_window": best_row.get("target_smooth_window", ""),
+            "target_mode": task["target_mode"],
+            "horizon": task["horizon"],
+            "target_smooth_window": task["target_smooth_window"],
             "best_model_by_test_mse": best_row.get("model", ""),
-            "best_test_mse": best_row.get("test_mse", ""),
-            "best_val_mse": best_row.get("val_mse", ""),
-            "best_train_mse": best_row.get("train_mse", ""),
+            "best_test_mse": best_test_mse,
+            "best_val_mse": best_val_mse,
+            "best_train_mse": best_train_mse,
         }
     )
 
