@@ -44,7 +44,9 @@ docs/
   analysis-0224.md         Snapshot analysis write-up of one reported result set
 
 reports/
-  Generated metrics, checkpoints, diagnostics, figures, and tuning summaries
+  sessions/
+    run_<UTC timestamp>/
+      Generated metrics, checkpoints, diagnostics, figures, and tuning summaries
 
 tests/
   Regression tests for reporting/tuning utilities
@@ -63,6 +65,15 @@ tests/
 
 ## Main workflows
 
+> **Report output location**
+>
+> Most workflows write outputs to a per-run session folder:
+> `reports/sessions/run_<UTC timestamp>/...`
+>
+> You can override this behavior with:
+> - `FYP_REPORTS_DIR=/your/path` (force exact output directory)
+> - `FYP_REPORTS_DISABLE_SESSION_DIR=1` (write directly to `reports/` like legacy behavior)
+
 ### 1. Train a single neural model
 
 ```bash
@@ -74,10 +85,10 @@ python -m src.transformer.train
 
 Each training entrypoint uses the shared sequence pipeline and writes:
 
-- `reports/<Model>.pt`
-- `reports/<model>_diagnostics.json`
-- `reports/metrics_<model>.json`
-- plots in `reports/figures/`
+- `<reports_dir>/<Model>.pt`
+- `<reports_dir>/<model>_diagnostics.json`
+- `<reports_dir>/metrics_<model>.json`
+- plots in `<reports_dir>/figures/`
 - structured experiment-log rows
 
 ### 2. Override runtime hyperparameters from the CLI
@@ -145,14 +156,14 @@ python -m src.tuning.main --plan-json '{"gru": {"hidden": [32, 64]}}'
 
 The tuning runner performs staged sweeps over model-specific parameter groups and writes summary CSVs such as:
 
-- `reports/tuning_runs.csv`
-- `reports/tuning_winners.csv`
-- `reports/tuning_all_runs.csv`
-- `reports/tuning_best_configs.csv`
+- `<reports_dir>/tuning_runs.csv`
+- `<reports_dir>/tuning_winners.csv`
+- `<reports_dir>/tuning_all_runs.csv`
+- `<reports_dir>/tuning_best_configs.csv`
 
-`reports/tuning_winners.csv` is the canonical source of "best parameters" for downstream comparison because it stores the final frozen winner after each sequential tuning stage. `reports/tuning_best_configs.csv` remains available when you want the single best archived run per model instead.
+`<reports_dir>/tuning_winners.csv` is the canonical source of "best parameters" for downstream comparison because it stores the final frozen winner after each sequential tuning stage. `<reports_dir>/tuning_best_configs.csv` remains available when you want the single best archived run per model instead.
 
-If `--session-mode reset` is used, the runner clears prior tuning artifacts in `reports/` before starting a fresh session.
+If `--session-mode reset` is used, the runner clears prior tuning artifacts in the active `<reports_dir>` before starting a fresh session.
 
 ### 5. Compare models with their tuned-best configurations
 
@@ -168,12 +179,12 @@ python -m src.comparison.best_tuned_main --config-source tuning_best_configs
 
 This workflow:
 
-- loads tuned per-model hyperparameters from `reports/tuning_winners.csv` by default,
+- loads tuned per-model hyperparameters from `<reports_dir>/tuning_winners.csv` by default,
 - computes the same flattened-sequence linear-regression baseline on the shared split,
 - reuses the shared sequence experiment-preparation flow,
 - calls the existing model training entrypoints with the tuned settings,
 - reports train / validation / test MSE summary columns for every row,
-- writes `reports/best_tuned_comparison.csv` and `reports/best_tuned_comparison.md`.
+- writes `<reports_dir>/best_tuned_comparison.csv` and `<reports_dir>/best_tuned_comparison.md`.
 
 ### 6. Generate SVG charts for the best-tuned comparison
 
@@ -185,19 +196,19 @@ Optional variant if you want to point at a different comparison CSV or output fo
 
 ```bash
 python -m src.comparison.best_tuned_charts \
-  --csv-path reports/best_tuned_comparison.csv \
-  --output-dir reports/figures
+  --csv-path <reports_dir>/best_tuned_comparison.csv \
+  --output-dir <reports_dir>/figures
 ```
 
 This workflow:
 
-- reads `reports/best_tuned_comparison.csv`,
+- reads `<reports_dir>/best_tuned_comparison.csv`,
 - validates that the best-tuned comparison includes model, training, testing, and validation MSE columns,
 - generates one SVG bar chart per metric with all best-tuned models shown on the same graph,
 - writes:
-  - `reports/figures/best_tuned_training_loss.svg`
-  - `reports/figures/best_tuned_testing_loss.svg`
-  - `reports/figures/best_tuned_validation_loss.svg`
+  - `<reports_dir>/figures/best_tuned_training_loss.svg`
+  - `<reports_dir>/figures/best_tuned_testing_loss.svg`
+  - `<reports_dir>/figures/best_tuned_validation_loss.svg`
 
 ### 7. Generate the hyper-parameter impact report
 
@@ -207,10 +218,10 @@ python -m src.tuning.report
 
 This report reads the existing tuning artifacts and generates:
 
-- `reports/hyperparameter_impact_report.md`
-- `reports/figures/hyperparameter_model_loss_summary.svg`
+- `<reports_dir>/hyperparameter_impact_report.md`
+- `<reports_dir>/figures/hyperparameter_model_loss_summary.svg`
 
-The figure places the tuned models' training, testing, and validation losses in three side-by-side subplots that share the same y-axis. This report is separate from `src.comparison.best_tuned_charts`, which writes individual SVG charts from `reports/best_tuned_comparison.csv`.
+The figure places the tuned models' training, testing, and validation losses in three side-by-side subplots that share the same y-axis. This report is separate from `src.comparison.best_tuned_charts`, which writes individual SVG charts from `<reports_dir>/best_tuned_comparison.csv`.
 
 ## Experiment logging and reproducibility
 
@@ -228,14 +239,14 @@ Depending on the workflow, the repository records:
 
 Key generated files include:
 
-- `reports/experiment_log.jsonl`: full structured run records
-- `reports/experiment_log.csv`: flattened summary view
-- `reports/model_comparison_record.json`
-- `reports/model_comparison_record.csv`
-- `reports/best_tuned_comparison.csv`
-- `reports/best_tuned_comparison.md`
-- `reports/tuning_all_runs.csv`
-- `reports/tuning_best_configs.csv`
+- `<reports_dir>/experiment_log.jsonl`: full structured run records
+- `<reports_dir>/experiment_log.csv`: flattened summary view
+- `<reports_dir>/model_comparison_record.json`
+- `<reports_dir>/model_comparison_record.csv`
+- `<reports_dir>/best_tuned_comparison.csv`
+- `<reports_dir>/best_tuned_comparison.md`
+- `<reports_dir>/tuning_all_runs.csv`
+- `<reports_dir>/tuning_best_configs.csv`
 
 ## Comparison framing
 
