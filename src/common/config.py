@@ -7,7 +7,9 @@ START = "2010-01-01"
 
 # Task Config
 SEQ_LEN = 30      # Lookback window
-HORIZON = 10      # Prediction horizon
+HORIZON = 1       # Prediction horizon
+TARGET_MODE = "horizon_return"  # options: "horizon_return", "next_return", "next3_mean_return"
+TARGET_SMOOTH_WINDOW = 3
 LAGS = 30         # For baseline models
 
 # Training Config

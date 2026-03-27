@@ -8,10 +8,13 @@ The repository now supports **one primary experiment family** with one shared co
 
 ### A. Sequence-model workflow
 
-The neural-model pipeline uses a fixed lookback sequence and predicts a configurable horizon ahead:
+The neural-model pipeline uses a fixed lookback sequence and predicts a configurable return target:
 
 - Input: the last `SEQ_LEN` returns, shaped `(N, T, 1)`.
-- Target: the return at `t + HORIZON`.
+- Target: one of:
+  - `horizon_return`: return at `t + HORIZON`
+  - `next_return`: return at `t + 1`
+  - `next3_mean_return`: mean return over the next `TARGET_SMOOTH_WINDOW` steps
 - Entrypoints: `src/rnn/train.py`, `src/lstm/train.py`, `src/gru/train.py`, `src/transformer/train.py`, `src/comparison/main.py`, `src/comparison/best_tuned_main.py`, `src/tuning/main.py`.
 
 ### B. Shared comparison baseline
@@ -27,8 +30,10 @@ That flattened-sequence linear-regression baseline is part of both the shared co
 With the current defaults in `src/common/config.py`:
 
 - `SEQ_LEN = 30`
-- `HORIZON = 10`
-So the repository's user-facing workflows use one shared forecasting target definition. That makes the comparison outputs easier to interpret consistently.
+- `HORIZON = 1`
+- `TARGET_MODE = "horizon_return"`
+- `TARGET_SMOOTH_WINDOW = 3`
+So the default user-facing workflow predicts one-day-ahead returns from a 30-step lookback, while still allowing target difficulty switches via runtime options.
 
 ## 2) End-to-end pipeline
 
@@ -51,7 +56,7 @@ Most experiment scripts follow a shared sequence:
 Central project defaults:
 
 - market/data scope (`TICKER`, `START`),
-- task definition (`SEQ_LEN`, `HORIZON`, `LAGS`),
+- task definition (`SEQ_LEN`, `HORIZON`, `TARGET_MODE`, `TARGET_SMOOTH_WINDOW`, `LAGS`),
 - split ratios,
 - training controls (`EPOCHS`, `PATIENCE`, `MIN_DELTA`, `MIN_EPOCHS`, `TRAIN_LOG_EVERY`),
 - scheduler settings,
@@ -73,7 +78,7 @@ Core data utilities:
 
 - `load_data(...)`: downloads SPY data and computes log returns.
 - `make_lag_features(...)`: helper for lag-feature tabular inputs retained as a reusable data utility.
-- `build_sequences(...)`: builds `(N, seq_len, 1)` sequence inputs with a configurable horizon target.
+- `build_sequences(...)`: builds `(N, seq_len, 1)` sequence inputs with configurable target modes (`horizon_return`, `next_return`, `next3_mean_return`).
 - `chronological_split(...)`: performs time-ordered splitting.
 - `SeqDataset`: thin PyTorch dataset wrapper.
 
@@ -136,7 +141,7 @@ A thin helper layer that standardizes:
 
 - parser creation,
 - runtime-config resolution,
-- shared sequence-data preparation for neural models.
+- shared sequence-data preparation for neural models, including runtime target controls (`horizon`, `target_mode`, `target_smooth_window`).
 
 ### `src/rnn/`, `src/lstm/`, `src/gru/`, `src/transformer/`
 
@@ -259,7 +264,9 @@ python -m src.tuning.main --model all --session-mode append
 
 Start with `src/common/config.py` if you want to change global defaults:
 
-- `HORIZON`: how far ahead sequence models predict.
+- `HORIZON`: how far ahead sequence models predict in `horizon_return` mode.
+- `TARGET_MODE`: sequence target definition (`horizon_return`, `next_return`, `next3_mean_return`).
+- `TARGET_SMOOTH_WINDOW`: forward averaging window for `next3_mean_return`.
 - `SEQ_LEN`: neural-model lookback window.
 - `LAGS`: retained lag-window helper setting for tabular-feature utilities.
 - `TRAIN_RATIO`, `VAL_RATIO`: chronological split proportions.

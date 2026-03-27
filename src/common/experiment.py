@@ -10,7 +10,12 @@ from torch.utils.data import DataLoader
 
 from .config import HORIZON, SEQ_LEN, TRAIN_RATIO, VAL_RATIO, TICKER, START
 from .data import SeqDataset, build_sequences, chronological_split, load_data
-from .reporting import create_run_context, default_training_metadata, split_metadata
+from .reporting import (
+    create_run_context,
+    default_task_metadata,
+    default_training_metadata,
+    split_metadata,
+)
 
 
 @dataclass(frozen=True)
@@ -42,6 +47,8 @@ def prepare_sequence_experiment_run(
     start: str | None = None,
     seq_len: int = SEQ_LEN,
     horizon: int = HORIZON,
+    target_mode: str = "horizon_return",
+    target_smooth_window: int = 3,
     train_ratio: float = TRAIN_RATIO,
     val_ratio: float = VAL_RATIO,
 ) -> PreparedSequenceRun:
@@ -49,7 +56,13 @@ def prepare_sequence_experiment_run(
     ticker=ticker or TICKER,
     start=start or START,
     )
-    sequences, targets, sequence_index = build_sequences(raw_returns, seq_len, horizon)
+    sequences, targets, sequence_index = build_sequences(
+        raw_returns,
+        seq_len,
+        horizon,
+        target_mode=target_mode,
+        smooth_window=target_smooth_window,
+    )
     (X_tr, y_tr, idx_tr), (X_va, y_va, idx_va), (X_te, y_te, idx_te) = chronological_split(
         sequences,
         targets,
@@ -71,6 +84,14 @@ def prepare_sequence_experiment_run(
     run_context = create_run_context(
         experiment_name,
         split_meta,
+        task_meta=default_task_metadata(
+            horizon=horizon,
+            input_window=seq_len,
+            target_mode=target_mode,
+            target_smooth_window=target_smooth_window,
+            ticker=ticker or TICKER,
+            start_date=start or START,
+        ),
         training_meta=default_training_metadata(**(training_metadata or {})),
         notes=run_note,
     )

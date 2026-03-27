@@ -3,7 +3,7 @@ import pandas as pd
 import yfinance as yf
 import torch
 from torch.utils.data import Dataset
-from .config import TICKER, START
+from .config import START, TARGET_MODE, TARGET_SMOOTH_WINDOW, TICKER
 
 def load_data(ticker=TICKER, start=START):
     df = yf.download(ticker, start=start, progress=False)
@@ -41,21 +41,52 @@ def make_lag_features(returns: pd.Series, lags: int, horizon: int = 1):
     y = df["y"].values
     return X, y, df.index
 
-def build_sequences(returns: pd.Series, seq_len: int, horizon: int = 1):
+def build_sequences(
+    returns: pd.Series,
+    seq_len: int,
+    horizon: int = 1,
+    *,
+    target_mode: str = TARGET_MODE,
+    smooth_window: int = TARGET_SMOOTH_WINDOW,
+):
     """
     For Neural Models
     Input:  [r_{t-seq+1}, ..., r_t]
-    Target: r_{t+horizon}
+    Target modes:
+      - horizon_return: r_{t+horizon}
+      - next_return: r_{t+1}
+      - next3_mean_return: mean(r_{t+1}, ..., r_{t+smooth_window})
     """
     r = returns.values.astype(np.float64)
     dates = returns.index
-    
+
+    mode = (target_mode or "horizon_return").strip().lower()
+    if mode == "horizon_return":
+        offset = int(horizon)
+        if offset < 1:
+            raise ValueError("horizon must be >= 1 for horizon_return mode.")
+    elif mode == "next_return":
+        offset = 1
+    elif mode == "next3_mean_return":
+        offset = int(smooth_window)
+        if offset < 1:
+            raise ValueError("smooth_window must be >= 1 for next3_mean_return mode.")
+    else:
+        raise ValueError(
+            f"Unsupported target_mode '{target_mode}'. "
+            "Expected one of: horizon_return, next_return, next3_mean_return."
+        )
+
     X_list, y_list, y_dates = [], [], []
-    for t in range(seq_len - 1, len(r) - horizon):
+    for t in range(seq_len - 1, len(r) - offset):
         X_list.append(r[t - seq_len + 1: t + 1])
-        y_list.append(r[t + horizon])
-        y_dates.append(dates[t + horizon])
-        
+        if mode == "next3_mean_return":
+            forward_window = r[t + 1: t + offset + 1]
+            y_list.append(float(np.mean(forward_window)))
+        else:
+            y_list.append(r[t + offset])
+        y_dates.append(dates[t + offset])
+
     X = np.array(X_list)[:, :, None]  # (N, seq, 1)
     y = np.array(y_list)              # (N,)
     idx = pd.DatetimeIndex(y_dates)
