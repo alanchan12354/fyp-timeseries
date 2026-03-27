@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
-from src.common.config import REPORTS_DIR
+from src.common.config import HORIZON, REPORTS_DIR, TARGET_MODE, TARGET_SMOOTH_WINDOW
 
 from .best_configs import (
     CANONICAL_SOURCE,
@@ -89,6 +89,16 @@ def run_best_tuned_comparison(
     rows = [_build_baseline_row(shared_run=shared_run, selection=selection)]
     for model_key in MODEL_ORDER:
         runtime_config = dict(selection.configs[model_key])
+        if horizon is not None:
+            runtime_config["horizon"] = int(horizon)
+        if data_source is not None:
+            runtime_config["data_source"] = data_source
+        if target_mode is not None:
+            runtime_config["target_mode"] = target_mode
+        if target_smooth_window is not None:
+            runtime_config["target_smooth_window"] = int(target_smooth_window)
+        if task_id:
+            runtime_config["task_id"] = task_id
         prepared_run = prepared_runs[model_key]
         run_id = prepared_run.run_context["run_id"]
         metrics = _run_entrypoint(
@@ -169,10 +179,10 @@ def _prepare_runs(
             experiment_name=f"best_tuned_{model_key}_comparison",
             run_note="Shared split prepared for best-tuned model comparison.",
             training_metadata={"lr": configs[model_key]["lr"], "batch_size": configs[model_key]["batch_size"]},
-            horizon=int(horizon) if horizon is not None else 1,
+            horizon=int(horizon) if horizon is not None else int(HORIZON),
             data_source=(data_source or "spy"),
-            target_mode=(target_mode or "next_return"),
-            target_smooth_window=int(target_smooth_window) if target_smooth_window is not None else 1,
+            target_mode=(target_mode or TARGET_MODE),
+            target_smooth_window=int(target_smooth_window) if target_smooth_window is not None else int(TARGET_SMOOTH_WINDOW),
             task_id=task_id,
         )
         for model_key in MODEL_ORDER
