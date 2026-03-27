@@ -4,7 +4,7 @@ import csv
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable, Sequence
 
 from src.common.config import REPORTS_DIR
 
@@ -34,9 +34,12 @@ class BestConfigSelection:
 class BestConfigError(ValueError):
     pass
 
-
-
-def load_best_configs(source_key: str = CANONICAL_SOURCE, *, source_path: str | Path | None = None) -> BestConfigSelection:
+def load_best_configs(
+    source_key: str = CANONICAL_SOURCE,
+    *,
+    source_path: str | Path | None = None,
+    task_ids: Sequence[str] | None = None,
+) -> BestConfigSelection:
     normalized_source = source_key.strip().lower()
     if normalized_source not in SOURCE_FILES:
         raise BestConfigError(
@@ -47,11 +50,12 @@ def load_best_configs(source_key: str = CANONICAL_SOURCE, *, source_path: str | 
     if not resolved_path.exists():
         raise BestConfigError(f"Tuning config source not found: {resolved_path}")
 
+    normalized_task_ids = _normalize_task_ids(task_ids)
     if normalized_source == "tuning_winners":
-        configs, source_rows = _load_from_tuning_winners(resolved_path)
+        configs, source_rows = _load_from_tuning_winners(resolved_path, task_ids=normalized_task_ids)
         note = "Uses the final frozen staged winners from sequential tuning for each model."
     else:
-        configs, source_rows = _load_from_tuning_best_configs(resolved_path)
+        configs, source_rows = _load_from_tuning_best_configs(resolved_path, task_ids=normalized_task_ids)
         note = "Uses the single best archived run per model across the tuning log."
 
     missing_models = [model for model in MODEL_ORDER if model not in configs]
@@ -70,11 +74,17 @@ def load_best_configs(source_key: str = CANONICAL_SOURCE, *, source_path: str | 
 
 
 
-def _load_from_tuning_winners(path: Path) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, str]]]:
+def _load_from_tuning_winners(
+    path: Path,
+    *,
+    task_ids: set[str] | None = None,
+) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, str]]]:
     latest_rows: dict[str, dict[str, str]] = {}
     with path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
         for row in reader:
+            if task_ids and _row_task_id(row) not in task_ids:
+                continue
             model = _normalize_model_name(row.get("model"))
             stage_index = _coerce_int(row.get("stage_index"), field_name="stage_index", model=model)
             prior_stage = _coerce_int(latest_rows[model].get("stage_index"), field_name="stage_index", model=model) if model in latest_rows else -1
@@ -89,11 +99,17 @@ def _load_from_tuning_winners(path: Path) -> tuple[dict[str, dict[str, Any]], di
 
 
 
-def _load_from_tuning_best_configs(path: Path) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, str]]]:
+def _load_from_tuning_best_configs(
+    path: Path,
+    *,
+    task_ids: set[str] | None = None,
+) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, str]]]:
     rows_by_model: dict[str, dict[str, str]] = {}
     with path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
         for row in reader:
+            if task_ids and _row_task_id(row) not in task_ids:
+                continue
             model = _normalize_model_name(row.get("model"))
             best_val = _coerce_float(row.get("best_val_MSE"), field_name="best_val_MSE", model=model)
             current = rows_by_model.get(model)
@@ -217,3 +233,30 @@ def _parse_structured_notes(notes: str) -> dict[str, str]:
         key, value = item.split("=", 1)
         parsed[key] = value
     return parsed
+
+
+def _normalize_task_ids(task_ids: Sequence[str] | None) -> set[str] | None:
+    if task_ids is None:
+        return None
+    normalized = {task_id.strip() for task_id in task_ids if task_id and task_id.strip()}
+    return normalized or None
+
+
+def _row_task_id(row: dict[str, str]) -> str:
+    return str(row.get("task_id") or "").strip()
+
+
+def ensure_task_ids_have_tuning_winners(*, task_ids: Iterable[str], winners_path: str | Path | None = None) -> None:
+    requested = [task_id.strip() for task_id in task_ids if task_id and task_id.strip()]
+    if not requested:
+        return
+    path = Path(winners_path) if winners_path is not None else SOURCE_FILES["tuning_winners"]
+    if not path.exists():
+        raise BestConfigError(f"Tuning winners source not found: {path}")
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        available = {_row_task_id(row) for row in csv.DictReader(handle) if _row_task_id(row)}
+    missing = [task_id for task_id in requested if task_id not in available]
+    if missing:
+        raise BestConfigError(
+            "No matching tuning winners were found for requested task_id(s): " + ", ".join(missing)
+        )

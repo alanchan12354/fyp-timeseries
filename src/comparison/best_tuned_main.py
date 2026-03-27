@@ -8,10 +8,16 @@ from typing import Any, Callable
 
 from src.common.config import REPORTS_DIR
 
-from .best_configs import CANONICAL_SOURCE, BestConfigSelection, load_best_configs
+from .best_configs import (
+    CANONICAL_SOURCE,
+    BestConfigSelection,
+    ensure_task_ids_have_tuning_winners,
+    load_best_configs,
+)
 
 CSV_REPORT_PATH = Path(REPORTS_DIR) / "best_tuned_comparison.csv"
 MD_REPORT_PATH = Path(REPORTS_DIR) / "best_tuned_comparison.md"
+MULTI_TASK_SUMMARY_PATH = Path(REPORTS_DIR) / "multi_task_summary.md"
 MODEL_ORDER = ("lstm", "gru", "rnn", "transformer")
 BASELINE_NAME = "Baseline-LR"
 DISPLAY_NAMES = {
@@ -32,6 +38,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Which tuning artifact should be treated as the source of best per-model hyperparameters.",
     )
     parser.add_argument("--config-path", default=None, help="Optional override path to the selected tuning CSV artifact.")
+    parser.add_argument("--task-id", help="Single task identifier to scope tuned config loading and reporting.")
+    parser.add_argument(
+        "--task-ids",
+        nargs="+",
+        help="One or more task identifiers to generate per-task tuned comparisons. Overrides --task-id.",
+    )
     return parser
 
 
@@ -166,6 +178,46 @@ def write_reports(results: list[dict[str, Any]], *, selection: BestConfigSelecti
     md_path.write_text(build_markdown_report(results, selection=selection), encoding="utf-8")
 
 
+def _resolve_task_ids(args: argparse.Namespace) -> list[str]:
+    if args.task_ids:
+        task_ids = [task_id.strip() for task_id in args.task_ids if task_id and task_id.strip()]
+    elif args.task_id:
+        task_ids = [args.task_id.strip()]
+    else:
+        task_ids = []
+    return list(dict.fromkeys(task_ids))
+
+
+def _slugify_task_id(task_id: str) -> str:
+    return "".join(ch if ch.isalnum() or ch in {"-", "_"} else "_" for ch in task_id.strip()) or "unknown_task"
+
+
+def _task_output_paths(task_id: str | None) -> tuple[Path, Path]:
+    if not task_id:
+        return CSV_REPORT_PATH, MD_REPORT_PATH
+    suffix = _slugify_task_id(task_id)
+    return (
+        Path(REPORTS_DIR) / f"best_tuned_comparison_{suffix}.csv",
+        Path(REPORTS_DIR) / f"best_tuned_comparison_{suffix}.md",
+    )
+
+
+def _write_multi_task_summary(entries: list[dict[str, str]], out_path: Path = MULTI_TASK_SUMMARY_PATH) -> None:
+    lines = [
+        "# Multi-task best tuned comparison summary",
+        "",
+        "| Task ID | Markdown report | CSV report |",
+        "| --- | --- | --- |",
+    ]
+    for entry in entries:
+        md_rel = entry["md_path"]
+        csv_rel = entry["csv_path"]
+        lines.append(
+            f"| `{entry['task_id']}` | [{Path(md_rel).name}]({md_rel}) | [{Path(csv_rel).name}]({csv_rel}) |"
+        )
+    out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 
 def build_markdown_report(results: list[dict[str, Any]], *, selection: BestConfigSelection) -> str:
     best_val = min(results, key=lambda row: row["best_val_MSE"])
@@ -217,13 +269,45 @@ def build_markdown_report(results: list[dict[str, Any]], *, selection: BestConfi
 
 def main(argv: list[str] | None = None) -> list[dict[str, Any]]:
     args = build_parser().parse_args(argv)
-    selection = load_best_configs(args.config_source, source_path=args.config_path)
-    results = run_best_tuned_comparison(selection=selection)
-    write_reports(results, selection=selection)
-    print(json.dumps(results, indent=2))
-    print(f"Wrote {CSV_REPORT_PATH}")
-    print(f"Wrote {MD_REPORT_PATH}")
-    return results
+    task_ids = _resolve_task_ids(args)
+    ensure_task_ids_have_tuning_winners(task_ids=task_ids)
+
+    if not task_ids:
+        selection = load_best_configs(args.config_source, source_path=args.config_path)
+        results = run_best_tuned_comparison(selection=selection)
+        write_reports(results, selection=selection)
+        print(json.dumps(results, indent=2))
+        print(f"Wrote {CSV_REPORT_PATH}")
+        print(f"Wrote {MD_REPORT_PATH}")
+        return results
+
+    aggregate_results: list[dict[str, Any]] = []
+    summary_entries: list[dict[str, str]] = []
+    for task_id in task_ids:
+        selection = load_best_configs(
+            args.config_source,
+            source_path=args.config_path,
+            task_ids=[task_id],
+        )
+        results = run_best_tuned_comparison(selection=selection)
+        csv_path, md_path = _task_output_paths(task_id)
+        write_reports(results, selection=selection, csv_path=csv_path, md_path=md_path)
+        summary_entries.append(
+            {
+                "task_id": task_id,
+                "csv_path": str(csv_path.relative_to(REPORTS_DIR)),
+                "md_path": str(md_path.relative_to(REPORTS_DIR)),
+            }
+        )
+        aggregate_results.extend(results)
+        print(f"Wrote {csv_path}")
+        print(f"Wrote {md_path}")
+
+    if len(task_ids) > 1:
+        _write_multi_task_summary(summary_entries)
+        print(f"Wrote {MULTI_TASK_SUMMARY_PATH}")
+    print(json.dumps(aggregate_results, indent=2))
+    return aggregate_results
 
 
 if __name__ == "__main__":
