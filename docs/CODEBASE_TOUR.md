@@ -14,7 +14,10 @@ The neural-model pipeline uses a fixed lookback sequence and predicts a configur
 - Target: one of:
   - `horizon_return`: `log_ret` at `t + HORIZON`
   - `next_return`: `log_ret` at `t + 1`
-  - `next3_mean_return`: mean `log_ret` over the next `TARGET_SMOOTH_WINDOW` steps
+  - `next3_mean_return` (legacy): mean `log_ret` over the next `TARGET_SMOOTH_WINDOW` steps
+  - `next_mean_return`: mean `log_ret` over the next `TARGET_SMOOTH_WINDOW` steps (MA-style target)
+  - `next_volatility`: std of `log_ret` over the next `TARGET_SMOOTH_WINDOW` steps (volatility target)
+  - `sine_next_day`: alias of next-step target for sine next-day prediction runs
 - Entrypoints: `src/rnn/train.py`, `src/lstm/train.py`, `src/gru/train.py`, `src/transformer/train.py`, `src/comparison/main.py`, `src/comparison/best_tuned_main.py`, `src/tuning/main.py`.
 
 ### B. Shared comparison baseline
@@ -87,7 +90,7 @@ Core data utilities:
   - `volatility_5 = log_ret.rolling(5).std()`
   - `volatility_20 = log_ret.rolling(20).std()`
 - `make_lag_features(...)`: helper for lag-feature tabular inputs retained as a reusable data utility.
-- `build_sequences(...)`: builds `(N, seq_len, 8)` sequence inputs with configurable target modes (`horizon_return`, `next_return`, `next3_mean_return`) while keeping labels tied to future `log_ret`.
+- `build_sequences(...)`: builds `(N, seq_len, 8)` sequence inputs with configurable target modes (`horizon_return`, `next_return`, `next3_mean_return`, `next_mean_return`, `next_volatility`, `sine_next_day`) while keeping labels tied to future `log_ret`.
 - `chronological_split(...)`: performs time-ordered splitting.
 - `SeqDataset`: thin PyTorch dataset wrapper.
 
@@ -276,8 +279,8 @@ python -m src.comparison.best_tuned_charts
 Start with `src/common/config.py` if you want to change global defaults:
 
 - `HORIZON`: how far ahead sequence models predict in `horizon_return` mode.
-- `TARGET_MODE`: sequence target definition (`horizon_return`, `next_return`, `next3_mean_return`).
-- `TARGET_SMOOTH_WINDOW`: forward averaging window for `next3_mean_return`.
+- `TARGET_MODE`: sequence target definition (`horizon_return`, `next_return`, `next3_mean_return`, `next_mean_return`, `next_volatility`, `sine_next_day`).
+- `TARGET_SMOOTH_WINDOW`: forward window for rolling target modes (`next3_mean_return`, `next_mean_return`, `next_volatility`).
 - `SEQ_LEN`: neural-model lookback window.
 - `LAGS`: retained lag-window helper setting for tabular-feature utilities.
 - `TRAIN_RATIO`, `VAL_RATIO`: chronological split proportions.

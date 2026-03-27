@@ -32,12 +32,15 @@ The default per-step input feature schema is:
 - `volatility_5 = log_ret.rolling(5).std()`
 - `volatility_20 = log_ret.rolling(20).std()`
 
-Targets remain based on future **`log_ret`** values (`horizon_return`, `next_return`, or `next3_mean_return`), so feature engineering and labels stay clearly separated.
+Targets remain based on future **`log_ret`** values, so feature engineering and labels stay clearly separated.
 
 Available neural target modes are:
 - `horizon_return`: `r_{t+horizon}`
 - `next_return`: `r_{t+1}`
-- `next3_mean_return`: mean of the next `target_smooth_window` returns
+- `next3_mean_return`: legacy alias for mean of the next `target_smooth_window` returns
+- `next_mean_return`: mean of the next `target_smooth_window` returns (for MA(5), MA(10), etc.)
+- `next_volatility`: rolling std of the next `target_smooth_window` returns (for volatility tasks)
+- `sine_next_day`: alias of next-step return used for sine next-day prediction workflows
 
 ## Repository structure
 
@@ -131,14 +134,14 @@ python -m src.transformer.train \
   --d-model 128 \
   --transformer-num-layers 3 \
   --nhead 8 \
-  --target-mode next3_mean_return \
+  --target-mode next_mean_return \
   --target-smooth-window 3 \
   --run-note "manual_transformer_sweep"
 ```
 
 Target-focused runtime flags available on all neural entrypoints:
 - `--horizon`
-- `--target-mode {horizon_return,next_return,next3_mean_return}`
+- `--target-mode {horizon_return,next_return,next3_mean_return,next_mean_return,next_volatility,sine_next_day}`
 - `--target-smooth-window`
 
 ### Predefined sanity profile (`--run-note sanity_sine`)
@@ -278,6 +281,46 @@ The figure places the tuned models' training, testing, and validation losses in 
 ## Multi-task experiments
 
 Use **task** to mean one forecast configuration identified by a stable `task_id` and defined by `target_mode` + `horizon` (plus optional smoothing via `target_smooth_window`).
+
+### Quick presets for the three additional tasks
+
+1. **Sine curve next-day prediction**
+
+```bash
+python -m src.gru.train \
+  --data-source sine \
+  --task-id sine_next_day \
+  --target-mode sine_next_day \
+  --horizon 1
+```
+
+2. **Volatility prediction (next 5-day rolling std)**
+
+```bash
+python -m src.gru.train \
+  --task-id spy_next5_volatility \
+  --target-mode next_volatility \
+  --target-smooth-window 5 \
+  --horizon 1
+```
+
+3. **Moving-average prediction (MA(5) or MA(10))**
+
+```bash
+# MA(5)
+python -m src.gru.train \
+  --task-id spy_next_ma5 \
+  --target-mode next_mean_return \
+  --target-smooth-window 5 \
+  --horizon 1
+
+# MA(10)
+python -m src.gru.train \
+  --task-id spy_next_ma10 \
+  --target-mode next_mean_return \
+  --target-smooth-window 10 \
+  --horizon 1
+```
 
 ### 1) Define two tasks explicitly
 
