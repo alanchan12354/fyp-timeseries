@@ -198,6 +198,7 @@ def default_environment_metadata() -> Dict[str, Any]:
 def default_task_metadata(
     task_kind: str = "forecasting",
     *,
+    data_source: str = "spy",
     ticker: str = TICKER,
     start_date: str = START,
     input_window: int = SEQ_LEN,
@@ -218,6 +219,7 @@ def default_task_metadata(
     )
     return {
         "task_kind": task_kind,
+        "data_source": data_source,
         "ticker": ticker,
         "start_date": start_date,
         "input_window": input_window,

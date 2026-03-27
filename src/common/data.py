@@ -51,6 +51,45 @@ def build_spy_feature_frame(ticker=TICKER, start=START):
 
     return features.dropna()
 
+
+def build_sine_feature_frame(
+    periods: int = 2500,
+    *,
+    freq: str = "B",
+    amplitude: float = 0.01,
+    sine_period: int = 40,
+    noise_std: float = 0.0002,
+    seed: int = 42,
+    start: str = START,
+):
+    if periods <= 30:
+        raise ValueError("periods must be > 30 so rolling-window features are valid.")
+    if sine_period <= 0:
+        raise ValueError("sine_period must be > 0.")
+
+    rng = np.random.default_rng(seed)
+    index = pd.date_range(start=start, periods=periods, freq=freq)
+    phase = np.arange(periods, dtype=np.float64)
+
+    clean_sine = amplitude * np.sin((2.0 * np.pi * phase) / float(sine_period))
+    noisy_sine = clean_sine + rng.normal(0.0, noise_std, periods)
+
+    features = pd.DataFrame(index=index)
+    features["log_ret"] = noisy_sine
+    features["oc_ret"] = np.roll(clean_sine, 1)
+    features.iloc[0, features.columns.get_loc("oc_ret")] = clean_sine[0]
+    features["hl_range"] = np.abs(clean_sine) * 0.5 + 1e-4
+    features["vol_chg"] = rng.normal(0.0, noise_std * 2.0, periods)
+
+    pseudo_price = 100.0 * np.exp(np.cumsum(features["log_ret"].values))
+    pseudo_price_series = pd.Series(pseudo_price, index=index)
+    features["ma_5_gap"] = (pseudo_price_series / pseudo_price_series.rolling(5).mean()) - 1.0
+    features["ma_20_gap"] = (pseudo_price_series / pseudo_price_series.rolling(20).mean()) - 1.0
+    features["volatility_5"] = features["log_ret"].rolling(5).std()
+    features["volatility_20"] = features["log_ret"].rolling(20).std()
+
+    return features.dropna()
+
 def make_lag_features(returns: pd.Series, lags: int, horizon: int = 1):
     """
     For baseline models using lagged tabular features.

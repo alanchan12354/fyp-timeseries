@@ -16,6 +16,7 @@ class RuntimeTrainingConfig:
     transformer_nhead: int = 4
     input_size: int = 8
     horizon: int = HORIZON
+    data_source: str = "spy"
     target_mode: str = TARGET_MODE
     target_smooth_window: int = TARGET_SMOOTH_WINDOW
     run_note: Optional[str] = None
@@ -62,6 +63,7 @@ class RuntimeTrainingConfig:
             "lr": self.learning_rate,
             "batch_size": self.batch_size,
             "horizon": self.horizon,
+            "data_source": self.data_source,
             "target_mode": self.target_mode,
             "target_smooth_window": self.target_smooth_window,
             "input_size": self.input_size,
@@ -97,6 +99,12 @@ def add_runtime_config_args(parser: argparse.ArgumentParser) -> argparse.Argumen
     parser.add_argument("--input-size", type=int, dest="input_size", help="Number of input channels per sequence step.")
     parser.add_argument("--horizon", type=int, dest="horizon", help="Target horizon for horizon_return mode.")
     parser.add_argument(
+        "--data-source",
+        choices=["spy", "sine"],
+        dest="data_source",
+        help="Input data source for sequence features.",
+    )
+    parser.add_argument(
         "--target-mode",
         choices=["horizon_return", "next_return", "next3_mean_return"],
         dest="target_mode",
@@ -130,6 +138,7 @@ _ALIAS_MAP = {
     "transformer_num_layers": "transformer_num_layers",
     "input_size": "input_size",
     "horizon": "horizon",
+    "data_source": "data_source",
     "target_mode": "target_mode",
     "target_smooth_window": "target_smooth_window",
     "run_note": "run_note",
