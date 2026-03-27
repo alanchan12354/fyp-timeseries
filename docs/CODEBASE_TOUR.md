@@ -266,9 +266,9 @@ From the repository root:
 pip install -r requirements.txt
 python -m src.gru.train --learning-rate 5e-4 --recurrent-hidden-size 128
 python -m src.comparison.main
+python -m src.tuning.main --model all --session-mode append
 python -m src.comparison.best_tuned_main
 python -m src.comparison.best_tuned_charts
-python -m src.tuning.main --model all --session-mode append
 ```
 
 ## 6) What to tweak first
