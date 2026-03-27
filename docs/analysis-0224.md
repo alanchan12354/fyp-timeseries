@@ -27,10 +27,14 @@ Because those files are generated outputs rather than version-controlled source 
 
 ## 3. Important interpretation warning
 
-The current repository contains **two forecasting setups**:
+Keep this document as a **historical snapshot** tied to one prior analysis window.
+
+The repository contains **two forecasting setups**:
 
 - the standalone baseline script uses **next-day** targets,
-- the sequence-model workflow uses a configurable `HORIZON` target and currently defaults to **10 trading days ahead**.
+- the sequence-model workflow uses a configurable `HORIZON` target; this snapshot may have used horizon 10, but current defaults should be checked in `src/common/config.py`.
+
+Current code defaults may differ from this snapshot, and any conclusions should cite the exact run IDs and generated artifacts used.
 
 If the metrics underlying this historical note came from mixed workflows, then the comparison must be described carefully in any formal report.
 
