@@ -2,7 +2,18 @@ import argparse
 from dataclasses import asdict, dataclass
 from typing import Any, Mapping, Optional
 
-from .config import BATCH_SIZE, HORIZON, LR, TARGET_MODE, TARGET_SMOOTH_WINDOW
+from .config import BATCH_SIZE, EPOCHS, HORIZON, LR, SCHEDULER_TYPE, TARGET_MODE, TARGET_SMOOTH_WINDOW
+
+
+SANITY_SINE_PROFILE_NAME = "sanity_sine"
+SANITY_SINE_PROFILE = {
+    "horizon": 1,
+    "target_mode": "next_return",
+    "recurrent_hidden_size": 64,
+    "transformer_d_model": 64,
+    "epochs": 80,
+    "scheduler_type": "none",
+}
 
 
 @dataclass
@@ -19,6 +30,8 @@ class RuntimeTrainingConfig:
     data_source: str = "spy"
     target_mode: str = TARGET_MODE
     target_smooth_window: int = TARGET_SMOOTH_WINDOW
+    epochs: int = EPOCHS
+    scheduler_type: str = SCHEDULER_TYPE
     run_note: Optional[str] = None
 
     @classmethod
@@ -37,6 +50,7 @@ class RuntimeTrainingConfig:
         if cli_args is not None:
             values.update(_namespace_values(cli_args))
         values.update({key: value for key, value in overrides.items() if value is not None})
+        values = _apply_named_profile(values)
         return cls(**{key: value for key, value in values.items() if key in cls.__dataclass_fields__})
 
     def to_dict(self) -> dict[str, Any]:
@@ -66,6 +80,8 @@ class RuntimeTrainingConfig:
             "data_source": self.data_source,
             "target_mode": self.target_mode,
             "target_smooth_window": self.target_smooth_window,
+            "epochs": self.epochs,
+            "scheduler_type": self.scheduler_type,
             "input_size": self.input_size,
         }
         if self.run_note:
@@ -116,6 +132,13 @@ def add_runtime_config_args(parser: argparse.ArgumentParser) -> argparse.Argumen
         dest="target_smooth_window",
         help="Forward averaging window used by next3_mean_return mode.",
     )
+    parser.add_argument("--epochs", type=int, dest="epochs", help="Maximum training epochs.")
+    parser.add_argument(
+        "--scheduler-type",
+        choices=["none", "plateau", "cosine"],
+        dest="scheduler_type",
+        help="Learning-rate scheduler strategy.",
+    )
     parser.add_argument("--run-note", dest="run_note", help="Optional experiment tag or note.")
     return parser
 
@@ -141,6 +164,8 @@ _ALIAS_MAP = {
     "data_source": "data_source",
     "target_mode": "target_mode",
     "target_smooth_window": "target_smooth_window",
+    "epochs": "epochs",
+    "scheduler_type": "scheduler_type",
     "run_note": "run_note",
     "experiment_tag": "run_note",
     "experiment_note": "run_note",
@@ -160,3 +185,10 @@ def _namespace_values(namespace: argparse.Namespace) -> dict[str, Any]:
     if namespace is None:
         return {}
     return {key: value for key, value in vars(namespace).items() if value is not None}
+
+
+def _apply_named_profile(values: dict[str, Any]) -> dict[str, Any]:
+    profile_name = str(values.get("run_note") or "").strip().lower()
+    if profile_name == SANITY_SINE_PROFILE_NAME:
+        values.update(SANITY_SINE_PROFILE)
+    return values

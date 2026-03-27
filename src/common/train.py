@@ -26,6 +26,20 @@ from .metrics import evaluate_preds
 from .reporting import append_experiment_record, build_experiment_record
 
 
+SANITY_SINE_MSE_THRESHOLD = 0.02
+
+
+def _is_sanity_sine_run(experiment_context=None, tuning_notes=None):
+    context = experiment_context or {}
+    notes = [
+        context.get("notes"),
+        (context.get("training") or {}).get("run_note"),
+        tuning_notes,
+    ]
+    note_text = " ".join(str(item) for item in notes if item)
+    return "sanity_sine" in note_text.strip().lower()
+
+
 def _build_scheduler(optimizer, *, scheduler_type, epochs, scheduler_factor, scheduler_patience, scheduler_min_lr):
     scheduler_type = (scheduler_type or "none").strip().lower()
     if scheduler_type == "plateau":
@@ -340,6 +354,24 @@ def train_model(
     metrics["best_val_MSE"] = float(best_val)
     metrics["best_train_MSE"] = float(best_train_loss)
     metrics["best_test_MSE"] = float(best_test_loss)
+
+    sanity_sine_active = _is_sanity_sine_run(experiment_context=experiment_context, tuning_notes=tuning_notes)
+    if sanity_sine_active:
+        test_mse = float(metrics.get("MSE", float("inf")))
+        sanity_passed = bool(np.isfinite(test_mse) and test_mse <= SANITY_SINE_MSE_THRESHOLD)
+        sanity_summary = {
+            "active": True,
+            "passed": sanity_passed,
+            "threshold_mse": float(SANITY_SINE_MSE_THRESHOLD),
+            "observed_test_mse": test_mse,
+        }
+        metrics["sanity_check"] = sanity_summary
+        metrics["sanity_check_passed"] = sanity_passed
+        if not sanity_passed:
+            print(
+                "[Sanity check warning] sanity_sine profile failed: "
+                f"test MSE {test_mse:.6f} exceeded threshold {SANITY_SINE_MSE_THRESHOLD:.6f}."
+            )
 
     if record_experiment:
         record = build_experiment_record(

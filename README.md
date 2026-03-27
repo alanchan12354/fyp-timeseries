@@ -138,6 +138,41 @@ Target-focused runtime flags available on all neural entrypoints:
 - `--target-mode {horizon_return,next_return,next3_mean_return}`
 - `--target-smooth-window`
 
+### Predefined sanity profile (`--run-note sanity_sine`)
+
+For a quick, reproducible sanity pass before longer sweeps, use the predefined
+`sanity_sine` runtime profile. When `--run-note sanity_sine` is set, runtime config
+automatically applies these stable settings:
+
+- `target_mode=next_return`
+- `horizon=1`
+- moderate model width (`recurrent_hidden_size=64`, `transformer_d_model=64`)
+- enough training budget (`epochs=80`)
+- scheduler disabled (`scheduler_type=none`)
+
+Example (GRU):
+
+```bash
+python -m src.gru.train \
+  --run-note sanity_sine \
+  --horizon 1 \
+  --target-mode next_return \
+  --recurrent-hidden-size 64 \
+  --epochs 80 \
+  --scheduler-type none
+```
+
+The same profile trigger works for LSTM/RNN/Transformer entrypoints.
+
+Expected sanity outcomes for this profile:
+
+- **Low test MSE** relative to the normalized wave baseline (the training code currently
+  uses an automatic pass/fail threshold of `MSE <= 0.02` for `sanity_sine` runs).
+- **True-vs-predicted scatter** should look close to a diagonal trend.
+- **Prediction-slice chart** should overlap the true wave shape with limited phase drift.
+- The generated `metrics_*.json` includes `sanity_check` and `sanity_check_passed` so you
+  can report pass/fail quickly without manual plot inspection.
+
 ### 3. Run the shared model-comparison pipeline
 
 ```bash
