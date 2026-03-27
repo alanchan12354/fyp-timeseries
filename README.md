@@ -1,7 +1,7 @@
 # Time Series Neural Models Project
 
-This repository benchmarks neural approaches for forecasting **SPY daily log returns**, with a linear-regression reference included in the shared comparison workflow.
-The codebase now includes shared experiment-preparation utilities, runtime-configurable training entrypoints, structured experiment logging, and a sequential tuning workflow.
+This repository benchmarks neural approaches across **four equally important forecasting tasks**: `sine_next_day`, `next_return`, `next_volatility`, and `next_mean_return`, with a linear-regression reference included in the shared comparison workflow.
+The codebase includes shared experiment-preparation utilities, runtime-configurable training entrypoints, structured experiment logging, and sequential tuning workflows per task.
 
 ## What the project does
 
@@ -206,7 +206,7 @@ python -m src.tuning.main --model gru --session-mode reset
 python -m src.tuning.main --model transformer --dry-run
 python -m src.tuning.main --plan-file path/to/plan.json
 python -m src.tuning.main --plan-json '{"gru": {"hidden": [32, 64]}}'
-python -m src.tuning.main --model all --task-id spy_next5_volatility --target-mode next_volatility --target-smooth-window 5 --horizon 1
+python -m src.tuning.main --model all --task-id next_volatility --target-mode next_volatility --target-smooth-window 5 --horizon 1
 ```
 
 The tuning runner performs staged sweeps over model-specific parameter groups and writes summary CSVs such as:
@@ -293,7 +293,7 @@ The figure places the tuned models' training, testing, and validation losses in 
 
 Use **task** to mean one forecast configuration identified by a stable `task_id` and defined by `target_mode` + `horizon` (plus optional smoothing via `target_smooth_window`).
 
-### Quick presets for the three additional tasks
+### Canonical four-task presets
 
 1. **Sine curve next-day prediction**
 
@@ -305,87 +305,75 @@ python -m src.gru.train \
   --horizon 1
 ```
 
-2. **Volatility prediction (next 5-day rolling std)**
+2. **SPY next-day return prediction**
 
 ```bash
 python -m src.gru.train \
-  --task-id spy_next5_volatility \
+  --task-id next_return \
+  --target-mode next_return \
+  --horizon 1
+```
+
+3. **SPY volatility prediction (next 5-day rolling std)**
+
+```bash
+python -m src.gru.train \
+  --task-id next_volatility \
   --target-mode next_volatility \
   --target-smooth-window 5 \
   --horizon 1
 ```
 
-3. **Moving-average prediction (MA(5) or MA(10))**
+4. **SPY mean-return prediction (next 5-day rolling mean)**
 
 ```bash
-# MA(5)
 python -m src.gru.train \
-  --task-id spy_next_ma5 \
+  --task-id next_mean_return \
   --target-mode next_mean_return \
   --target-smooth-window 5 \
   --horizon 1
-
-# MA(10)
-python -m src.gru.train \
-  --task-id spy_next_ma10 \
-  --target-mode next_mean_return \
-  --target-smooth-window 10 \
-  --horizon 1
 ```
 
-### 1) Define two tasks explicitly
+### 1) Run tuning/comparison per core task
 
-Example task definitions:
-
-- **Task A**: `task_id=spy_h10_horizon_return`, `target_mode=horizon_return`, `horizon=10`
-- **Task B**: `task_id=spy_h1_next_return`, `target_mode=next_return`, `horizon=1`
-
-You can apply these on neural entrypoints with runtime flags:
+Current tuning output (`tuning_winners.csv`) is keyed by `task_id`. Run tuning separately for each core task so each tuned winner row is tied to its intended `task_id`:
 
 ```bash
-python -m src.lstm.train \
-  --task-id spy_h10_horizon_return \
-  --target-mode horizon_return \
-  --horizon 10
-
-python -m src.lstm.train \
-  --task-id spy_h1_next_return \
-  --target-mode next_return \
-  --horizon 1
+python -m src.tuning.main --model all --session-mode reset --task-id sine_next_day --data-source sine --target-mode sine_next_day --horizon 1 --target-smooth-window 1
+python -m src.tuning.main --model all --session-mode reset --task-id next_return --data-source spy --target-mode next_return --horizon 1 --target-smooth-window 1
+python -m src.tuning.main --model all --session-mode reset --task-id next_volatility --data-source spy --target-mode next_volatility --horizon 1 --target-smooth-window 5
+python -m src.tuning.main --model all --session-mode reset --task-id next_mean_return --data-source spy --target-mode next_mean_return --horizon 1 --target-smooth-window 5
 ```
 
-### 2) Run tuning/comparison per task
-
-Current tuning output (`tuning_winners.csv`) is keyed by `task_id`. The recommended workflow is to run tuning separately for each task setup (so each tuned winner row is tied to the intended `task_id`), then run task-scoped comparisons.
+Then run task-scoped tuned-best comparisons:
 
 ```bash
-# After tuning artifacts include both task IDs in tuning_winners.csv:
 python -m src.comparison.best_tuned_main \
-  --task-ids spy_h10_horizon_return spy_h1_next_return
+  --task-ids sine_next_day next_return next_volatility next_mean_return
 ```
 
-This writes per-task files:
+This writes per-task files such as:
 
-- `<reports_dir>/best_tuned_comparison_spy_h10_horizon_return.csv`
-- `<reports_dir>/best_tuned_comparison_spy_h10_horizon_return.md`
-- `<reports_dir>/best_tuned_comparison_spy_h1_next_return.csv`
-- `<reports_dir>/best_tuned_comparison_spy_h1_next_return.md`
+- `<reports_dir>/best_tuned_comparison_sine_next_day.csv`
+- `<reports_dir>/best_tuned_comparison_next_return.csv`
+- `<reports_dir>/best_tuned_comparison_next_volatility.csv`
+- `<reports_dir>/best_tuned_comparison_next_mean_return.csv`
 - `<reports_dir>/multi_task_summary.md`
 
-### 3) Generate per-task and aggregate reports
+### 2) Generate per-task and aggregate reports
 
 Per-task hyperparameter impact reports:
 
 ```bash
-python -m src.tuning.report --task-ids spy_h10_horizon_return spy_h1_next_return
+python -m src.tuning.report --task-ids sine_next_day next_return next_volatility next_mean_return
 ```
 
 Outputs include:
 
-- `<reports_dir>/hyperparameter_impact_report_spy_h10_horizon_return.md`
-- `<reports_dir>/figures/hyperparameter_model_loss_summary_spy_h10_horizon_return.svg`
-- `<reports_dir>/hyperparameter_impact_report_spy_h1_next_return.md`
-- `<reports_dir>/figures/hyperparameter_model_loss_summary_spy_h1_next_return.svg`
+- `<reports_dir>/hyperparameter_impact_report_sine_next_day.md`
+- `<reports_dir>/hyperparameter_impact_report_next_return.md`
+- `<reports_dir>/hyperparameter_impact_report_next_volatility.md`
+- `<reports_dir>/hyperparameter_impact_report_next_mean_return.md`
 - `<reports_dir>/multi_task_summary.md` (task-level report index generated by the tuning report workflow)
 
 > **Note**
@@ -396,9 +384,9 @@ Outputs include:
 
 For one consolidated cross-task view in your write-up, combine key rows from the per-task `best_tuned_comparison_<task_id>.csv` files into a single results table in `docs/final_report.md`.
 
-### One-click final-report pipeline (all 3 requested tasks)
+### One-click final-report pipeline (all 4 core tasks)
 
-Use the helper script below to run all three tasks end-to-end (tune all models, compare tuned best models, generate impact reports, generate charts) in one command:
+Use the helper script below to run all four tasks end-to-end (tune all models, compare tuned best models, generate impact reports, generate charts, and produce a cross-task summary) in one command:
 
 ```bash
 bash scripts/run_multitask_final_reports.sh
@@ -413,8 +401,10 @@ bash scripts/run_multitask_final_reports.sh reports/final_report_tasks/my_final_
 The script creates a clear task-by-task structure:
 
 - `<root>/sine_next_day/`
-- `<root>/spy_next5_volatility/`
-- `<root>/spy_next5_mean_return/`
+- `<root>/next_return/`
+- `<root>/next_volatility/`
+- `<root>/next_mean_return/`
+- `<root>/overall_task_summary.csv` and `<root>/overall_task_summary.md` (cross-task winner summary)
 - `<root>/README.md` (index of generated artifacts and rerun command)
 
 ## Experiment logging and reproducibility

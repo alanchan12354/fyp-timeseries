@@ -1,6 +1,6 @@
 # Codebase Tour (Beginner-Friendly)
 
-This guide explains the current repository structure and workflow for forecasting **SPY daily log returns** with neural models plus a shared linear-regression comparison baseline.
+This guide explains the current repository structure and workflow for a **four-task forecasting setup** (`sine_next_day`, `next_return`, `next_volatility`, `next_mean_return`) with neural models plus a shared linear-regression comparison baseline.
 
 ## 1) Project goal (current behavior)
 
@@ -231,11 +231,12 @@ Capabilities include:
 - write per-stage run logs and winner summaries.
 
 ### `scripts/run_multitask_final_reports.sh`
-One-click orchestration script for final-report packaging across the three target tasks:
+One-click orchestration script for final-report packaging across the four core tasks:
 
 1. `sine_next_day`
-2. `next_volatility` with a 5-step forward window
-3. `next_mean_return` with a 5-step forward window
+2. `next_return`
+3. `next_volatility` with a 5-step forward window
+4. `next_mean_return` with a 5-step forward window
 
 For each task it:
 
