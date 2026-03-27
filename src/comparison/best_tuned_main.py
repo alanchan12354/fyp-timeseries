@@ -44,13 +44,47 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="+",
         help="One or more task identifiers to generate per-task tuned comparisons. Overrides --task-id.",
     )
+    parser.add_argument("--horizon", type=int, default=None, help="Optional target horizon override used for comparison reruns.")
+    parser.add_argument(
+        "--data-source",
+        choices=("spy", "sine"),
+        default=None,
+        help="Optional data source override used for comparison reruns.",
+    )
+    parser.add_argument(
+        "--target-mode",
+        choices=("horizon_return", "next_return", "next3_mean_return", "next_mean_return", "next_volatility", "sine_next_day"),
+        default=None,
+        help="Optional target-mode override used for comparison reruns.",
+    )
+    parser.add_argument(
+        "--target-smooth-window",
+        type=int,
+        default=None,
+        help="Optional target smoothing window override used for comparison reruns.",
+    )
     return parser
 
 
 
-def run_best_tuned_comparison(*, selection: BestConfigSelection) -> list[dict[str, Any]]:
+def run_best_tuned_comparison(
+    *,
+    selection: BestConfigSelection,
+    horizon: int | None = None,
+    data_source: str | None = None,
+    target_mode: str | None = None,
+    target_smooth_window: int | None = None,
+    task_id: str | None = None,
+) -> list[dict[str, Any]]:
     entrypoints = _load_entrypoints()
-    prepared_runs = _prepare_runs(selection.configs)
+    prepared_runs = _prepare_runs(
+        selection.configs,
+        horizon=horizon,
+        data_source=data_source,
+        target_mode=target_mode,
+        target_smooth_window=target_smooth_window,
+        task_id=task_id,
+    )
     shared_run = prepared_runs[MODEL_ORDER[0]]
     rows = [_build_baseline_row(shared_run=shared_run, selection=selection)]
     for model_key in MODEL_ORDER:
@@ -118,7 +152,15 @@ def _build_baseline_row(*, shared_run: Any, selection: BestConfigSelection) -> d
 
 
 
-def _prepare_runs(configs: dict[str, dict[str, Any]]) -> dict[str, Any]:
+def _prepare_runs(
+    configs: dict[str, dict[str, Any]],
+    *,
+    horizon: int | None = None,
+    data_source: str | None = None,
+    target_mode: str | None = None,
+    target_smooth_window: int | None = None,
+    task_id: str | None = None,
+) -> dict[str, Any]:
     from src.common.experiment import prepare_sequence_experiment_run
 
     return {
@@ -127,6 +169,11 @@ def _prepare_runs(configs: dict[str, dict[str, Any]]) -> dict[str, Any]:
             experiment_name=f"best_tuned_{model_key}_comparison",
             run_note="Shared split prepared for best-tuned model comparison.",
             training_metadata={"lr": configs[model_key]["lr"], "batch_size": configs[model_key]["batch_size"]},
+            horizon=int(horizon) if horizon is not None else 1,
+            data_source=(data_source or "spy"),
+            target_mode=(target_mode or "next_return"),
+            target_smooth_window=int(target_smooth_window) if target_smooth_window is not None else 1,
+            task_id=task_id,
         )
         for model_key in MODEL_ORDER
     }
@@ -274,7 +321,14 @@ def main(argv: list[str] | None = None) -> list[dict[str, Any]]:
 
     if not task_ids:
         selection = load_best_configs(args.config_source, source_path=args.config_path)
-        results = run_best_tuned_comparison(selection=selection)
+        results = run_best_tuned_comparison(
+            selection=selection,
+            horizon=args.horizon,
+            data_source=args.data_source,
+            target_mode=args.target_mode,
+            target_smooth_window=args.target_smooth_window,
+            task_id=args.task_id,
+        )
         write_reports(results, selection=selection)
         print(json.dumps(results, indent=2))
         print(f"Wrote {CSV_REPORT_PATH}")
@@ -289,7 +343,14 @@ def main(argv: list[str] | None = None) -> list[dict[str, Any]]:
             source_path=args.config_path,
             task_ids=[task_id],
         )
-        results = run_best_tuned_comparison(selection=selection)
+        results = run_best_tuned_comparison(
+            selection=selection,
+            horizon=args.horizon,
+            data_source=args.data_source,
+            target_mode=args.target_mode,
+            target_smooth_window=args.target_smooth_window,
+            task_id=task_id,
+        )
         csv_path, md_path = _task_output_paths(task_id)
         write_reports(results, selection=selection, csv_path=csv_path, md_path=md_path)
         summary_entries.append(
