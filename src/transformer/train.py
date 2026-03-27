@@ -30,6 +30,7 @@ def main(config=None, config_dict=None, cli_args=None, prepared_run=None, **over
         data_source=runtime_config.data_source,
         target_mode=runtime_config.target_mode,
         target_smooth_window=runtime_config.target_smooth_window,
+        task_id=runtime_config.task_id,
     )
 
     metrics = train_model(
