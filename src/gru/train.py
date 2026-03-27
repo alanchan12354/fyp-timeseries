@@ -41,6 +41,8 @@ def main(config=None, config_dict=None, cli_args=None, prepared_run=None, **over
         experiment_context=prepared_run.run_context,
         tuning_notes=runtime_config.run_note or "Runtime-configurable single-model training run.",
         learning_rate=runtime_config.learning_rate,
+        epochs=runtime_config.epochs,
+        scheduler_type=runtime_config.scheduler_type,
         **runtime_config.recurrent_model_kwargs(),
     )
 
