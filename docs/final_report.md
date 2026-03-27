@@ -102,19 +102,23 @@ This project is positioned as a controlled benchmark rather than a claim of trad
 
 ### 3.1 Forecasting task definition
 
-The task is formulated as a supervised learning problem. Let \(r_t\) denote the daily log return at trading day \(t\). For each example, the input is the previous 30 returns:
+The task is formulated as a supervised learning problem on **multifeature sequences**. Let \(r_t\) denote daily log return at trading day \(t\), and let \(\mathbf{f}_t \in \mathbb{R}^8\) denote the engineered feature vector at day \(t\). The repository builds each training example from a rolling 30-day feature window:
 
 \[
-X_t = [r_{t-29}, r_{t-28}, \ldots, r_t]
+X_t = [\mathbf{f}_{t-29}, \mathbf{f}_{t-28}, \ldots, \mathbf{f}_t]
 \]
 
-and the prediction target is the return 10 trading days ahead:
+so sequence inputs have shape \((N, 30, 8)\).
+
+By default, the target uses repository settings in `src/common/config.py`: `HORIZON=1` and `TARGET_MODE=horizon_return`, giving:
 
 \[
-y_t = r_{t+10}
+y_t = r_{t+1}
 \]
 
-This makes the forecasting problem a fixed-horizon many-to-one sequence regression task.
+Archived experiment variants (for example, runs configured with `horizon=10`) are treated as **run-specific settings** supplied through runtime configuration/CLI overrides, rather than repository defaults.
+
+This keeps the forecasting setup as a fixed-horizon many-to-one sequence regression task, with horizon and target mode explicitly tracked per run.
 
 ### 3.2 Research questions
 
@@ -152,7 +156,20 @@ Using returns instead of prices reduces scale effects and makes the target more 
 
 ### 4.3 Sequence construction
 
-For neural models, the repository builds three-dimensional input tensors of shape \((N, 30, 1)\), where each sample contains 30 consecutive daily returns and one scalar target at horizon 10. For the baseline model, the same sequence is flattened into a 30-feature vector so that the learning target remains aligned with the neural models.
+For neural models, the repository builds three-dimensional input tensors of shape \((N, 30, 8)\), where each sample contains 30 consecutive days of 8 engineered features and one scalar target.
+
+The 8 engineered features produced by `build_spy_feature_frame` are:
+
+1. `log_ret`
+2. `oc_ret`
+3. `hl_range`
+4. `vol_chg`
+5. `ma_5_gap`
+6. `ma_20_gap`
+7. `volatility_5`
+8. `volatility_20`
+
+Target construction is controlled by `target_mode` (default `horizon_return`) and `horizon` (default 1), with archived alternatives such as `horizon=10` recorded at run time.
 
 ### 4.4 Train/validation/test split
 
@@ -172,7 +189,7 @@ All models share the same high-level pipeline:
 
 1. Download SPY historical data.
 2. Compute daily log returns.
-3. Build aligned 30-step input sequences with a 10-step-ahead target.
+3. Build aligned 30-step input sequences with 8 features per step and a configured target (repository default: 1-step-ahead `horizon_return`; archived variants may use different horizons such as 10).
 4. Split the data chronologically into training, validation, and test sets.
 5. Fit the scaler on training inputs only.
 6. Train each model using validation-based checkpoint selection.
@@ -180,7 +197,7 @@ All models share the same high-level pipeline:
 
 ### 5.2 Baseline model
 
-The baseline is a flattened-sequence **linear regression** model. It uses the same 30-return lookback window as the neural models, but instead of sequence processing, the input is reshaped into a vector of 30 lagged returns. This baseline is important because it shows whether nonlinearity and extra modelling complexity are actually needed. [5], [10]
+The baseline is a flattened-sequence **linear regression** model. It uses the same multifeature 30-step window as the neural models, but reshapes each \((30, 8)\) sequence into a tabular vector (240 features) so the target alignment remains identical. This baseline tests whether nonlinear sequence modelling provides gains beyond a strong linear model on the same information set. [5], [10]
 
 ### 5.3 RNN model
 
@@ -196,9 +213,13 @@ The GRU model is structurally similar to the LSTM model but uses update and rese
 
 ### 5.6 Transformer model
 
-The Transformer model first projects each one-dimensional return observation into a learned embedding space, adds positional encodings, applies stacked Transformer encoder layers, and uses the final time step representation for scalar prediction. This architecture is intended to test whether self-attention can outperform recurrence on a small univariate financial sequence problem. [4]
+The Transformer model first projects each 8-dimensional timestep feature vector into a learned embedding space, adds positional encodings, applies stacked Transformer encoder layers, and uses the final time-step representation for scalar prediction. This architecture is intended to test whether self-attention can outperform recurrence on this multifeature financial sequence problem. [4]
 
-### 5.7 Training strategy
+### 5.7 Configuration source of truth
+
+Repository-level defaults (for example `HORIZON=1`, `TARGET_MODE=horizon_return`) are defined in `src/common/config.py`. Run-specific overrides (including CLI overrides such as `--horizon` and `--target-mode`) are resolved through `src/common/runtime_config.py` and then passed into experiment preparation, so archived experiments may intentionally differ from defaults.
+
+### 5.8 Training strategy
 
 The training workflow uses the Adam optimiser, mean squared error loss, early stopping with validation-loss smoothing, checkpointing of the best validation state, and scheduler-based learning-rate reduction. Hyperparameter selection is validation-driven, and the final archived best-tuned comparison was generated from the frozen winners stored in `tuning_winners.csv`. [12]
 
@@ -206,7 +227,7 @@ The training workflow uses the Adam optimiser, mean squared error loss, early st
 
 *Figure 1. Training-loss comparison for the best tuned models and baseline.*
 
-### 5.8 Evaluation metrics
+### 5.9 Evaluation metrics
 
 Three metrics are reported:
 
