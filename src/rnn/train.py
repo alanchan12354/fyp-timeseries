@@ -27,6 +27,7 @@ def main(config=None, config_dict=None, cli_args=None, prepared_run=None, **over
         run_note=runtime_config.run_note or "Single-model training run for RNN.",
         training_metadata=runtime_config.training_metadata(),
         horizon=runtime_config.horizon,
+        data_source=runtime_config.data_source,
         target_mode=runtime_config.target_mode,
         target_smooth_window=runtime_config.target_smooth_window,
     )

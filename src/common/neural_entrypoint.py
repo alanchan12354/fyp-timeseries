@@ -47,6 +47,7 @@ def prepare_runtime_sequence_run(
     run_note: str | None = None,
     training_metadata: dict[str, Any] | None = None,
     horizon: int,
+    data_source: str,
     target_mode: str,
     target_smooth_window: int,
 ) -> PreparedSequenceRun:
@@ -56,6 +57,7 @@ def prepare_runtime_sequence_run(
         run_note=run_note,
         training_metadata=training_metadata,
         horizon=horizon,
+        data_source=data_source,
         target_mode=target_mode,
         target_smooth_window=target_smooth_window,
     )

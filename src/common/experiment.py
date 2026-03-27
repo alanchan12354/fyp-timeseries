@@ -9,7 +9,13 @@ from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader
 
 from .config import HORIZON, SEQ_LEN, TRAIN_RATIO, VAL_RATIO, TICKER, START
-from .data import SeqDataset, build_sequences, build_spy_feature_frame, chronological_split
+from .data import (
+    SeqDataset,
+    build_sequences,
+    build_sine_feature_frame,
+    build_spy_feature_frame,
+    chronological_split,
+)
 from .reporting import (
     create_run_context,
     default_task_metadata,
@@ -47,15 +53,23 @@ def prepare_sequence_experiment_run(
     start: str | None = None,
     seq_len: int = SEQ_LEN,
     horizon: int = HORIZON,
+    data_source: str = "spy",
     target_mode: str = "horizon_return",
     target_smooth_window: int = 3,
     train_ratio: float = TRAIN_RATIO,
     val_ratio: float = VAL_RATIO,
 ) -> PreparedSequenceRun:
-    feature_frame = build_spy_feature_frame(
-        ticker=ticker or TICKER,
-        start=start or START,
-    )
+    normalized_data_source = (data_source or "spy").strip().lower()
+    if normalized_data_source == "spy":
+        feature_frame = build_spy_feature_frame(
+            ticker=ticker or TICKER,
+            start=start or START,
+        )
+    elif normalized_data_source == "sine":
+        feature_frame = build_sine_feature_frame(start=start or START)
+    else:
+        raise ValueError(f"Unsupported data_source '{data_source}'. Expected one of: spy, sine.")
+
     raw_returns = feature_frame["log_ret"]
     sequences, targets, sequence_index = build_sequences(
         feature_frame,
@@ -92,6 +106,7 @@ def prepare_sequence_experiment_run(
             input_window=seq_len,
             target_mode=target_mode,
             target_smooth_window=target_smooth_window,
+            data_source=normalized_data_source,
             ticker=ticker or TICKER,
             start_date=start or START,
         ),
