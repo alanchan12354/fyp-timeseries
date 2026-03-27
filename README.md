@@ -392,10 +392,20 @@ Use the helper script below to run all four tasks end-to-end (tune all models, c
 bash scripts/run_multitask_final_reports.sh
 ```
 
+PowerShell (Windows 11):
+
+```pwsh
+pwsh -File scripts/run_multitask_final_reports.ps1
+```
+
 Optional: provide an explicit output root folder:
 
 ```bash
 bash scripts/run_multitask_final_reports.sh reports/final_report_tasks/my_final_bundle
+```
+
+```pwsh
+pwsh -File scripts/run_multitask_final_reports.ps1 -RootDir reports/final_report_tasks/my_final_bundle
 ```
 
 The script creates a clear task-by-task structure:
