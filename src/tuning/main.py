@@ -414,6 +414,7 @@ def main(cli_args: argparse.Namespace | None = None) -> List[Dict[str, Any]]:
 
     _print_resolved_plan(selected_models, plan_by_model)
     print(f"Session mode: {session_mode}")
+    print(f"Reports directory: {REPORTS_DIR}")
     if args.dry_run:
         print("Dry run enabled; no training jobs were started.")
         return [

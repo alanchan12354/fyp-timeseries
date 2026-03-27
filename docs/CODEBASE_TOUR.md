@@ -46,7 +46,7 @@ Most experiment scripts follow a shared sequence:
 5. Fit a scaler on training inputs and apply it to validation/test inputs.
 6. Train the model or baseline.
 7. Evaluate with MAE, MSE, and Directional Accuracy (DA).
-8. Save metrics, plots, diagnostics, and structured experiment records under `reports/`.
+8. Save metrics, plots, diagnostics, and structured experiment records under the active report directory (default: `reports/sessions/run_<UTC timestamp>/`).
 
 ## 3) Directory walkthrough
 
@@ -60,7 +60,7 @@ Central project defaults:
 - split ratios,
 - training controls (`EPOCHS`, `PATIENCE`, `MIN_DELTA`, `MIN_EPOCHS`, `TRAIN_LOG_EVERY`),
 - scheduler settings,
-- reports/figure output paths,
+- reports/figure output paths (with per-run session directories by default),
 - `DEVICE` selection (`cuda` if available, otherwise `cpu`).
 
 #### `runtime_config.py`
@@ -103,16 +103,16 @@ It handles:
 - optional learning-rate schedulers (`none`, `plateau`, `cosine`),
 - validation-loss smoothing for early stopping,
 - minimum-epoch warmup before patience starts counting down,
-- checkpointing best weights to `reports/<Model>.pt`,
+- checkpointing best weights to `<reports_dir>/<Model>.pt`,
 - saving diagnostics JSON,
 - generating plots,
 - appending structured experiment records.
 
 Saved neural artifacts include:
 
-- checkpoint: `reports/<Model>.pt`
-- diagnostics: `reports/<model>_diagnostics.json`
-- plots in `reports/figures/`:
+- checkpoint: `<reports_dir>/<Model>.pt`
+- diagnostics: `<reports_dir>/<model>_diagnostics.json`
+- plots in `<reports_dir>/figures/`:
   - `loss_<Model>.png`
   - `<model>_pred_slice.png`
   - `<model>_scatter.png`
@@ -171,9 +171,9 @@ This file is the best source for the repository's **apples-to-apples sequence co
 #### `best_configs.py`
 Loads a tuning artifact and normalizes the best per-model hyperparameters into the runtime aliases accepted by the shared neural entrypoints.
 
-By default it treats `reports/tuning_winners.csv` as the canonical source of "best parameters" because that file captures the final frozen configuration produced by sequential staged tuning.
+By default it treats `<reports_dir>/tuning_winners.csv` as the canonical source of "best parameters" because that file captures the final frozen configuration produced by sequential staged tuning.
 
-`reports/tuning_best_configs.csv` is also supported when you want the single best archived run per model instead.
+`<reports_dir>/tuning_best_configs.csv` is also supported when you want the single best archived run per model instead.
 
 #### `best_tuned_main.py`
 Runs a tuned-model comparison using the tuned-best settings recovered from the tuning artifacts plus the shared linear-regression baseline.
@@ -185,7 +185,7 @@ What it does:
 - computes the flattened-sequence linear-regression baseline on the same shared split,
 - reuses each model's existing training entrypoint,
 - includes train / validation / test MSE summary columns in the final report,
-- writes `reports/best_tuned_comparison.csv` and `reports/best_tuned_comparison.md`,
+- writes `<reports_dir>/best_tuned_comparison.csv` and `<reports_dir>/best_tuned_comparison.md`,
 - summarizes the best model by validation and test MSE.
 
 #### `best_tuned_charts.py`
@@ -193,10 +193,10 @@ Generates standalone SVG summary charts from the best-tuned comparison CSV.
 
 What it does:
 
-- reads `reports/best_tuned_comparison.csv`,
+- reads `<reports_dir>/best_tuned_comparison.csv`,
 - validates that the `model`, `best_train_MSE`, `best_test_MSE`, and `best_val_MSE` columns are present,
 - renders one SVG bar chart per metric with all best-tuned models shown together,
-- writes the charts to `reports/figures/` by default,
+- writes the charts to `<reports_dir>/figures/` by default,
 - exposes a CLI entrypoint through `python -m src.comparison.best_tuned_charts`.
 
 ### `src/tuning/`
@@ -217,7 +217,9 @@ Capabilities include:
 - dry-run the resolved plan,
 - write per-stage run logs and winner summaries.
 
-## 4) Important outputs in `reports/`
+## 4) Important outputs in `<reports_dir>`
+
+By default, `<reports_dir>` means `reports/sessions/run_<UTC timestamp>/`. You can force legacy direct output to `reports/` by setting `FYP_REPORTS_DISABLE_SESSION_DIR=1`, or set `FYP_REPORTS_DIR` to a custom path.
 
 Depending on which workflows you run, you may see files such as:
 

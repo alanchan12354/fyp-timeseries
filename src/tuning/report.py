@@ -6,9 +6,7 @@ from collections import defaultdict
 from html import escape
 from typing import Any, Dict, Iterable, List, Tuple
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-REPORTS_DIR = os.path.join(BASE_DIR, "reports")
-FIGURES_DIR = os.path.join(REPORTS_DIR, "figures")
+from src.common.config import FIGURES_DIR, REPORTS_DIR
 
 
 EXPERIMENT_LOG_JSONL = os.path.join(REPORTS_DIR, "experiment_log.jsonl")

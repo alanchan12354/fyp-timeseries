@@ -1,5 +1,6 @@
 import os
 import torch
+from datetime import datetime, timezone
 
 # Data Config
 TICKER = "SPY"
@@ -34,7 +35,28 @@ SCHEDULER_MIN_LR = 1e-6
 
 # Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-REPORTS_DIR = os.path.join(BASE_DIR, "reports")
+BASE_REPORTS_DIR = os.path.join(BASE_DIR, "reports")
+
+
+def _build_report_session_name() -> str:
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
+    safe_timestamp = timestamp.replace(".", "-")
+    return f"run_{safe_timestamp}"
+
+
+def _resolve_reports_dir() -> str:
+    explicit_dir = os.environ.get("FYP_REPORTS_DIR")
+    if explicit_dir:
+        return explicit_dir
+
+    if os.environ.get("FYP_REPORTS_DISABLE_SESSION_DIR", "").lower() in {"1", "true", "yes"}:
+        return BASE_REPORTS_DIR
+
+    sessions_root = os.path.join(BASE_REPORTS_DIR, "sessions")
+    return os.path.join(sessions_root, _build_report_session_name())
+
+
+REPORTS_DIR = _resolve_reports_dir()
 FIGURES_DIR = os.path.join(REPORTS_DIR, "figures")
 
 os.makedirs(REPORTS_DIR, exist_ok=True)
