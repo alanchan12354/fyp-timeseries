@@ -28,7 +28,7 @@ XX April 2026
 
 ## Abstract
 
-This project studies whether neural sequence models can improve short-horizon financial return forecasting when evaluated under a common and reproducible workflow. The task is defined as predicting the daily log return of the SPDR S&P 500 ETF Trust (SPY) at a horizon of 10 trading days ahead using the previous 30 daily log returns as input. Four neural architectures are compared: vanilla recurrent neural network (RNN), long short-term memory (LSTM), gated recurrent unit (GRU), and Transformer encoder. To keep the comparison fair, a flattened-sequence linear regression model is also included as a baseline on the same aligned dataset. The experimental pipeline uses Yahoo Finance data accessed through `yfinance`, chronological train/validation/test splitting, training-set-only standardisation, validation-based model selection, and staged hyperparameter tuning. The archived tuned comparison shows that LSTM achieved the lowest validation mean squared error (MSE) of 0.0001356 and the lowest test MSE of 0.0000987, while the linear-regression baseline remained highly competitive with a test MSE of 0.0001001. GRU produced the highest directional accuracy among the tuned neural models at 57.00%, whereas the Transformer underperformed the recurrent alternatives on this dataset. These findings suggest that, for this specific SPY forecasting setup, gated recurrent models remain strong practical choices, but the small margin between LSTM and a simple baseline also indicates that exploitable predictive structure in daily returns is limited. [1]–[8]
+This project studies whether neural sequence models can improve short-horizon financial return forecasting when evaluated under a common and reproducible workflow. The primary archived task (Task A) is defined as predicting the daily log return of the SPDR S&P 500 ETF Trust (SPY) with `target_mode=horizon_return` and `horizon=10`, using the previous 30 daily log returns as input. Four neural architectures are compared: vanilla recurrent neural network (RNN), long short-term memory (LSTM), gated recurrent unit (GRU), and Transformer encoder. To keep the comparison fair, a flattened-sequence linear regression model is also included as a baseline on the same aligned dataset. The experimental pipeline uses Yahoo Finance data accessed through `yfinance`, chronological train/validation/test splitting, training-set-only standardisation, validation-based model selection, and staged hyperparameter tuning. The archived tuned comparison shows that LSTM achieved the lowest validation mean squared error (MSE) of 0.0001356 and the lowest test MSE of 0.0000987, while the linear-regression baseline remained highly competitive with a test MSE of 0.0001001. GRU produced the highest directional accuracy among the tuned neural models at 57.00%, whereas the Transformer underperformed the recurrent alternatives on this dataset. These findings suggest that, for this specific SPY forecasting setup, gated recurrent models remain strong practical choices, but the small margin between LSTM and a simple baseline also indicates that exploitable predictive structure in daily returns is limited. [1]–[8]
 
 ---
 
@@ -60,7 +60,7 @@ The specific objectives are:
 
 ### 1.5 Scope of the project
 
-The final archived comparison is limited to one asset (SPY), one input window (30 trading days), and one forecast horizon (10 trading days ahead). The report therefore makes claims only for this specific configuration and not for financial forecasting in general.
+The archived metrics in this draft are strongest for one asset (SPY) and one fully populated task (`task_id=spy_h10_horizon_return`, 30-day input window, `target_mode=horizon_return`, `horizon=10`). Claims are therefore limited to that task definition, with Task B included as a structured extension point.
 
 ### 1.6 Report organisation
 
@@ -276,11 +276,15 @@ Sequential tuning is efficient, but it does not exhaustively search hyperparamet
 
 ## 7. Results
 
-### 7.1 Final tuned comparison overview
+This chapter reports outcomes by **task**, where each task is identified by a `task_id` and defined by a `target_mode` + `horizon` setting.
 
-Table 1 summarises the final archived comparison of the tuned neural models and the flattened-sequence linear-regression baseline.
+### 7.1 Task A (`task_id=spy_h10_horizon_return`)
 
-**Table 1. Final archived best-tuned comparison on the shared SPY forecasting task.**
+**Task definition.** `target_mode=horizon_return`, `horizon=10`.
+
+Table 1 summarises the archived tuned comparison of the neural models and the flattened-sequence linear-regression baseline for Task A.
+
+**Table 1. Task A tuned comparison (`target_mode=horizon_return`, `horizon=10`).**
 
 | Rank | Model | Train MSE | Validation MSE | Test MSE | MAE | DA |
 | ---: | --- | ---: | ---: | ---: | ---: | ---: |
@@ -290,54 +294,72 @@ Table 1 summarises the final archived comparison of the tuned neural models and 
 | 4 | RNN | 0.000254451 | 0.000145849 | 0.000102793 | 0.006844 | 0.472817 |
 | 5 | Transformer | 0.000258977 | 0.000157518 | 0.000133374 | 0.007735 | 0.542010 |
 
-The main result is that **LSTM achieved the lowest validation and test MSE**, while **Baseline-LR ranked second** and remained very close to LSTM. This is one of the most important findings of the project because it shows that model complexity did not lead to a decisive margin of superiority.
+Task A shows that LSTM achieved the strongest validation/test MSE, while Baseline-LR remained highly competitive and GRU led directional accuracy.
 
-### 7.2 Error-based performance comparison
+### 7.2 Task B (`task_id=spy_h1_next_return`)
 
-The LSTM test MSE of 0.000098719 is only slightly lower than the baseline test MSE of 0.000100075. The absolute gap is therefore small. By contrast, the Transformer is clearly behind the recurrent models and the baseline, with a materially worse test MSE of 0.000133374.
+**Task definition.** `target_mode=next_return`, `horizon=1`.
 
-This pattern suggests three points:
+Task B is structured and reported with the same workflow as Task A (`tuning_winners` → `best_tuned_comparison_<task_id>.csv/.md`). At the time of this draft, the Task B aggregate metric table is pending final run archival, so this section records the narrative frame and artifact locations first.
 
-1. There is some benefit from sequence-aware nonlinear modelling, as the best LSTM run did outperform the baseline.
-2. The signal available in 30 lagged SPY returns is weak enough that linear regression remains highly competitive.
-3. Not all deep architectures benefit equally from this task; the Transformer seems less well matched to the available data and tuning budget.
+Recommended interpretation template once Task B metrics are frozen:
 
-### 7.3 Directional accuracy comparison
+1. identify the best model by validation MSE,
+2. compare the winner against Baseline-LR using test MSE,
+3. check whether directional-accuracy ranking differs from MSE ranking.
 
-Directional accuracy does not fully align with MSE rankings. The **GRU** produced the highest DA at **57.00%**, even though its MSE was worse than LSTM and slightly worse than the baseline. This means that the GRU was comparatively better at getting the sign right, even when its predicted magnitudes were not the most accurate.
+### 7.3 Cross-task comparison (consolidated table)
 
-That divergence matters because it shows why a report should not treat one metric as sufficient. In financial forecasting, a model can be more useful for directional decisions than for magnitude estimation, or vice versa.
+Table 2 is the single consolidated cross-task view used for report-level conclusions.
 
-### 7.4 Prediction pattern visualisation
+**Table 2. Cross-task consolidated summary (`task_id`, `target_mode`, `horizon`).**
+
+| Task | task_id | target_mode | horizon | Best model (val MSE) | Best test MSE | Baseline-LR test MSE | Best DA model |
+| --- | --- | --- | ---: | --- | ---: | ---: | --- |
+| Task A | `spy_h10_horizon_return` | `horizon_return` | 10 | LSTM | 0.000098719 | 0.000100075 | GRU (0.570016) |
+| Task B | `spy_h1_next_return` | `next_return` | 1 | _Pending final run_ | _Pending final run_ | _Pending final run_ | _Pending final run_ |
+
+The consolidated table ensures the narrative is consistent with implementation terms (`task`, `task_id`, `target_mode`, `horizon`) and avoids mixing results from different forecast definitions.
+
+### 7.4 Report artifact map
+
+Table 3 maps each task to the generated files that support reproducibility.
+
+**Table 3. Report artifact map by task.**
+
+| Task | `task_id` | Tuning winners source | Comparison reports | Figures | Run IDs |
+| --- | --- | --- | --- | --- | --- |
+| Task A | `spy_h10_horizon_return` | `reports/tuning_winners.csv` (rows filtered by `task_id`) | `reports/best_tuned_comparison_spy_h10_horizon_return.csv` and `.md` | `reports/figures/best_tuned_training_loss.svg`, `best_tuned_validation_loss.svg`, `best_tuned_testing_loss.svg` plus per-model scatter/slice plots | `best_tuned_lstm_comparison-20260320T093214Z`, `best_tuned_gru_comparison-20260320T093215Z`, `best_tuned_rnn_comparison-20260320T093215Z`, `best_tuned_transformer_comparison-20260320T093216Z` |
+| Task B | `spy_h1_next_return` | `reports/tuning_winners.csv` (rows filtered by `task_id`) | `reports/best_tuned_comparison_spy_h1_next_return.csv` and `.md` | `reports/figures/hyperparameter_model_loss_summary_spy_h1_next_return.svg` and Task B best-tuned figures after archival | _Pending final run IDs_ |
+
+### 7.5 Prediction pattern visualisation
 
 The archived scatter and prediction-slice plots provide a qualitative view of model behaviour.
 
 ![LSTM scatter plot](../reports/figures/lstm_best_tuned_lstm_comparison-20260320t093214z_scatter.png)
 
-*Figure 4. LSTM predicted-vs-actual scatter plot for the archived best-tuned comparison.*
+*Figure 4. LSTM predicted-vs-actual scatter plot for Task A archived best-tuned comparison.*
 
 ![GRU scatter plot](../reports/figures/gru_best_tuned_gru_comparison-20260320t093215z_scatter.png)
 
-*Figure 5. GRU predicted-vs-actual scatter plot for the archived best-tuned comparison.*
+*Figure 5. GRU predicted-vs-actual scatter plot for Task A archived best-tuned comparison.*
 
 ![LSTM prediction slice](../reports/figures/lstm_best_tuned_lstm_comparison-20260320t093214z_pred_slice.png)
 
-*Figure 6. LSTM prediction slice over a test-set segment.*
+*Figure 6. LSTM prediction slice over a Task A test-set segment.*
 
 ![GRU prediction slice](../reports/figures/gru_best_tuned_gru_comparison-20260320t093215z_pred_slice.png)
 
-*Figure 7. GRU prediction slice over a test-set segment.*
+*Figure 7. GRU prediction slice over a Task A test-set segment.*
 
-Qualitatively, the plots show that all models struggle with the full volatility of daily returns, which is expected. The best-performing models appear to track broad movement direction better than precise return magnitude.
+Qualitatively, the plots show that models struggle with full daily-return volatility. The better Task A models track broad direction more reliably than exact magnitude.
 
-### 7.5 Summary of key findings
+### 7.6 Summary of key findings
 
-The final result set supports the following findings:
-
-- **LSTM** is the strongest overall model by validation and test MSE.
-- **Baseline-LR** is unexpectedly competitive and nearly matches LSTM.
-- **GRU** has the highest directional accuracy among the archived tuned models.
-- **Transformer** performs worst by loss in the current archived comparison.
+- For **Task A** (`target_mode=horizon_return`, `horizon=10`), **LSTM** is strongest on loss metrics.
+- For **Task A**, **Baseline-LR** remains very close to the best neural model.
+- For **Task A**, **GRU** reaches the highest directional accuracy.
+- **Task B** section and cross-task row are now structurally in place and should be finalised once its tuned comparison artifacts are archived.
 
 ---
 
@@ -377,7 +399,7 @@ The archived report is based on a limited set of recorded runs rather than repea
 
 ### 9.3 Model-comparison limitations
 
-The project focuses on a single canonical setup with a 30-day lookback and 10-day horizon. Other horizons, additional features, or multivariate inputs could materially change the ranking.
+The project currently has one fully archived task and one pending second task. Different `horizon` / `target_mode` definitions, additional features, or multivariate inputs could materially change the ranking.
 
 ### 9.4 External validity limitations
 
@@ -393,7 +415,7 @@ The report evaluates prediction quality, not trading profitability. It does not 
 
 ### 10.1 Conclusion
 
-This project investigated whether neural sequence models improve forecasting of SPY daily log returns under a shared and reproducible benchmark. The final archived comparison shows that **LSTM achieved the best overall loss performance**, with the lowest validation and test MSE among all evaluated models. However, the **linear-regression baseline remained highly competitive**, indicating that the predictive structure available in the chosen input window is modest. The **GRU delivered the strongest directional accuracy**, while the **Transformer underperformed** the recurrent alternatives on the archived result set.
+This project investigated whether neural sequence models improve forecasting of SPY daily log returns under a shared and reproducible benchmark with explicit `task_id`, `target_mode`, and `horizon` definitions. For the fully archived Task A comparison, **LSTM achieved the best overall loss performance** (lowest validation and test MSE). However, the **linear-regression baseline remained highly competitive**, indicating modest predictive structure in the selected window. The **GRU delivered the strongest directional accuracy**, while the **Transformer underperformed** the recurrent alternatives on the archived Task A result set.
 
 ### 10.2 Contributions of the project
 

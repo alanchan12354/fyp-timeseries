@@ -1,6 +1,6 @@
 # Final Report Writing Plan
 
-> **Note:** I could not find `docs/interim-report.pdf` in the repository. This plan is therefore reconstructed from the closest available project materials in `/docs` and the current evidence in `/reports`, so you can still move forward with the final report draft.
+> **Source note:** This plan aligns with the interim submission in `docs/interim-report.pdf` and the latest generated artifacts under `reports/`.
 
 ## 1. Recommended report strategy
 
@@ -26,6 +26,15 @@ A good final report structure is:
 12. Appendices
 
 ---
+
+## Terminology guardrail (use consistently in every chapter)
+
+- **task**: one forecast definition evaluated end-to-end.
+- **task_id**: stable identifier for that task (for example, `spy_h10_horizon_return`).
+- **target_mode**: label construction mode (`horizon_return`, `next_return`, `next3_mean_return`).
+- **horizon**: forecast step used by `horizon_return` mode.
+
+When reporting results, always show `task_id`, `target_mode`, and `horizon` together so narrative text matches generated artifacts.
 
 ## 2. Chapter-by-chapter writing plan
 
@@ -450,4 +459,4 @@ This project investigates whether neural sequence models can improve the forecas
 2. Build your main results table from `reports/best_tuned_comparison.md`.
 3. Build your tuning subsection from `reports/hyperparameter_impact_report.md`.
 4. Insert the recommended figures using the `[insert: ...]` placeholders.
-5. If you later recover the actual `interim-report.pdf`, do one final pass to align the chapter wording and continuity with that earlier submission.
+5. Do one final pass against `docs/interim-report.pdf` to align chapter wording and continuity with the earlier submission.
