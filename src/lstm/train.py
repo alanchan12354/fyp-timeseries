@@ -26,6 +26,9 @@ def main(config=None, config_dict=None, cli_args=None, prepared_run=None, **over
         batch_size=runtime_config.batch_size,
         run_note=runtime_config.run_note or "Single-model training run for LSTM.",
         training_metadata=runtime_config.training_metadata(),
+        horizon=runtime_config.horizon,
+        target_mode=runtime_config.target_mode,
+        target_smooth_window=runtime_config.target_smooth_window,
     )
 
     metrics = train_model(

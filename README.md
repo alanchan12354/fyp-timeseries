@@ -7,7 +7,7 @@ The codebase now includes shared experiment-preparation utilities, runtime-confi
 
 The repository currently supports a shared forecasting setup across the neural training and comparison workflows:
 
-- **Sequence-model workflow** (`src/*/train.py`, `src/comparison/main.py`, `src/tuning/main.py`): predicts the log return at `t + HORIZON` from the last `SEQ_LEN` returns.
+- **Sequence-model workflow** (`src/*/train.py`, `src/comparison/main.py`, `src/tuning/main.py`): predicts a configurable return target from the last `SEQ_LEN` returns.
 - **Comparison reference baseline** (`src/comparison/main.py`): fits a flattened-sequence linear regression on that same shared `SEQ_LEN` / `HORIZON` dataset.
 
 With the default configuration in `src/common/config.py`:
@@ -15,8 +15,16 @@ With the default configuration in `src/common/config.py`:
 - `TICKER = "SPY"`
 - `START = "2010-01-01"`
 - `SEQ_LEN = 30`
-- `HORIZON = 10`
-That means the default experiments are forecasting **10 trading days ahead** from a **30-return lookback window**.
+- `HORIZON = 1`
+- `TARGET_MODE = "horizon_return"`
+- `TARGET_SMOOTH_WINDOW = 3`
+
+So, by default, experiments forecast the **next trading day's** return from a **30-return lookback window**.
+
+Available neural target modes are:
+- `horizon_return`: `r_{t+horizon}`
+- `next_return`: `r_{t+1}`
+- `next3_mean_return`: mean of the next `target_smooth_window` returns
 
 ## Repository structure
 
@@ -83,6 +91,7 @@ python -m src.gru.train \
   --batch-size 32 \
   --recurrent-hidden-size 128 \
   --recurrent-layer-count 3 \
+  --target-mode next_return \
   --run-note "manual_gru_sweep"
 ```
 
@@ -95,8 +104,15 @@ python -m src.transformer.train \
   --d-model 128 \
   --transformer-num-layers 3 \
   --nhead 8 \
+  --target-mode next3_mean_return \
+  --target-smooth-window 3 \
   --run-note "manual_transformer_sweep"
 ```
+
+Target-focused runtime flags available on all neural entrypoints:
+- `--horizon`
+- `--target-mode {horizon_return,next_return,next3_mean_return}`
+- `--target-smooth-window`
 
 ### 3. Run the shared model-comparison pipeline
 
@@ -202,7 +218,7 @@ The reporting utilities now capture more than just final metrics.
 Depending on the workflow, the repository records:
 
 - run IDs and UTC timestamps,
-- task metadata (ticker, start date, input window, horizon, split ratios),
+- task metadata (ticker, start date, input window, horizon, target mode, target smoothing window, split ratios),
 - split sizes,
 - training metadata,
 - environment metadata such as Python, platform, device, package versions, and git commit,
@@ -224,7 +240,7 @@ Key generated files include:
 ## Comparison framing
 
 Use `src/comparison/main.py` as the canonical apples-to-apples benchmark workflow.
-It compares the neural models against a **flattened-sequence linear regression** built on the same `SEQ_LEN` / `HORIZON` dataset, so the reported targets stay aligned when you discuss results.
+It compares the neural models against a **flattened-sequence linear regression** built on the shared sequence framing, so the reported targets stay aligned when you discuss results.
 
 ## New to the codebase?
 

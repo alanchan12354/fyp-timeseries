@@ -2,7 +2,7 @@ import argparse
 from dataclasses import asdict, dataclass
 from typing import Any, Mapping, Optional
 
-from .config import BATCH_SIZE, LR
+from .config import BATCH_SIZE, HORIZON, LR, TARGET_MODE, TARGET_SMOOTH_WINDOW
 
 
 @dataclass
@@ -14,6 +14,9 @@ class RuntimeTrainingConfig:
     transformer_d_model: int = 64
     transformer_num_layers: int = 2
     transformer_nhead: int = 4
+    horizon: int = HORIZON
+    target_mode: str = TARGET_MODE
+    target_smooth_window: int = TARGET_SMOOTH_WINDOW
     run_note: Optional[str] = None
 
     @classmethod
@@ -55,6 +58,9 @@ class RuntimeTrainingConfig:
         metadata = {
             "lr": self.learning_rate,
             "batch_size": self.batch_size,
+            "horizon": self.horizon,
+            "target_mode": self.target_mode,
+            "target_smooth_window": self.target_smooth_window,
         }
         if self.run_note:
             metadata["run_note"] = self.run_note
@@ -84,6 +90,19 @@ def add_runtime_config_args(parser: argparse.ArgumentParser) -> argparse.Argumen
         help="Number of Transformer encoder layers.",
     )
     parser.add_argument("--nhead", type=int, dest="transformer_nhead", help="Transformer attention head count.")
+    parser.add_argument("--horizon", type=int, dest="horizon", help="Target horizon for horizon_return mode.")
+    parser.add_argument(
+        "--target-mode",
+        choices=["horizon_return", "next_return", "next3_mean_return"],
+        dest="target_mode",
+        help="Training target definition.",
+    )
+    parser.add_argument(
+        "--target-smooth-window",
+        type=int,
+        dest="target_smooth_window",
+        help="Forward averaging window used by next3_mean_return mode.",
+    )
     parser.add_argument("--run-note", dest="run_note", help="Optional experiment tag or note.")
     return parser
 
@@ -104,6 +123,9 @@ _ALIAS_MAP = {
     "nhead": "transformer_nhead",
     "transformer_nhead": "transformer_nhead",
     "transformer_num_layers": "transformer_num_layers",
+    "horizon": "horizon",
+    "target_mode": "target_mode",
+    "target_smooth_window": "target_smooth_window",
     "run_note": "run_note",
     "experiment_tag": "run_note",
     "experiment_note": "run_note",

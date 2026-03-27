@@ -46,10 +46,16 @@ def prepare_runtime_sequence_run(
     batch_size: int,
     run_note: str | None = None,
     training_metadata: dict[str, Any] | None = None,
+    horizon: int,
+    target_mode: str,
+    target_smooth_window: int,
 ) -> PreparedSequenceRun:
     return prepare_sequence_experiment_run(
         batch_size=batch_size,
         experiment_name=experiment_name,
         run_note=run_note,
         training_metadata=training_metadata,
+        horizon=horizon,
+        target_mode=target_mode,
+        target_smooth_window=target_smooth_window,
     )

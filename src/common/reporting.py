@@ -28,6 +28,8 @@ from .config import (
     REPORTS_DIR,
     SEQ_LEN,
     START,
+    TARGET_MODE,
+    TARGET_SMOOTH_WINDOW,
     TICKER,
     TRAIN_RATIO,
     TRAIN_LOG_EVERY,
@@ -193,16 +195,38 @@ def default_environment_metadata() -> Dict[str, Any]:
     }
 
 
-def default_task_metadata(task_kind: str = "forecasting") -> Dict[str, Any]:
+def default_task_metadata(
+    task_kind: str = "forecasting",
+    *,
+    ticker: str = TICKER,
+    start_date: str = START,
+    input_window: int = SEQ_LEN,
+    horizon: int = HORIZON,
+    baseline_lags: int = LAGS,
+    target_mode: str = TARGET_MODE,
+    target_smooth_window: int = TARGET_SMOOTH_WINDOW,
+) -> Dict[str, Any]:
+    target_descriptions = {
+        "horizon_return": f"log return at t+{horizon}",
+        "next_return": "next-day log return (r_{t+1})",
+        "next3_mean_return": f"mean of next {target_smooth_window} daily log returns",
+    }
+    normalized_mode = (target_mode or TARGET_MODE).strip().lower()
+    target_description = target_descriptions.get(
+        normalized_mode,
+        f"{normalized_mode} (horizon={horizon}, smooth_window={target_smooth_window})",
+    )
     return {
         "task_kind": task_kind,
-        "ticker": TICKER,
-        "start_date": START,
-        "input_window": SEQ_LEN,
-        "prediction_horizon": HORIZON,
-        "baseline_lags": LAGS,
-        "target": f"log return at t+{HORIZON}",
-        "input_description": f"previous {SEQ_LEN} daily log returns",
+        "ticker": ticker,
+        "start_date": start_date,
+        "input_window": input_window,
+        "prediction_horizon": horizon,
+        "target_mode": normalized_mode,
+        "target_smooth_window": target_smooth_window,
+        "baseline_lags": baseline_lags,
+        "target": target_description,
+        "input_description": f"previous {input_window} daily log returns",
         "split": {
             "train_ratio": TRAIN_RATIO,
             "val_ratio": VAL_RATIO,
