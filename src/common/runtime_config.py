@@ -30,6 +30,7 @@ class RuntimeTrainingConfig:
     data_source: str = "spy"
     target_mode: str = TARGET_MODE
     target_smooth_window: int = TARGET_SMOOTH_WINDOW
+    task_id: Optional[str] = None
     epochs: int = EPOCHS
     scheduler_type: str = SCHEDULER_TYPE
     run_note: Optional[str] = None
@@ -51,6 +52,7 @@ class RuntimeTrainingConfig:
             values.update(_namespace_values(cli_args))
         values.update({key: value for key, value in overrides.items() if value is not None})
         values = _apply_named_profile(values)
+        values["task_id"] = _resolve_task_id(values)
         return cls(**{key: value for key, value in values.items() if key in cls.__dataclass_fields__})
 
     def to_dict(self) -> dict[str, Any]:
@@ -80,6 +82,7 @@ class RuntimeTrainingConfig:
             "data_source": self.data_source,
             "target_mode": self.target_mode,
             "target_smooth_window": self.target_smooth_window,
+            "task_id": self.task_id,
             "epochs": self.epochs,
             "scheduler_type": self.scheduler_type,
             "input_size": self.input_size,
@@ -132,6 +135,11 @@ def add_runtime_config_args(parser: argparse.ArgumentParser) -> argparse.Argumen
         dest="target_smooth_window",
         help="Forward averaging window used by next3_mean_return mode.",
     )
+    parser.add_argument(
+        "--task-id",
+        dest="task_id",
+        help="Strongly encouraged stable identifier for the forecast task. If omitted, a deterministic value is generated.",
+    )
     parser.add_argument("--epochs", type=int, dest="epochs", help="Maximum training epochs.")
     parser.add_argument(
         "--scheduler-type",
@@ -164,6 +172,7 @@ _ALIAS_MAP = {
     "data_source": "data_source",
     "target_mode": "target_mode",
     "target_smooth_window": "target_smooth_window",
+    "task_id": "task_id",
     "epochs": "epochs",
     "scheduler_type": "scheduler_type",
     "run_note": "run_note",
@@ -192,3 +201,15 @@ def _apply_named_profile(values: dict[str, Any]) -> dict[str, Any]:
     if profile_name == SANITY_SINE_PROFILE_NAME:
         values.update(SANITY_SINE_PROFILE)
     return values
+
+
+def _resolve_task_id(values: Mapping[str, Any]) -> str:
+    explicit_task_id = str(values.get("task_id") or "").strip()
+    if explicit_task_id:
+        return explicit_task_id
+
+    data_source = str(values.get("data_source") or "spy").strip().lower()
+    horizon = int(values.get("horizon", HORIZON))
+    target_mode = str(values.get("target_mode") or TARGET_MODE).strip().lower()
+    target_smooth_window = int(values.get("target_smooth_window", TARGET_SMOOTH_WINDOW))
+    return f"{data_source}_h{horizon}_{target_mode}_sw{target_smooth_window}"

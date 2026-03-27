@@ -50,6 +50,7 @@ def prepare_runtime_sequence_run(
     data_source: str,
     target_mode: str,
     target_smooth_window: int,
+    task_id: str | None,
 ) -> PreparedSequenceRun:
     return prepare_sequence_experiment_run(
         batch_size=batch_size,
@@ -60,4 +61,5 @@ def prepare_runtime_sequence_run(
         data_source=data_source,
         target_mode=target_mode,
         target_smooth_window=target_smooth_window,
+        task_id=task_id,
     )

@@ -56,6 +56,7 @@ def prepare_sequence_experiment_run(
     data_source: str = "spy",
     target_mode: str = "horizon_return",
     target_smooth_window: int = 3,
+    task_id: str | None = None,
     train_ratio: float = TRAIN_RATIO,
     val_ratio: float = VAL_RATIO,
 ) -> PreparedSequenceRun:
@@ -102,6 +103,7 @@ def prepare_sequence_experiment_run(
         experiment_name,
         split_meta,
         task_meta=default_task_metadata(
+            task_id=task_id,
             horizon=horizon,
             input_window=seq_len,
             target_mode=target_mode,

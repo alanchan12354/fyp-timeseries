@@ -49,6 +49,7 @@ TUNING_BEST_CONFIGS_CSV = os.path.join(REPORTS_DIR, "tuning_best_configs.csv")
 SUMMARY_FIELDNAMES = [
     "timestamp_utc",
     "run_id",
+    "task_id",
     "model_name",
     "record_type",
     "selection_metric",
@@ -198,6 +199,9 @@ def default_environment_metadata() -> Dict[str, Any]:
 def default_task_metadata(
     task_kind: str = "forecasting",
     *,
+    task_id: Optional[str] = None,
+    task_group: Optional[str] = None,
+    task_version: Optional[str] = None,
     data_source: str = "spy",
     ticker: str = TICKER,
     start_date: str = START,
@@ -217,8 +221,15 @@ def default_task_metadata(
         normalized_mode,
         f"{normalized_mode} (horizon={horizon}, smooth_window={target_smooth_window})",
     )
-    return {
+    metadata = {
         "task_kind": task_kind,
+        "task_id": task_id
+        or deterministic_task_id(
+            data_source=data_source,
+            horizon=horizon,
+            target_mode=normalized_mode,
+            target_smooth_window=target_smooth_window,
+        ),
         "data_source": data_source,
         "ticker": ticker,
         "start_date": start_date,
@@ -235,6 +246,23 @@ def default_task_metadata(
             "test_ratio": 1.0 - TRAIN_RATIO - VAL_RATIO,
         },
     }
+    if task_group:
+        metadata["task_group"] = task_group
+    if task_version:
+        metadata["task_version"] = task_version
+    return metadata
+
+
+def deterministic_task_id(
+    *,
+    data_source: str,
+    horizon: int,
+    target_mode: str,
+    target_smooth_window: int,
+) -> str:
+    normalized_source = (data_source or "spy").strip().lower()
+    normalized_mode = (target_mode or TARGET_MODE).strip().lower()
+    return f"{normalized_source}_h{int(horizon)}_{normalized_mode}_sw{int(target_smooth_window)}"
 
 
 def split_metadata(train_size: int, val_size: int, test_size: int) -> Dict[str, int]:
@@ -272,12 +300,20 @@ def create_run_context(
     notes_metadata: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     normalized_notes = notes or (format_structured_notes(notes_metadata) if notes_metadata else None)
+    effective_task_meta = deepcopy(task_meta or default_task_metadata())
+    if not effective_task_meta.get("task_id"):
+        effective_task_meta["task_id"] = deterministic_task_id(
+            data_source=effective_task_meta.get("data_source", "spy"),
+            horizon=effective_task_meta.get("prediction_horizon", HORIZON),
+            target_mode=effective_task_meta.get("target_mode", TARGET_MODE),
+            target_smooth_window=effective_task_meta.get("target_smooth_window", TARGET_SMOOTH_WINDOW),
+        )
     return {
         "run_id": f"{experiment_name}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}",
         "experiment_name": experiment_name,
         "comparison_group": comparison_group,
         "timestamp_utc": _utc_now(),
-        "task": task_meta or default_task_metadata(),
+        "task": effective_task_meta,
         "split": deepcopy(split_meta),
         "training": training_meta or default_training_metadata(),
         "environment": environment_meta or default_environment_metadata(),
@@ -300,16 +336,25 @@ def build_experiment_record(
     extra: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     context = deepcopy(context or {})
+    task_metadata = deepcopy(context.get("task", default_task_metadata()))
+    if not task_metadata.get("task_id"):
+        task_metadata["task_id"] = deterministic_task_id(
+            data_source=task_metadata.get("data_source", "spy"),
+            horizon=task_metadata.get("prediction_horizon", HORIZON),
+            target_mode=task_metadata.get("target_mode", TARGET_MODE),
+            target_smooth_window=task_metadata.get("target_smooth_window", TARGET_SMOOTH_WINDOW),
+        )
     record = {
         "timestamp_utc": _utc_now(),
         "run_id": context.get("run_id"),
+        "task_id": task_metadata.get("task_id"),
         "experiment_name": context.get("experiment_name"),
         "comparison_group": context.get("comparison_group"),
         "model_name": model_name,
         "record_type": record_type,
         "selection_metric": selection_metric,
         "selection_split": selection_split,
-        "task": deepcopy(context.get("task", default_task_metadata())),
+        "task": task_metadata,
         "split": deepcopy(context.get("split", {})),
         "training": deepcopy(context.get("training", default_training_metadata())),
         "environment": deepcopy(context.get("environment", default_environment_metadata())),
@@ -333,6 +378,7 @@ def _extract_num_layers(hyper: Dict[str, Any]) -> Any:
 
 
 def _flatten_record_for_csv(record: Dict[str, Any]) -> Dict[str, Any]:
+    task = record.get("task", {})
     training = record.get("training", {})
     metrics = record.get("metrics", {})
     hyper = record.get("hyperparameters", {})
@@ -344,6 +390,7 @@ def _flatten_record_for_csv(record: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "timestamp_utc": record.get("timestamp_utc"),
         "run_id": record.get("run_id"),
+        "task_id": record.get("task_id") or task.get("task_id"),
         "model_name": record.get("model_name"),
         "record_type": record.get("record_type"),
         "selection_metric": record.get("selection_metric"),
@@ -428,6 +475,7 @@ def _load_experiment_log_records(reports_dir: str = REPORTS_DIR) -> List[Dict[st
                     {
                         "timestamp_utc": row.get("timestamp_utc"),
                         "run_id": row.get("run_id"),
+                        "task_id": row.get("task_id"),
                         "model_name": row.get("model_name"),
                         "record_type": row.get("record_type"),
                         "selection_metric": row.get("selection_metric"),
@@ -448,6 +496,7 @@ def _load_experiment_log_records(reports_dir: str = REPORTS_DIR) -> List[Dict[st
                             "tuning_notes": row.get("tuning_notes"),
                         },
                         "notes": row.get("notes"),
+                        "task": {"task_id": row.get("task_id")} if row.get("task_id") else {},
                     }
                 )
         return records
