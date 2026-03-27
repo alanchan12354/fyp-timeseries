@@ -271,13 +271,75 @@ This report reads the existing tuning artifacts and generates:
 
 The figure places the tuned models' training, testing, and validation losses in three side-by-side subplots that share the same y-axis. This report is separate from `src.comparison.best_tuned_charts`, which writes individual SVG charts from `<reports_dir>/best_tuned_comparison.csv`.
 
+
+## Multi-task experiments
+
+Use **task** to mean one forecast configuration identified by a stable `task_id` and defined by `target_mode` + `horizon` (plus optional smoothing via `target_smooth_window`).
+
+### 1) Define two tasks explicitly
+
+Example task definitions:
+
+- **Task A**: `task_id=spy_h10_horizon_return`, `target_mode=horizon_return`, `horizon=10`
+- **Task B**: `task_id=spy_h1_next_return`, `target_mode=next_return`, `horizon=1`
+
+You can apply these on neural entrypoints with runtime flags:
+
+```bash
+python -m src.lstm.train \
+  --task-id spy_h10_horizon_return \
+  --target-mode horizon_return \
+  --horizon 10
+
+python -m src.lstm.train \
+  --task-id spy_h1_next_return \
+  --target-mode next_return \
+  --horizon 1
+```
+
+### 2) Run tuning/comparison per task
+
+Current tuning output (`tuning_winners.csv`) is keyed by `task_id`. The recommended workflow is to run tuning separately for each task setup (so each tuned winner row is tied to the intended `task_id`), then run task-scoped comparisons.
+
+```bash
+# After tuning artifacts include both task IDs in tuning_winners.csv:
+python -m src.comparison.best_tuned_main \
+  --task-ids spy_h10_horizon_return spy_h1_next_return
+```
+
+This writes per-task files:
+
+- `<reports_dir>/best_tuned_comparison_spy_h10_horizon_return.csv`
+- `<reports_dir>/best_tuned_comparison_spy_h10_horizon_return.md`
+- `<reports_dir>/best_tuned_comparison_spy_h1_next_return.csv`
+- `<reports_dir>/best_tuned_comparison_spy_h1_next_return.md`
+- `<reports_dir>/multi_task_summary.md`
+
+### 3) Generate per-task and aggregate reports
+
+Per-task hyperparameter impact reports:
+
+```bash
+python -m src.tuning.report --task-ids spy_h10_horizon_return spy_h1_next_return
+```
+
+Outputs include:
+
+- `<reports_dir>/hyperparameter_impact_report_spy_h10_horizon_return.md`
+- `<reports_dir>/figures/hyperparameter_model_loss_summary_spy_h10_horizon_return.svg`
+- `<reports_dir>/hyperparameter_impact_report_spy_h1_next_return.md`
+- `<reports_dir>/figures/hyperparameter_model_loss_summary_spy_h1_next_return.svg`
+- `<reports_dir>/multi_task_tuning_summary.md`
+
+For one consolidated cross-task view in your write-up, combine key rows from the per-task `best_tuned_comparison_<task_id>.csv` files into a single results table in `docs/final_report.md`.
+
 ## Experiment logging and reproducibility
 
 The reporting utilities now capture more than just final metrics.
 Depending on the workflow, the repository records:
 
 - run IDs and UTC timestamps,
-- task metadata (ticker, start date, input window, horizon, target mode, target smoothing window, split ratios),
+- task metadata (`task_id`, ticker, start date, input window, `horizon`, `target_mode`, `target_smooth_window`, split ratios),
 - split sizes,
 - training metadata,
 - environment metadata such as Python, platform, device, package versions, and git commit,
