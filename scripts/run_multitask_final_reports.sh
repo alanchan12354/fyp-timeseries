@@ -4,6 +4,10 @@ set -euo pipefail
 ROOT_DIR="${1:-reports/final_report_tasks/$(date -u +%Y%m%dT%H%M%SZ)}"
 mkdir -p "${ROOT_DIR}"
 
+# Use a non-interactive Matplotlib backend to avoid Tk/Tcl crashes in
+# headless or non-main-thread contexts (common on Windows shells).
+export MPLBACKEND="${MPLBACKEND:-Agg}"
+
 run_task() {
   local task_id="$1"
   local target_mode="$2"
