@@ -8,6 +8,12 @@ $ErrorActionPreference = 'Stop'
 
 New-Item -ItemType Directory -Force -Path $RootDir | Out-Null
 
+# Use a non-interactive Matplotlib backend to avoid Tk/Tcl teardown crashes
+# in headless or non-main-thread contexts (common on Windows shells).
+if (-not $env:MPLBACKEND) {
+  $env:MPLBACKEND = 'Agg'
+}
+
 function Invoke-Task {
   param(
     [Parameter(Mandatory = $true)][string]$TaskId,
