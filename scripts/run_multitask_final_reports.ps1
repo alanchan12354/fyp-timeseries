@@ -1,12 +1,18 @@
 #!/usr/bin/env pwsh
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
-
 param(
   [string]$RootDir = (Join-Path 'reports/final_report_tasks' ([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ')))
 )
 
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
 New-Item -ItemType Directory -Force -Path $RootDir | Out-Null
+
+# Use a non-interactive Matplotlib backend to avoid Tk/Tcl teardown crashes
+# in headless or non-main-thread contexts (common on Windows shells).
+if (-not $env:MPLBACKEND) {
+  $env:MPLBACKEND = 'Agg'
+}
 
 function Invoke-Task {
   param(

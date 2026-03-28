@@ -417,6 +417,8 @@ The script creates a clear task-by-task structure:
 - `<root>/overall_task_summary.csv` and `<root>/overall_task_summary.md` (cross-task winner summary)
 - `<root>/README.md` (index of generated artifacts and rerun command)
 
+Both orchestration scripts (`.sh` and `.ps1`) force a non-interactive Matplotlib backend (`MPLBACKEND=Agg` by default) to avoid Windows Tk/Tcl teardown crashes during figure generation.
+
 ## Experiment logging and reproducibility
 
 The reporting utilities now capture more than just final metrics.
