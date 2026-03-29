@@ -247,22 +247,7 @@ For each task it:
 - writes outputs into a dedicated task folder under one shared root bundle for easier final-report use.
 - sets `MPLBACKEND=Agg` (if unset) to keep Matplotlib non-interactive and avoid Tk/Tcl crashes on Windows/headless shells.
 
-### `scripts/run_multitask_final_reports.ps1`
-PowerShell equivalent of `run_multitask_final_reports.sh` for Windows environments (especially Windows 11 + PowerShell):
 
-- accepts `-RootDir` (default: `reports/final_report_tasks/<UTC timestamp>`),
-- runs the same four tasks and module entrypoints,
-- writes per-task outputs and aggregate summary files to the same folder structure,
-- emits a bundle README that includes both PowerShell and Bash rerun commands,
-- sets `MPLBACKEND=Agg` (if unset) for safer non-interactive chart generation on Windows.
-
-### `scripts/run_multitask_final_reports.ps1`
-PowerShell equivalent of `run_multitask_final_reports.sh` for Windows environments (especially Windows 11 + PowerShell):
-
-- accepts `-RootDir` (default: `reports/final_report_tasks/<UTC timestamp>`),
-- runs the same four tasks and module entrypoints,
-- writes per-task outputs and aggregate summary files to the same folder structure,
-- emits a bundle README that includes both PowerShell and Bash rerun commands.
 
 ## 4) Important outputs in `<reports_dir>`
 
@@ -308,8 +293,9 @@ python -m src.tuning.main --model all --session-mode append
 python -m src.comparison.best_tuned_main
 python -m src.comparison.best_tuned_charts
 bash scripts/run_multitask_final_reports.sh
-pwsh -File scripts/run_multitask_final_reports.ps1
 ```
+
+On Windows, run the same command from Git Bash.
 
 ## 6) What to tweak first
 

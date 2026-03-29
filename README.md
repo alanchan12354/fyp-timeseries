@@ -392,20 +392,12 @@ Use the helper script below to run all four tasks end-to-end (tune all models, c
 bash scripts/run_multitask_final_reports.sh
 ```
 
-PowerShell (Windows 11):
-
-```pwsh
-pwsh -File scripts/run_multitask_final_reports.ps1
-```
+Windows tip: use **Git Bash** and run the same Bash script above.
 
 Optional: provide an explicit output root folder:
 
 ```bash
 bash scripts/run_multitask_final_reports.sh reports/final_report_tasks/my_final_bundle
-```
-
-```pwsh
-pwsh -File scripts/run_multitask_final_reports.ps1 -RootDir reports/final_report_tasks/my_final_bundle
 ```
 
 The script creates a clear task-by-task structure:
@@ -417,7 +409,7 @@ The script creates a clear task-by-task structure:
 - `<root>/overall_task_summary.csv` and `<root>/overall_task_summary.md` (cross-task winner summary)
 - `<root>/README.md` (index of generated artifacts and rerun command)
 
-Both orchestration scripts (`.sh` and `.ps1`) force a non-interactive Matplotlib backend (`MPLBACKEND=Agg` by default) to avoid Windows Tk/Tcl teardown crashes during figure generation.
+The orchestration script forces a non-interactive Matplotlib backend (`MPLBACKEND=Agg` by default) to avoid Windows Tk/Tcl teardown crashes during figure generation.
 
 ## Experiment logging and reproducibility
 
