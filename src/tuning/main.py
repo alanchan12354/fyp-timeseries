@@ -419,6 +419,7 @@ def tune_model(
     frozen_config = deepcopy(spec.baseline)
     winners: List[Dict[str, Any]] = []
     model_start = time.perf_counter()
+    total_stages = len(spec.stage_order)
 
     for stage_index, stage_name in enumerate(spec.stage_order, start=1):
         candidates = list(plan[stage_name])
@@ -451,7 +452,7 @@ def tune_model(
                 model_name,
                 candidate_config,
                 note,
-                runtime_overrides=runtime_overrides,
+                runtime_overrides={**(runtime_overrides or {}), "save_figures": False},
             )
             metrics = spec.train_entrypoint(config_dict=runtime_config)
             best_val = float(metrics["best_val_MSE"])
@@ -496,6 +497,19 @@ def tune_model(
             "best_val_MSE": winner["best_val_MSE"],
             "frozen_config": deepcopy(frozen_config),
         })
+
+        if stage_index == total_stages:
+            final_note = (
+                f"Tuning final selected configuration for {spec.display_name}. "
+                f"Winner of staged parameter sweep (stage={stage_name})."
+            )
+            final_runtime_config = _config_to_runtime_dict(
+                model_name,
+                frozen_config,
+                final_note,
+                runtime_overrides={**(runtime_overrides or {}), "save_figures": True},
+            )
+            spec.train_entrypoint(config_dict=final_runtime_config)
 
     return {
         "model": model_name,
