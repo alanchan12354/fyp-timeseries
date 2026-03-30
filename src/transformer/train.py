@@ -31,6 +31,7 @@ def main(config=None, config_dict=None, cli_args=None, prepared_run=None, **over
         target_mode=runtime_config.target_mode,
         target_smooth_window=runtime_config.target_smooth_window,
         task_id=runtime_config.task_id,
+        random_seed=runtime_config.random_seed,
     )
 
     metrics = train_model(
@@ -45,6 +46,7 @@ def main(config=None, config_dict=None, cli_args=None, prepared_run=None, **over
         learning_rate=runtime_config.learning_rate,
         epochs=runtime_config.epochs,
         scheduler_type=runtime_config.scheduler_type,
+        random_seed=runtime_config.random_seed,
         **runtime_config.transformer_model_kwargs(),
     )
 

@@ -30,6 +30,7 @@ def prepare_sequence_training_data(batch_size: int) -> tuple[Any, Any, tuple[Any
     prepared_run = prepare_sequence_experiment_run(
         batch_size=batch_size,
         experiment_name="sequence_training",
+        random_seed=RuntimeTrainingConfig().random_seed,
     )
     return (
         prepared_run.train_loader,
@@ -51,6 +52,7 @@ def prepare_runtime_sequence_run(
     target_mode: str,
     target_smooth_window: int,
     task_id: str | None,
+    random_seed: int,
 ) -> PreparedSequenceRun:
     return prepare_sequence_experiment_run(
         batch_size=batch_size,
@@ -62,4 +64,5 @@ def prepare_runtime_sequence_run(
         target_mode=target_mode,
         target_smooth_window=target_smooth_window,
         task_id=task_id,
+        random_seed=random_seed,
     )

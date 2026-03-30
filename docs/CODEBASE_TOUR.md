@@ -36,6 +36,7 @@ With the current defaults in `src/common/config.py`:
 - `HORIZON = 1`
 - `TARGET_MODE = "horizon_return"`
 - `TARGET_SMOOTH_WINDOW = 3`
+- `RANDOM_SEED = 42` (default reproducibility seed for neural runs)
 So the default user-facing workflow predicts one-day-ahead returns from a 30-step lookback, while still allowing target difficulty switches via runtime options.
 
 ## 2) End-to-end pipeline
@@ -62,6 +63,7 @@ Central project defaults:
 - task definition (`SEQ_LEN`, `HORIZON`, `TARGET_MODE`, `TARGET_SMOOTH_WINDOW`, `LAGS`),
 - split ratios,
 - training controls (`EPOCHS`, `PATIENCE`, `MIN_DELTA`, `MIN_EPOCHS`, `TRAIN_LOG_EVERY`),
+- reproducibility defaults (`RANDOM_SEED`),
 - scheduler settings,
 - reports/figure output paths (with per-run session directories by default),
 - `DEVICE` selection (`cuda` if available, otherwise `cpu`).
@@ -75,6 +77,7 @@ Defines `RuntimeTrainingConfig`, which allows neural entrypoints to combine:
 - CLI overrides.
 
 It also defines the shared command-line flags used by the neural training scripts.
+This includes `--random-seed` so single-model runs, tuning, and comparison reruns can be reproduced consistently.
 
 #### `data.py`
 Core data utilities:
@@ -173,6 +176,7 @@ What it does:
 
 - resolves runtime task controls at the entrypoint (`task_id`, `data_source`, `target_mode`, `target_smooth_window`, `horizon`),
 - builds one common task-aware sequence split via `prepare_sequence_experiment_run(...)`,
+- applies deterministic train-loader shuffling and training seeds from `runtime_config.random_seed` (default 42),
 - fits a flattened-sequence linear regression reference (`Baseline-LR`),
 - trains RNN, LSTM, GRU, and Transformer on the same split,
 - writes task-scoped comparison metrics and a task-scoped comparison-plot figure:
@@ -197,6 +201,7 @@ What it does:
 
 - selects a tuning source (`tuning_winners.csv` by default),
 - rebuilds prepared sequence runs using the shared experiment helper,
+- applies deterministic seeding for those reruns (`random_seed`, default 42),
 - computes the flattened-sequence linear-regression baseline on the same shared split,
 - reuses each model's existing training entrypoint,
 - includes train / validation / test MSE summary columns in the final report,
@@ -229,6 +234,7 @@ Capabilities include:
 - tune one model or all models,
 - provide overrides from a JSON file or inline JSON,
 - pass task-scoping runtime settings (`task_id`, `target_mode`, `target_smooth_window`, `horizon`, `data_source`, etc.) so tuning rows are tied to one forecast task,
+- pass/override reproducibility controls (`random_seed`, default 42),
 - reset or append tuning outputs,
 - dry-run the resolved plan,
 - write per-stage run logs and winner summaries.

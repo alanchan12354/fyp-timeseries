@@ -57,6 +57,7 @@ def prepare_sequence_experiment_run(
     target_mode: str = "horizon_return",
     target_smooth_window: int = 3,
     task_id: str | None = None,
+    random_seed: int | None = None,
     train_ratio: float = TRAIN_RATIO,
     val_ratio: float = VAL_RATIO,
 ) -> PreparedSequenceRun:
@@ -95,7 +96,19 @@ def prepare_sequence_experiment_run(
     X_va_scaled = scaler.transform(X_va.reshape(-1, feature_count)).reshape(X_va.shape)
     X_te_scaled = scaler.transform(X_te.reshape(-1, feature_count)).reshape(X_te.shape)
 
-    train_loader = DataLoader(SeqDataset(X_tr_scaled, y_tr), batch_size=batch_size, shuffle=True)
+    train_generator = None
+    if random_seed is not None:
+        import torch
+
+        train_generator = torch.Generator()
+        train_generator.manual_seed(int(random_seed))
+
+    train_loader = DataLoader(
+        SeqDataset(X_tr_scaled, y_tr),
+        batch_size=batch_size,
+        shuffle=True,
+        generator=train_generator,
+    )
     val_loader = DataLoader(SeqDataset(X_va_scaled, y_va), batch_size=batch_size)
 
     split_meta = split_metadata(len(X_tr_scaled), len(X_va_scaled), len(X_te_scaled))

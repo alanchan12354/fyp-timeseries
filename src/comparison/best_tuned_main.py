@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
-from src.common.config import HORIZON, REPORTS_DIR, TARGET_MODE, TARGET_SMOOTH_WINDOW
+from src.common.config import HORIZON, RANDOM_SEED, REPORTS_DIR, TARGET_MODE, TARGET_SMOOTH_WINDOW
 
 from .best_configs import (
     CANONICAL_SOURCE,
@@ -184,6 +184,7 @@ def _prepare_runs(
             target_mode=(target_mode or TARGET_MODE),
             target_smooth_window=int(target_smooth_window) if target_smooth_window is not None else int(TARGET_SMOOTH_WINDOW),
             task_id=task_id,
+            random_seed=int(configs[model_key].get("random_seed", RANDOM_SEED)),
         )
         for model_key in MODEL_ORDER
     }

@@ -26,6 +26,7 @@ MIN_DELTA = 1e-5
 VAL_LOSS_SMOOTH_WINDOW = 3
 MIN_EPOCHS = 20
 TRAIN_LOG_EVERY = 1
+RANDOM_SEED = 42
 
 # Learning-rate scheduler config
 SCHEDULER_TYPE = "plateau"  # options: "none", "plateau", "cosine"
