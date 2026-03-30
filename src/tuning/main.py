@@ -200,6 +200,11 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["none", "plateau", "cosine"],
         help="Scheduler override passed to each tuned training run.",
     )
+    parser.add_argument(
+        "--random-seed",
+        type=int,
+        help="Random seed passed to each tuned training run for reproducibility.",
+    )
     return parser
 
 
@@ -482,6 +487,7 @@ def main(cli_args: argparse.Namespace | None = None) -> List[Dict[str, Any]]:
             "task_id": args.task_id,
             "epochs": args.epochs,
             "scheduler_type": args.scheduler_type,
+            "random_seed": args.random_seed,
         }.items()
         if value is not None
     }

@@ -100,6 +100,7 @@ def main(cli_args=None, **overrides):
         target_mode=runtime_config.target_mode,
         target_smooth_window=runtime_config.target_smooth_window,
         task_id=task_id,
+        random_seed=runtime_config.random_seed,
     )
 
     X_tr_s, y_tr = prepared_run.train_data
@@ -158,7 +159,19 @@ def main(cli_args=None, **overrides):
     comparison_records.append(baseline_record)
 
     _, _, feature_dim = X_tr_s.shape
-    tr_load = DataLoader(SeqDataset(X_tr_s, y_tr), batch_size=runtime_config.batch_size, shuffle=True)
+    train_generator = None
+    if runtime_config.random_seed is not None:
+        import torch
+
+        train_generator = torch.Generator()
+        train_generator.manual_seed(int(runtime_config.random_seed))
+
+    tr_load = DataLoader(
+        SeqDataset(X_tr_s, y_tr),
+        batch_size=runtime_config.batch_size,
+        shuffle=True,
+        generator=train_generator,
+    )
     va_load = DataLoader(SeqDataset(X_va_s, y_va), batch_size=runtime_config.batch_size)
 
     models = [
@@ -219,6 +232,7 @@ def main(cli_args=None, **overrides):
             learning_rate=runtime_config.learning_rate,
             epochs=runtime_config.epochs,
             scheduler_type=runtime_config.scheduler_type,
+            random_seed=runtime_config.random_seed,
             artifact_paths={
                 "prediction_slice": os.path.join(FIGURES_DIR, f"{name.lower()}_{_slugify(task_id)}_pred_slice.png"),
                 "scatter": os.path.join(FIGURES_DIR, f"{name.lower()}_{_slugify(task_id)}_scatter.png"),

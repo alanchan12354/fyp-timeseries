@@ -24,6 +24,8 @@ class TuningTaskOverridesTests(unittest.TestCase):
                 "20",
                 "--scheduler-type",
                 "none",
+                "--random-seed",
+                "123",
                 "--dry-run",
             ]
         )
@@ -35,6 +37,7 @@ class TuningTaskOverridesTests(unittest.TestCase):
         self.assertEqual(args.data_source, "spy")
         self.assertEqual(args.epochs, 20)
         self.assertEqual(args.scheduler_type, "none")
+        self.assertEqual(args.random_seed, 123)
 
     def test_runtime_overrides_are_applied_into_candidate_config(self):
         runtime = tuning_main._config_to_runtime_dict(  # noqa: SLF001
@@ -47,6 +50,7 @@ class TuningTaskOverridesTests(unittest.TestCase):
                 "target_smooth_window": 1,
                 "horizon": 1,
                 "data_source": "sine",
+                "random_seed": 7,
             },
         )
 
@@ -55,6 +59,7 @@ class TuningTaskOverridesTests(unittest.TestCase):
         self.assertEqual(runtime["target_smooth_window"], 1)
         self.assertEqual(runtime["horizon"], 1)
         self.assertEqual(runtime["data_source"], "sine")
+        self.assertEqual(runtime["random_seed"], 7)
 
 
 if __name__ == "__main__":

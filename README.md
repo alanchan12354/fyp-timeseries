@@ -18,6 +18,7 @@ With the default configuration in `src/common/config.py`:
 - `HORIZON = 1`
 - `TARGET_MODE = "horizon_return"`
 - `TARGET_SMOOTH_WINDOW = 3`
+- `RANDOM_SEED = 42`
 
 So, by default, experiments forecast the **next trading day's** return from a **30-step multivariate lookback window**.
 
@@ -143,6 +144,7 @@ Target-focused runtime flags available on all neural entrypoints:
 - `--horizon`
 - `--target-mode {horizon_return,next_return,next3_mean_return,next_mean_return,next_volatility,sine_next_day}`
 - `--target-smooth-window`
+- `--random-seed` (defaults to `42`)
 
 ### Predefined sanity profile (`--run-note sanity_sine`)
 
@@ -244,6 +246,7 @@ Task-scoping flags are available directly on the tuning runner:
 - `--target-smooth-window`
 - `--epochs`
 - `--scheduler-type {none,plateau,cosine}`
+- `--random-seed` (defaults to `42`)
 
 ### 5. Compare models with their tuned-best configurations
 
@@ -263,6 +266,7 @@ This workflow:
 - computes the same flattened-sequence linear-regression baseline on the shared split,
 - reuses the shared sequence experiment-preparation flow,
 - calls the existing model training entrypoints with the tuned settings,
+- uses deterministic seeding by default (`random_seed=42`) for reproducible reruns,
 - reports train / validation / test MSE summary columns for every row,
 - writes `<reports_dir>/best_tuned_comparison.csv` and `<reports_dir>/best_tuned_comparison.md`.
 

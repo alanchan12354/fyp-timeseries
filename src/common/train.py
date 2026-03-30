@@ -5,6 +5,7 @@ import json
 import os
 import re
 import numpy as np
+import random
 
 from .config import (
     DEVICE,
@@ -138,7 +139,17 @@ def train_model(
         "scheduler_type": scheduler_type,
         "val_loss_smooth_window": val_loss_smooth_window,
     }
+    random_seed = model_kwargs.pop("random_seed", None)
+    if random_seed is not None:
+        random_seed = int(random_seed)
+        random.seed(random_seed)
+        np.random.seed(random_seed)
+        torch.manual_seed(random_seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(random_seed)
     training_hyperparameters = {k: v for k, v in training_hyperparameters.items() if v is not None}
+    if random_seed is not None:
+        training_hyperparameters["random_seed"] = random_seed
     plot_hyperparameters_text = _format_plot_hyperparameters(model_hyperparameters, training_hyperparameters)
 
     model = model_cls(**model_kwargs).to(DEVICE)

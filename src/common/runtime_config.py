@@ -2,7 +2,7 @@ import argparse
 from dataclasses import asdict, dataclass
 from typing import Any, Mapping, Optional
 
-from .config import BATCH_SIZE, EPOCHS, HORIZON, LR, SCHEDULER_TYPE, TARGET_MODE, TARGET_SMOOTH_WINDOW
+from .config import BATCH_SIZE, EPOCHS, HORIZON, LR, RANDOM_SEED, SCHEDULER_TYPE, TARGET_MODE, TARGET_SMOOTH_WINDOW
 
 
 SANITY_SINE_PROFILE_NAME = "sanity_sine"
@@ -33,6 +33,7 @@ class RuntimeTrainingConfig:
     task_id: Optional[str] = None
     epochs: int = EPOCHS
     scheduler_type: str = SCHEDULER_TYPE
+    random_seed: int = RANDOM_SEED
     run_note: Optional[str] = None
 
     @classmethod
@@ -85,6 +86,7 @@ class RuntimeTrainingConfig:
             "task_id": self.task_id,
             "epochs": self.epochs,
             "scheduler_type": self.scheduler_type,
+            "random_seed": self.random_seed,
             "input_size": self.input_size,
         }
         if self.run_note:
@@ -154,6 +156,7 @@ def add_runtime_config_args(parser: argparse.ArgumentParser) -> argparse.Argumen
         dest="scheduler_type",
         help="Learning-rate scheduler strategy.",
     )
+    parser.add_argument("--random-seed", type=int, dest="random_seed", help="Random seed for deterministic reruns.")
     parser.add_argument("--run-note", dest="run_note", help="Optional experiment tag or note.")
     return parser
 
@@ -182,6 +185,7 @@ _ALIAS_MAP = {
     "task_id": "task_id",
     "epochs": "epochs",
     "scheduler_type": "scheduler_type",
+    "random_seed": "random_seed",
     "run_note": "run_note",
     "experiment_tag": "run_note",
     "experiment_note": "run_note",
