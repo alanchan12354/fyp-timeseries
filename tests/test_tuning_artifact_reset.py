@@ -146,6 +146,31 @@ class TuningArtifactResetTests(unittest.TestCase):
             "model=LSTM;stage=lr_sweep;candidate_param=lr;candidates=0.001|0.0005;fixed=batch:64|hidden:64|layers:2|seq_len:30;selection=best_val_MSE;hidden=64;layers=2;lr=0.0005;batch=64;seq_len=30",
         )
 
+    def test_tune_model_only_enables_figures_for_final_selected_run(self):
+        captured_save_flags = []
+
+        def _fake_train_entrypoint(*, config_dict=None, **kwargs):
+            captured_save_flags.append(bool(config_dict.get("save_figures")))
+            return {"best_val_MSE": 0.1 if config_dict["learning_rate"] == 0.001 else 0.2}
+
+        spec = self.tuning_main.MODEL_SPECS["lstm"]
+        patched_spec = self.tuning_main.ModelSpec(
+            cli_name=spec.cli_name,
+            display_name=spec.display_name,
+            train_entrypoint=_fake_train_entrypoint,
+            baseline=spec.baseline,
+            stage_order=["lr"],
+            default_plan={"lr": [1e-3, 5e-4]},
+        )
+
+        with mock.patch.dict(self.tuning_main.MODEL_SPECS, {"lstm": patched_spec}, clear=False), mock.patch.object(
+            self.tuning_main,
+            "_append_csv",
+        ):
+            self.tuning_main.tune_model("lstm", {"lr": [1e-3, 5e-4]})
+
+        self.assertEqual(captured_save_flags, [False, False, True])
+
 
 if __name__ == "__main__":
     unittest.main()

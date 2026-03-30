@@ -124,6 +124,7 @@ def train_model(
     scheduler_factor = float(model_kwargs.pop("scheduler_factor", SCHEDULER_FACTOR))
     scheduler_patience = int(model_kwargs.pop("scheduler_patience", SCHEDULER_PATIENCE))
     scheduler_min_lr = float(model_kwargs.pop("scheduler_min_lr", SCHEDULER_MIN_LR))
+    save_figures = bool(model_kwargs.pop("save_figures", True))
     train_log_every = max(1, train_log_every)
     model_hyperparameters = dict(model_kwargs)
     training_hyperparameters = {
@@ -283,20 +284,22 @@ def train_model(
     run_id = (experiment_context or {}).get("run_id")
     figure_stem = _build_figure_stem(model_name, run_id)
 
-    fig = plt.figure()
-    plt.plot(train_losses, label="Train Loss")
-    plt.plot(val_losses, label="Val Loss")
-    if val_loss_smooth_window and val_loss_smooth_window > 1:
-        plt.plot(smooth_val_losses, label=f"Val Loss (MA{val_loss_smooth_window})")
-    plt.title(f"{model_name} Loss Curve")
-    plt.xlabel("Epoch")
-    plt.ylabel("MSE")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    _annotate_figure_with_hyperparameters(fig, plot_hyperparameters_text)
-    loss_path = os.path.join(FIGURES_DIR, f"loss_{figure_stem}.png")
-    plt.savefig(loss_path)
-    plt.close(fig)
+    loss_path = None
+    if save_figures:
+        fig = plt.figure()
+        plt.plot(train_losses, label="Train Loss")
+        plt.plot(val_losses, label="Val Loss")
+        if val_loss_smooth_window and val_loss_smooth_window > 1:
+            plt.plot(smooth_val_losses, label=f"Val Loss (MA{val_loss_smooth_window})")
+        plt.title(f"{model_name} Loss Curve")
+        plt.xlabel("Epoch")
+        plt.ylabel("MSE")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        _annotate_figure_with_hyperparameters(fig, plot_hyperparameters_text)
+        loss_path = os.path.join(FIGURES_DIR, f"loss_{figure_stem}.png")
+        plt.savefig(loss_path)
+        plt.close(fig)
 
     model.load_state_dict(torch.load(os.path.join(REPORTS_DIR, f"{model_name}.pt"), map_location=DEVICE))
     model.eval()
@@ -331,35 +334,36 @@ def train_model(
     with open(diagnostics_path, "w", encoding="utf-8") as f:
         json.dump(diagnostics_payload, f, indent=2)
 
-    try:
-        n_plot = min(200, len(y_te))
-        t = test_idx[:n_plot]
+    pred_slice_path = None
+    scatter_path = None
+    if save_figures:
+        try:
+            n_plot = min(200, len(y_te))
+            t = test_idx[:n_plot]
 
-        fig = plt.figure()
-        plt.plot(t, y_te[:n_plot], label="true")
-        plt.plot(t, preds[:n_plot], label=model_name)
-        plt.legend()
-        plt.title(f"{model_name}: Test Prediction Slice")
-        plt.xticks(rotation=45)
-        _annotate_figure_with_hyperparameters(fig, plot_hyperparameters_text)
-        pred_slice_path = os.path.join(FIGURES_DIR, f"{figure_stem.lower()}_pred_slice.png")
-        plt.savefig(pred_slice_path)
-        plt.close(fig)
+            fig = plt.figure()
+            plt.plot(t, y_te[:n_plot], label="true")
+            plt.plot(t, preds[:n_plot], label=model_name)
+            plt.legend()
+            plt.title(f"{model_name}: Test Prediction Slice")
+            plt.xticks(rotation=45)
+            _annotate_figure_with_hyperparameters(fig, plot_hyperparameters_text)
+            pred_slice_path = os.path.join(FIGURES_DIR, f"{figure_stem.lower()}_pred_slice.png")
+            plt.savefig(pred_slice_path)
+            plt.close(fig)
 
-        fig = plt.figure()
-        plt.scatter(y_te, preds, s=8, alpha=0.5)
-        plt.title(f"{model_name}: True vs Predicted")
-        plt.xlabel("True")
-        plt.ylabel("Pred")
-        plt.plot([y_te.min(), y_te.max()], [y_te.min(), y_te.max()], "r--")
-        _annotate_figure_with_hyperparameters(fig, plot_hyperparameters_text)
-        scatter_path = os.path.join(FIGURES_DIR, f"{figure_stem.lower()}_scatter.png")
-        plt.savefig(scatter_path)
-        plt.close(fig)
-    except Exception as e:
-        print(f"Plotting failed: {e}")
-        pred_slice_path = None
-        scatter_path = None
+            fig = plt.figure()
+            plt.scatter(y_te, preds, s=8, alpha=0.5)
+            plt.title(f"{model_name}: True vs Predicted")
+            plt.xlabel("True")
+            plt.ylabel("Pred")
+            plt.plot([y_te.min(), y_te.max()], [y_te.min(), y_te.max()], "r--")
+            _annotate_figure_with_hyperparameters(fig, plot_hyperparameters_text)
+            scatter_path = os.path.join(FIGURES_DIR, f"{figure_stem.lower()}_scatter.png")
+            plt.savefig(scatter_path)
+            plt.close(fig)
+        except Exception as e:
+            print(f"Plotting failed: {e}")
 
     metrics = evaluate_preds(y_te, preds)
     metrics["best_val_MSE"] = float(best_val)

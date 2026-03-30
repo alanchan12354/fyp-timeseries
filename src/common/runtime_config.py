@@ -35,6 +35,7 @@ class RuntimeTrainingConfig:
     epochs: int = EPOCHS
     scheduler_type: str = SCHEDULER_TYPE
     random_seed: int = RANDOM_SEED
+    save_figures: bool = True
     run_note: Optional[str] = None
 
     @classmethod
@@ -88,6 +89,7 @@ class RuntimeTrainingConfig:
             "epochs": self.epochs,
             "scheduler_type": self.scheduler_type,
             "random_seed": self.random_seed,
+            "save_figures": self.save_figures,
             "input_size": self.input_size,
             "seq_len": self.seq_len,
         }
@@ -190,6 +192,7 @@ _ALIAS_MAP = {
     "epochs": "epochs",
     "scheduler_type": "scheduler_type",
     "random_seed": "random_seed",
+    "save_figures": "save_figures",
     "run_note": "run_note",
     "experiment_tag": "run_note",
     "experiment_note": "run_note",

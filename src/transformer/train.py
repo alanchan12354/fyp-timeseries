@@ -48,6 +48,7 @@ def main(config=None, config_dict=None, cli_args=None, prepared_run=None, **over
         epochs=runtime_config.epochs,
         scheduler_type=runtime_config.scheduler_type,
         random_seed=runtime_config.random_seed,
+        save_figures=runtime_config.save_figures,
         **runtime_config.transformer_model_kwargs(),
     )
 
