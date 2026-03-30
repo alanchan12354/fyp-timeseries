@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1380" height="430" viewBox="0 0 1380 430">
+<rect width="100%" height="100%" fill="white" />
+<text x="690" y="28" font-size="20" text-anchor="middle" font-family="Arial">Best Tuned Model Losses on a Shared Y-Axis</text>
+<text x="25" y="210" font-size="14" text-anchor="middle" transform="rotate(-90 25 210)" font-family="Arial">MSE</text>
+<text x="260.0" y="45" font-size="16" text-anchor="middle" font-family="Arial">Training Loss</text>
+<line x1="65" y1="305.00" x2="455" y2="305.00" stroke="#dddddd" stroke-width="1" />
+<text x="57" y="309.00" font-size="10" text-anchor="end" font-family="Arial">0.00e+00</text>
+<line x1="65" y1="242.50" x2="455" y2="242.50" stroke="#dddddd" stroke-width="1" />
+<text x="57" y="246.50" font-size="10" text-anchor="end" font-family="Arial">6.83e-05</text>
+<line x1="65" y1="180.00" x2="455" y2="180.00" stroke="#dddddd" stroke-width="1" />
+<text x="57" y="184.00" font-size="10" text-anchor="end" font-family="Arial">1.37e-04</text>
+<line x1="65" y1="117.50" x2="455" y2="117.50" stroke="#dddddd" stroke-width="1" />
+<text x="57" y="121.50" font-size="10" text-anchor="end" font-family="Arial">2.05e-04</text>
+<line x1="65" y1="55.00" x2="455" y2="55.00" stroke="#dddddd" stroke-width="1" />
+<text x="57" y="59.00" font-size="10" text-anchor="end" font-family="Arial">2.73e-04</text>
+<line x1="65" y1="55" x2="65" y2="305" stroke="#333333" stroke-width="1" />
+<line x1="65" y1="305" x2="455" y2="305" stroke="#333333" stroke-width="1" />
+<rect x="83.00" y="180.68" width="75.00" height="124.32" fill="#4C78A8" />
+<text x="120.50" y="174.68" font-size="10" text-anchor="middle" font-family="Arial">1.36e-04</text>
+<text x="120.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">GRU</text>
+<rect x="176.00" y="121.31" width="75.00" height="183.69" fill="#59A14F" />
+<text x="213.50" y="115.31" font-size="10" text-anchor="middle" font-family="Arial">2.01e-04</text>
+<text x="213.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">LSTM</text>
+<rect x="269.00" y="188.19" width="75.00" height="116.81" fill="#F28E2B" />
+<text x="306.50" y="182.19" font-size="10" text-anchor="middle" font-family="Arial">1.28e-04</text>
+<text x="306.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">RNN</text>
+<rect x="362.00" y="124.13" width="75.00" height="180.87" fill="#E15759" />
+<text x="399.50" y="118.13" font-size="10" text-anchor="middle" font-family="Arial">1.98e-04</text>
+<text x="399.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">Transformer</text>
+<text x="260.0" y="412" font-size="12" text-anchor="middle" font-family="Arial">Model</text>
+<text x="690.0" y="45" font-size="16" text-anchor="middle" font-family="Arial">Testing Loss</text>
+<line x1="495" y1="305.00" x2="885" y2="305.00" stroke="#dddddd" stroke-width="1" />
+<line x1="495" y1="242.50" x2="885" y2="242.50" stroke="#dddddd" stroke-width="1" />
+<line x1="495" y1="180.00" x2="885" y2="180.00" stroke="#dddddd" stroke-width="1" />
+<line x1="495" y1="117.50" x2="885" y2="117.50" stroke="#dddddd" stroke-width="1" />
+<line x1="495" y1="55.00" x2="885" y2="55.00" stroke="#dddddd" stroke-width="1" />
+<line x1="495" y1="55" x2="495" y2="305" stroke="#333333" stroke-width="1" />
+<line x1="495" y1="305" x2="885" y2="305" stroke="#333333" stroke-width="1" />
+<rect x="513.00" y="220.18" width="75.00" height="84.82" fill="#4C78A8" />
+<text x="550.50" y="214.18" font-size="10" text-anchor="middle" font-family="Arial">9.26e-05</text>
+<text x="550.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">GRU</text>
+<rect x="606.00" y="222.47" width="75.00" height="82.53" fill="#59A14F" />
+<text x="643.50" y="216.47" font-size="10" text-anchor="middle" font-family="Arial">9.01e-05</text>
+<text x="643.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">LSTM</text>
+<rect x="699.00" y="204.62" width="75.00" height="100.38" fill="#F28E2B" />
+<text x="736.50" y="198.62" font-size="10" text-anchor="middle" font-family="Arial">1.10e-04</text>
+<text x="736.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">RNN</text>
+<rect x="792.00" y="192.02" width="75.00" height="112.98" fill="#E15759" />
+<text x="829.50" y="186.02" font-size="10" text-anchor="middle" font-family="Arial">1.23e-04</text>
+<text x="829.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">Transformer</text>
+<text x="690.0" y="412" font-size="12" text-anchor="middle" font-family="Arial">Model</text>
+<text x="1120.0" y="45" font-size="16" text-anchor="middle" font-family="Arial">Validation Loss</text>
+<line x1="925" y1="305.00" x2="1315" y2="305.00" stroke="#dddddd" stroke-width="1" />
+<line x1="925" y1="242.50" x2="1315" y2="242.50" stroke="#dddddd" stroke-width="1" />
+<line x1="925" y1="180.00" x2="1315" y2="180.00" stroke="#dddddd" stroke-width="1" />
+<line x1="925" y1="117.50" x2="1315" y2="117.50" stroke="#dddddd" stroke-width="1" />
+<line x1="925" y1="55.00" x2="1315" y2="55.00" stroke="#dddddd" stroke-width="1" />
+<line x1="925" y1="55" x2="925" y2="305" stroke="#333333" stroke-width="1" />
+<line x1="925" y1="305" x2="1315" y2="305" stroke="#333333" stroke-width="1" />
+<rect x="943.00" y="80.02" width="75.00" height="224.98" fill="#4C78A8" />
+<text x="980.50" y="74.02" font-size="10" text-anchor="middle" font-family="Arial">2.46e-04</text>
+<text x="980.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">GRU</text>
+<rect x="1036.00" y="83.29" width="75.00" height="221.71" fill="#59A14F" />
+<text x="1073.50" y="77.29" font-size="10" text-anchor="middle" font-family="Arial">2.42e-04</text>
+<text x="1073.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">LSTM</text>
+<rect x="1129.00" y="73.21" width="75.00" height="231.79" fill="#F28E2B" />
+<text x="1166.50" y="67.21" font-size="10" text-anchor="middle" font-family="Arial">2.53e-04</text>
+<text x="1166.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">RNN</text>
+<rect x="1222.00" y="66.90" width="75.00" height="238.10" fill="#E15759" />
+<text x="1259.50" y="60.90" font-size="10" text-anchor="middle" font-family="Arial">2.60e-04</text>
+<text x="1259.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">Transformer</text>
+<text x="1120.0" y="412" font-size="12" text-anchor="middle" font-family="Arial">Model</text>
+</svg>
