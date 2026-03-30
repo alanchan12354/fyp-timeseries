@@ -171,12 +171,15 @@ Runs the shared comparison workflow for sequence models.
 
 What it does:
 
-- builds one common `SEQ_LEN` / `HORIZON` dataset split,
-- scales the shared split once,
+- resolves runtime task controls at the entrypoint (`task_id`, `data_source`, `target_mode`, `target_smooth_window`, `horizon`),
+- builds one common task-aware sequence split via `prepare_sequence_experiment_run(...)`,
 - fits a flattened-sequence linear regression reference (`Baseline-LR`),
 - trains RNN, LSTM, GRU, and Transformer on the same split,
-- writes comparison metrics and a comparison-plot figure,
-- writes a model-comparison record selecting the best model by validation MSE.
+- writes task-scoped comparison metrics and a task-scoped comparison-plot figure:
+  - `metrics_comparison_<task_id>.csv`
+  - `metrics_comparison_<task_id>.json`
+  - `comparison_losses_<task_id>.png`
+- writes a model-comparison record selecting the best model by validation MSE, including task metadata in the summary payload.
 
 This file is the best source for the repository's **apples-to-apples sequence comparison**.
 
