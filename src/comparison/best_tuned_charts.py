@@ -129,7 +129,9 @@ def build_svg_chart(rows: list[ComparisonRow], *, metric: str, title: str, bar_c
         tick_value = safe_max * tick_index / 5
         y = margin["top"] + plot_height - ((tick_value / safe_max) * plot_height)
         parts.append(f'<line x1="{margin["left"]}" y1="{y:.2f}" x2="{width - margin["right"]}" y2="{y:.2f}" class="grid" />')
-        parts.append(f'<text x="{margin["left"] - 12}" y="{y + 5:.2f}" text-anchor="end" class="axis">{tick_value:.6f}</text>')
+        parts.append(
+            f'<text x="{margin["left"] - 12}" y="{y + 5:.2f}" text-anchor="end" class="axis">{_format_metric_value(tick_value)}</text>'
+        )
 
     parts.append(f'<line x1="{margin["left"]}" y1="{margin["top"] + plot_height}" x2="{width - margin["right"]}" y2="{margin["top"] + plot_height}" class="axis-line" />')
     parts.append(f'<line x1="{margin["left"]}" y1="{margin["top"]}" x2="{margin["left"]}" y2="{margin["top"] + plot_height}" class="axis-line" />')
@@ -140,13 +142,24 @@ def build_svg_chart(rows: list[ComparisonRow], *, metric: str, title: str, bar_c
         x = start_x + index * (bar_width + bar_gap)
         y = margin["top"] + plot_height - bar_height
         parts.append(f'<rect x="{x:.2f}" y="{y:.2f}" width="{bar_width}" height="{bar_height:.2f}" fill="{bar_color}" stroke="#1f2933" />')
-        parts.append(f'<text x="{x + bar_width / 2:.2f}" y="{y - 8:.2f}" text-anchor="middle" class="value">{value:.6f}</text>')
+        parts.append(
+            f'<text x="{x + bar_width / 2:.2f}" y="{y - 8:.2f}" text-anchor="middle" class="value">{_format_metric_value(value)}</text>'
+        )
         parts.append(f'<text x="{x + bar_width / 2:.2f}" y="{margin["top"] + plot_height + 24:.2f}" text-anchor="end" transform="rotate(-25 {x + bar_width / 2:.2f} {margin["top"] + plot_height + 24:.2f})" class="label">{escape(row.model)}</text>')
 
     parts.append(f'<text x="{margin["left"] + plot_width / 2}" y="{height - 30}" text-anchor="middle" class="axis">Model</text>')
     parts.append(f'<text x="24" y="{margin["top"] + plot_height / 2}" text-anchor="middle" transform="rotate(-90 24 {margin["top"] + plot_height / 2})" class="axis">MSE</text>')
     parts.append('</svg>')
     return ''.join(parts)
+
+
+def _format_metric_value(value: float) -> str:
+    abs_value = abs(value)
+    if abs_value == 0:
+        return "0"
+    if abs_value < 1e-4:
+        return f"{value:.2e}"
+    return f"{value:.6f}"
 
 
 

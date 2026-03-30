@@ -11,7 +11,12 @@ from src.common.runtime_config import RuntimeTrainingConfig
 from src.comparison.best_configs import BestConfigError, load_best_configs
 from src.comparison.best_tuned_main import build_markdown_report, build_report_row, run_best_tuned_comparison
 
-from src.comparison.best_tuned_charts import BestTunedChartError, generate_best_tuned_svg_charts
+from src.comparison.best_tuned_charts import (
+    BestTunedChartError,
+    ComparisonRow,
+    build_svg_chart,
+    generate_best_tuned_svg_charts,
+)
 
 
 class BestConfigsTests(unittest.TestCase):
@@ -218,6 +223,17 @@ LSTM,0.1,0.2
 
             with self.assertRaisesRegex(BestTunedChartError, "best_test_MSE"):
                 generate_best_tuned_svg_charts(csv_path, output_dir=Path(tmpdir) / "figures")
+
+    def test_build_svg_chart_uses_scientific_notation_for_tiny_values(self):
+        rows = [
+            ComparisonRow(model="Baseline-LR", metrics={"best_val_MSE": 2.7e-8}),
+            ComparisonRow(model="GRU", metrics={"best_val_MSE": 8.0e-6}),
+        ]
+
+        svg = build_svg_chart(rows, metric="best_val_MSE", title="Validation Loss (MSE)", bar_color="#54A24B")
+
+        self.assertIn("2.70e-08", svg)
+        self.assertNotIn(">0.000000<", svg)
 
 
 if __name__ == "__main__":

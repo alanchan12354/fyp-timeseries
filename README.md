@@ -185,13 +185,28 @@ Expected sanity outcomes for this profile:
 python -m src.comparison.main
 ```
 
+Task-scoped example (recommended for explicit reporting):
+
+```bash
+python -m src.comparison.main \
+  --task-id next_volatility_sw5_h1 \
+  --data-source spy \
+  --target-mode next_volatility \
+  --target-smooth-window 5 \
+  --horizon 1
+```
+
 This workflow:
 
-- builds one shared sequence split from the 8-feature SPY frame,
+- resolves runtime task settings at the entrypoint (`task_id`, `data_source`, `target_mode`, `target_smooth_window`, `horizon`),
+- builds one task-aware shared sequence split from the selected data source,
 - trains RNN, LSTM, GRU, and Transformer on that split,
 - computes a flattened-sequence linear-regression reference across all sequence features,
-- saves comparison metrics and a loss-comparison figure,
-- writes a model-comparison record summarizing the winner by validation MSE.
+- saves task-scoped comparison artifacts to avoid ambiguity across tasks:
+  - `<reports_dir>/metrics_comparison_<task_id>.csv`
+  - `<reports_dir>/metrics_comparison_<task_id>.json`
+  - `<reports_dir>/figures/comparison_losses_<task_id>.png`
+- writes a model-comparison record summarizing the winner by validation MSE with task metadata in the summary payload.
 
 ### 4. Run the tuning workflow
 
