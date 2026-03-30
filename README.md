@@ -8,7 +8,7 @@ The codebase includes shared experiment-preparation utilities, runtime-configura
 The repository currently supports a shared forecasting setup across the neural training and comparison workflows:
 
 - **Sequence-model workflow** (`src/*/train.py`, `src/comparison/main.py`, `src/tuning/main.py`): predicts a configurable return target from the last `SEQ_LEN` windows of an 8-feature SPY input schema.
-- **Comparison reference baseline** (`src/comparison/main.py`): fits a flattened-sequence linear regression on that same shared `SEQ_LEN` / `HORIZON` dataset.
+- **Baseline-LR workflow** (`src/baseline_lr/train.py`): fits a flattened-sequence linear regression on that same shared sequence dataset as a first-class model entrypoint.
 
 With the default configuration in `src/common/config.py`:
 
@@ -48,6 +48,7 @@ Available neural target modes are:
 ```text
 src/
   common/          Shared config, data prep, training, reporting, runtime config
+  baseline_lr/     Baseline linear-regression model entrypoint
   comparison/      Shared-split comparison pipeline across models
   gru/             GRU model and entrypoint
   lstm/            LSTM model and entrypoint
@@ -94,6 +95,7 @@ tests/
 ### 1. Train a single neural model
 
 ```bash
+python -m src.baseline_lr.train
 python -m src.lstm.train
 python -m src.gru.train
 python -m src.rnn.train
@@ -226,7 +228,7 @@ python -m src.tuning.main --plan-json '{"gru": {"hidden": [32, 64]}}'
 python -m src.tuning.main --model all --task-id next_volatility --target-mode next_volatility --target-smooth-window 5 --horizon 1
 ```
 
-The tuning runner performs staged sweeps over model-specific parameter groups and writes summary CSVs such as:
+The tuning runner performs staged sweeps over model-specific parameter groups (including a default `seq_len` sweep) and writes summary CSVs such as:
 
 - `<reports_dir>/tuning_runs.csv`
 - `<reports_dir>/tuning_winners.csv`
@@ -236,6 +238,7 @@ The tuning runner performs staged sweeps over model-specific parameter groups an
 `<reports_dir>/tuning_winners.csv` is the canonical source of "best parameters" for downstream comparison because it stores the final frozen winner after each sequential tuning stage. `<reports_dir>/tuning_best_configs.csv` remains available when you want the single best archived run per model instead.
 
 If `--session-mode reset` is used, the runner clears prior tuning artifacts in the active `<reports_dir>` before starting a fresh session.
+At the end of a run, the workflow prints per-model elapsed time and total wall-clock tuning time.
 
 Task-scoping flags are available directly on the tuning runner:
 
@@ -244,6 +247,7 @@ Task-scoping flags are available directly on the tuning runner:
 - `--data-source {spy,sine}`
 - `--target-mode {horizon_return,next_return,next3_mean_return,next_mean_return,next_volatility,sine_next_day}`
 - `--target-smooth-window`
+- `--seq-len`
 - `--epochs`
 - `--scheduler-type {none,plateau,cosine}`
 - `--random-seed` (defaults to `42`)
@@ -263,7 +267,7 @@ python -m src.comparison.best_tuned_main --config-source tuning_best_configs
 This workflow:
 
 - loads tuned per-model hyperparameters from `<reports_dir>/tuning_winners.csv` by default,
-- computes the same flattened-sequence linear-regression baseline on the shared split,
+- runs the same standalone `Baseline-LR` model entrypoint on the shared split,
 - reuses the shared sequence experiment-preparation flow,
 - calls the existing model training entrypoints with the tuned settings,
 - uses deterministic seeding by default (`random_seed=42`) for reproducible reruns,

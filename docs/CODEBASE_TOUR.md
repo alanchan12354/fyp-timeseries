@@ -20,15 +20,15 @@ The neural-model pipeline uses a fixed lookback sequence and predicts a configur
   - `sine_next_day`: alias of next-step target for sine next-day prediction runs
 - Entrypoints: `src/rnn/train.py`, `src/lstm/train.py`, `src/gru/train.py`, `src/transformer/train.py`, `src/comparison/main.py`, `src/comparison/best_tuned_main.py`, `src/tuning/main.py`.
 
-### B. Shared comparison baseline
+### B. Baseline-LR model workflow
 
-The comparison workflows also fit a flattened-sequence linear regression on the exact same prepared dataset used by both comparison entrypoints:
+The project includes a dedicated Baseline-LR entrypoint that fits flattened-sequence linear regression on the exact same prepared dataset:
 
 - Input: the last `SEQ_LEN` timesteps of all 8 features, flattened into one tabular row.
 - Target: future `log_ret` at `t + HORIZON`.
-- Entrypoints: `src/comparison/main.py`, `src/comparison/best_tuned_main.py`.
+- Entrypoints: `src/baseline_lr/train.py`, plus calls from `src/comparison/main.py` and `src/comparison/best_tuned_main.py`.
 
-That flattened-sequence linear-regression baseline is part of both the shared comparison workflow and the best-tuned comparison workflow.
+That flattened-sequence linear-regression baseline is treated as a first-class model and is reused by both comparison workflows.
 
 With the current defaults in `src/common/config.py`:
 
@@ -158,12 +158,12 @@ A thin helper layer that standardizes:
 - runtime-config resolution,
 - shared sequence-data preparation for neural models, including runtime target controls (`horizon`, `target_mode`, `target_smooth_window`).
 
-### `src/rnn/`, `src/lstm/`, `src/gru/`, `src/transformer/`
+### `src/rnn/`, `src/lstm/`, `src/gru/`, `src/transformer/`, `src/baseline_lr/`
 
 Each model directory has:
 
-- `model.py`: the architecture definition,
-- `train.py`: the runtime-configurable entrypoint that prepares a shared sequence experiment and calls the common trainer.
+- `model.py`: the architecture definition (neural models),
+- `train.py`: the runtime-configurable entrypoint that prepares a shared sequence experiment and runs either neural training or Baseline-LR fitting.
 
 These entrypoints accept CLI hyperparameter overrides, which is useful for manual sweeps or scripted tuning.
 
@@ -177,7 +177,7 @@ What it does:
 - resolves runtime task controls at the entrypoint (`task_id`, `data_source`, `target_mode`, `target_smooth_window`, `horizon`),
 - builds one common task-aware sequence split via `prepare_sequence_experiment_run(...)`,
 - applies deterministic train-loader shuffling and training seeds from `runtime_config.random_seed` (default 42),
-- fits a flattened-sequence linear regression reference (`Baseline-LR`),
+- runs the standalone flattened-sequence linear regression model entrypoint (`Baseline-LR`),
 - trains RNN, LSTM, GRU, and Transformer on the same split,
 - writes task-scoped comparison metrics and a task-scoped comparison-plot figure:
   - `metrics_comparison_<task_id>.csv`
@@ -202,7 +202,7 @@ What it does:
 - selects a tuning source (`tuning_winners.csv` by default),
 - rebuilds prepared sequence runs using the shared experiment helper,
 - applies deterministic seeding for those reruns (`random_seed`, default 42),
-- computes the flattened-sequence linear-regression baseline on the same shared split,
+- runs the flattened-sequence linear-regression baseline entrypoint on the same shared split,
 - reuses each model's existing training entrypoint,
 - includes train / validation / test MSE summary columns in the final report,
 - writes `<reports_dir>/best_tuned_comparison.csv` and `<reports_dir>/best_tuned_comparison.md`,
@@ -226,8 +226,9 @@ Runs staged hyperparameter sweeps.
 
 Default stage order:
 
-- recurrent models: `lr -> hidden -> layers -> batch_size`
-- transformer: `lr -> d_model -> num_layers -> nhead -> batch_size`
+- recurrent models: `lr -> hidden -> layers -> batch_size -> seq_len`
+- transformer: `lr -> d_model -> num_layers -> nhead -> batch_size -> seq_len`
+- baseline_lr: `seq_len`
 
 Capabilities include:
 
@@ -237,7 +238,8 @@ Capabilities include:
 - pass/override reproducibility controls (`random_seed`, default 42),
 - reset or append tuning outputs,
 - dry-run the resolved plan,
-- write per-stage run logs and winner summaries.
+- write per-stage run logs and winner summaries,
+- print elapsed timing per model and total tuning workflow runtime.
 
 ### `scripts/run_multitask_final_reports.sh`
 One-click orchestration script for final-report packaging across the four core tasks:
@@ -249,7 +251,7 @@ One-click orchestration script for final-report packaging across the four core t
 
 For each task it:
 
-- tunes all four neural models (`src.tuning.main`),
+- tunes the five configured models (RNN/LSTM/GRU/Transformer/Baseline-LR) via `src.tuning.main`,
 - runs tuned-best comparison (`src.comparison.best_tuned_main`),
 - builds hyperparameter impact report (`src.tuning.report`),
 - exports tuned-comparison charts (`src.comparison.best_tuned_charts`),

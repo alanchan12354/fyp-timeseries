@@ -24,7 +24,7 @@ def _install_fake_modules():
     fake_torch = _FakeTorch(cuda=_FakeCuda(), __version__="0.0-test")
     sys.modules.setdefault("torch", fake_torch)
 
-    for module_name in ("src.gru.train", "src.lstm.train", "src.rnn.train", "src.transformer.train"):
+    for module_name in ("src.gru.train", "src.lstm.train", "src.rnn.train", "src.transformer.train", "src.baseline_lr.train"):
         module = types.ModuleType(module_name)
         module.main = lambda **kwargs: {"best_val_MSE": 0.123}
         sys.modules[module_name] = module
@@ -73,6 +73,15 @@ class TuningArtifactResetTests(unittest.TestCase):
             clear_outputs=False,
             keep_outputs=False,
             dry_run=False,
+            horizon=None,
+            data_source=None,
+            target_mode=None,
+            target_smooth_window=None,
+            task_id=None,
+            seq_len=None,
+            epochs=None,
+            scheduler_type=None,
+            random_seed=None,
         )
         with mock.patch.object(self.tuning_main, "reset_tuning_artifacts", return_value={
             "reports_dir": "/tmp/reports",
@@ -130,11 +139,11 @@ class TuningArtifactResetTests(unittest.TestCase):
         self.assertEqual(summary["final_config"]["lr"], 1e-3)
         self.assertEqual(
             captured_notes[0],
-            "model=LSTM;stage=lr_sweep;candidate_param=lr;candidates=0.001|0.0005;fixed=batch:64|hidden:64|layers:2;selection=best_val_MSE;hidden=64;layers=2;lr=0.001;batch=64",
+            "model=LSTM;stage=lr_sweep;candidate_param=lr;candidates=0.001|0.0005;fixed=batch:64|hidden:64|layers:2|seq_len:30;selection=best_val_MSE;hidden=64;layers=2;lr=0.001;batch=64;seq_len=30",
         )
         self.assertEqual(
             captured_notes[1],
-            "model=LSTM;stage=lr_sweep;candidate_param=lr;candidates=0.001|0.0005;fixed=batch:64|hidden:64|layers:2;selection=best_val_MSE;hidden=64;layers=2;lr=0.0005;batch=64",
+            "model=LSTM;stage=lr_sweep;candidate_param=lr;candidates=0.001|0.0005;fixed=batch:64|hidden:64|layers:2|seq_len:30;selection=best_val_MSE;hidden=64;layers=2;lr=0.0005;batch=64;seq_len=30",
         )
 
 

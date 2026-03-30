@@ -85,7 +85,10 @@ def _load_from_tuning_winners(
         for row in reader:
             if task_ids and _row_task_id(row) not in task_ids:
                 continue
-            model = _normalize_model_name(row.get("model"))
+            raw_model = str(row.get("model") or "").strip().lower()
+            if raw_model not in REQUIRED_KEYS:
+                continue
+            model = raw_model
             stage_index = _coerce_int(row.get("stage_index"), field_name="stage_index", model=model)
             prior_stage = _coerce_int(latest_rows[model].get("stage_index"), field_name="stage_index", model=model) if model in latest_rows else -1
             if stage_index >= prior_stage:
@@ -110,7 +113,10 @@ def _load_from_tuning_best_configs(
         for row in reader:
             if task_ids and _row_task_id(row) not in task_ids:
                 continue
-            model = _normalize_model_name(row.get("model"))
+            raw_model = str(row.get("model") or "").strip().lower()
+            if raw_model not in REQUIRED_KEYS:
+                continue
+            model = raw_model
             best_val = _coerce_float(row.get("best_val_MSE"), field_name="best_val_MSE", model=model)
             current = rows_by_model.get(model)
             if current is None or best_val < _coerce_float(current.get("best_val_MSE"), field_name="best_val_MSE", model=model):
