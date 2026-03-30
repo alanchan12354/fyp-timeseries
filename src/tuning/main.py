@@ -2,13 +2,15 @@ import argparse
 import csv
 import json
 import os
+import time
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Sequence
 
-from src.common.config import BATCH_SIZE, LR, REPORTS_DIR
+from src.common.config import BATCH_SIZE, LR, REPORTS_DIR, SEQ_LEN
 from src.common.runtime_config import RuntimeTrainingConfig
 from src.common.reporting import format_structured_notes, reset_tuning_artifacts
+from src.baseline_lr import train as baseline_lr_train
 from src.gru import train as gru_train
 from src.lstm import train as lstm_train
 from src.rnn import train as rnn_train
@@ -19,7 +21,7 @@ TUNING_RUNS_CSV = os.path.join(REPORTS_DIR, "tuning_runs.csv")
 TUNING_WINNERS_CSV = os.path.join(REPORTS_DIR, "tuning_winners.csv")
 
 RECURRENT_MODELS = {"lstm", "gru", "rnn"}
-DEFAULT_MODEL_ORDER = ["lstm", "gru", "rnn", "transformer"]
+DEFAULT_MODEL_ORDER = ["lstm", "gru", "rnn", "transformer", "baseline_lr"]
 RUNS_FIELDNAMES = [
     "task_id",
     "model",
@@ -60,6 +62,7 @@ def _recurrent_baseline() -> Dict[str, Any]:
         "hidden": 64,
         "layers": 2,
         "batch_size": BATCH_SIZE,
+        "seq_len": SEQ_LEN,
     }
 
 
@@ -69,12 +72,13 @@ MODEL_SPECS: Dict[str, ModelSpec] = {
         display_name="LSTM",
         train_entrypoint=lstm_train.main,
         baseline=_recurrent_baseline(),
-        stage_order=["lr", "hidden", "layers", "batch_size"],
+        stage_order=["lr", "hidden", "layers", "batch_size", "seq_len"],
         default_plan={
             "lr": [1e-3, 5e-4, 1e-4],
             "hidden": [32, 64, 128],
             "layers": [1, 2, 3],
             "batch_size": [32, 64, 128],
+            "seq_len": [20, 30, 60],
         },
     ),
     "gru": ModelSpec(
@@ -82,12 +86,13 @@ MODEL_SPECS: Dict[str, ModelSpec] = {
         display_name="GRU",
         train_entrypoint=gru_train.main,
         baseline=_recurrent_baseline(),
-        stage_order=["lr", "hidden", "layers", "batch_size"],
+        stage_order=["lr", "hidden", "layers", "batch_size", "seq_len"],
         default_plan={
             "lr": [1e-3, 5e-4, 1e-4],
             "hidden": [32, 64, 128],
             "layers": [1, 2, 3],
             "batch_size": [32, 64, 128],
+            "seq_len": [20, 30, 60],
         },
     ),
     "rnn": ModelSpec(
@@ -95,12 +100,13 @@ MODEL_SPECS: Dict[str, ModelSpec] = {
         display_name="RNN",
         train_entrypoint=rnn_train.main,
         baseline=_recurrent_baseline(),
-        stage_order=["lr", "hidden", "layers", "batch_size"],
+        stage_order=["lr", "hidden", "layers", "batch_size", "seq_len"],
         default_plan={
             "lr": [1e-3, 5e-4, 1e-4],
             "hidden": [32, 64, 128],
             "layers": [1, 2, 3],
             "batch_size": [32, 64, 128],
+            "seq_len": [20, 30, 60],
         },
     ),
     "transformer": ModelSpec(
@@ -113,14 +119,30 @@ MODEL_SPECS: Dict[str, ModelSpec] = {
             "num_layers": 2,
             "nhead": 4,
             "batch_size": BATCH_SIZE,
+            "seq_len": SEQ_LEN,
         },
-        stage_order=["lr", "d_model", "num_layers", "nhead", "batch_size"],
+        stage_order=["lr", "d_model", "num_layers", "nhead", "batch_size", "seq_len"],
         default_plan={
             "lr": [1e-3, 5e-4, 1e-4],
             "d_model": [32, 64, 128],
             "num_layers": [1, 2, 3],
             "nhead": [2, 4, 8],
             "batch_size": [32, 64, 128],
+            "seq_len": [20, 30, 60],
+        },
+    ),
+    "baseline_lr": ModelSpec(
+        cli_name="baseline_lr",
+        display_name="Baseline-LR",
+        train_entrypoint=baseline_lr_train.main,
+        baseline={
+            "lr": LR,
+            "batch_size": BATCH_SIZE,
+            "seq_len": SEQ_LEN,
+        },
+        stage_order=["seq_len"],
+        default_plan={
+            "seq_len": [20, 30, 60],
         },
     ),
 }
@@ -185,6 +207,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--target-smooth-window",
         type=int,
         help="Forward window passed to rolling target modes during tuning.",
+    )
+    parser.add_argument(
+        "--seq-len",
+        type=int,
+        help="Input lookback window passed to each tuned training run.",
     )
     parser.add_argument(
         "--task-id",
@@ -271,6 +298,7 @@ def _config_to_runtime_dict(
     ).to_dict()
     runtime["learning_rate"] = frozen_config["lr"]
     runtime["batch_size"] = frozen_config["batch_size"]
+    runtime["seq_len"] = frozen_config["seq_len"]
     if model_name in RECURRENT_MODELS:
         runtime["recurrent_hidden_size"] = frozen_config["hidden"]
         runtime["recurrent_layer_count"] = frozen_config["layers"]
@@ -282,12 +310,19 @@ def _config_to_runtime_dict(
 
 
 def _note_alias_map(model_name: str) -> Dict[str, str]:
+    if model_name == "baseline_lr":
+        return {
+            "lr": "lr",
+            "batch_size": "batch",
+            "seq_len": "seq_len",
+        }
     if model_name in RECURRENT_MODELS:
         return {
             "hidden": "hidden",
             "layers": "layers",
             "lr": "lr",
             "batch_size": "batch",
+            "seq_len": "seq_len",
         }
     return {
         "d_model": "d_model",
@@ -295,6 +330,7 @@ def _note_alias_map(model_name: str) -> Dict[str, str]:
         "nhead": "nhead",
         "lr": "lr",
         "batch_size": "batch",
+        "seq_len": "seq_len",
     }
 
 
@@ -382,6 +418,7 @@ def tune_model(
     spec = MODEL_SPECS[model_name]
     frozen_config = deepcopy(spec.baseline)
     winners: List[Dict[str, Any]] = []
+    model_start = time.perf_counter()
 
     for stage_index, stage_name in enumerate(spec.stage_order, start=1):
         candidates = list(plan[stage_name])
@@ -464,10 +501,12 @@ def tune_model(
         "model": model_name,
         "final_config": frozen_config,
         "winners": winners,
+        "elapsed_seconds": round(time.perf_counter() - model_start, 3),
     }
 
 
 def main(cli_args: argparse.Namespace | None = None) -> List[Dict[str, Any]]:
+    workflow_start = time.perf_counter()
     args = cli_args or build_parser().parse_args()
     session_mode = _resolve_session_mode(args)
 
@@ -485,6 +524,7 @@ def main(cli_args: argparse.Namespace | None = None) -> List[Dict[str, Any]]:
             "target_mode": args.target_mode,
             "target_smooth_window": args.target_smooth_window,
             "task_id": args.task_id,
+            "seq_len": args.seq_len,
             "epochs": args.epochs,
             "scheduler_type": args.scheduler_type,
             "random_seed": args.random_seed,
@@ -520,6 +560,8 @@ def main(cli_args: argparse.Namespace | None = None) -> List[Dict[str, Any]]:
         for model_name in selected_models
     ]
     print("Completed tuning workflow.")
+    elapsed_seconds = round(time.perf_counter() - workflow_start, 3)
+    print(f"Total tuning workflow time: {elapsed_seconds:.3f}s")
     print(json.dumps(summaries, indent=2))
     return summaries
 

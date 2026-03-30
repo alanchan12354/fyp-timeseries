@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Callable
 
-from src.common.config import HORIZON, RANDOM_SEED, REPORTS_DIR, TARGET_MODE, TARGET_SMOOTH_WINDOW
+from src.common.config import HORIZON, RANDOM_SEED, REPORTS_DIR, SEQ_LEN, TARGET_MODE, TARGET_SMOOTH_WINDOW
 
 from .best_configs import (
     CANONICAL_SOURCE,
@@ -126,37 +126,31 @@ def run_best_tuned_comparison(
 
 
 def _build_baseline_row(*, shared_run: Any, selection: BestConfigSelection) -> dict[str, Any]:
-    from sklearn.linear_model import LinearRegression
-    from sklearn.metrics import mean_squared_error
-    from src.common.metrics import directional_accuracy
+    from src.baseline_lr.train import main as baseline_lr_main
 
-    X_tr, y_tr = shared_run.train_data
-    X_va, y_va = shared_run.val_data
-    X_te, y_te = shared_run.test_data
-
-    X_tr_flat = X_tr.reshape(len(X_tr), -1)
-    X_va_flat = X_va.reshape(len(X_va), -1)
-    X_te_flat = X_te.reshape(len(X_te), -1)
-
-    baseline = LinearRegression()
-    baseline.fit(X_tr_flat, y_tr)
-
-    yhat_tr = baseline.predict(X_tr_flat)
-    yhat_va = baseline.predict(X_va_flat)
-    yhat_te = baseline.predict(X_te_flat)
+    metrics = baseline_lr_main(
+        config_dict={
+            "run_note": (
+                f"Best-tuned comparison using {selection.source_key}. "
+                f"Canonical source: {selection.source_path.name}."
+            ),
+            "task_id": shared_run.run_context["task"]["task_id"],
+            "data_source": shared_run.run_context["task"]["data_source"],
+            "target_mode": shared_run.run_context["task"]["target_mode"],
+            "target_smooth_window": shared_run.run_context["task"]["target_smooth_window"],
+            "horizon": shared_run.run_context["task"]["prediction_horizon"],
+            "seq_len": shared_run.run_context["task"]["input_window"],
+            "batch_size": 64,
+            "learning_rate": 0.001,
+        },
+        prepared_run=shared_run,
+    )
 
     return build_report_row(
         model_name=BASELINE_NAME,
         config_source=selection.source_path.name,
-        tuned_config={"model": "LinearRegression", "flattened_sequence": True},
-        metrics={
-            "best_train_MSE": float(mean_squared_error(y_tr, yhat_tr)),
-            "best_val_MSE": float(mean_squared_error(y_va, yhat_va)),
-            "best_test_MSE": float(mean_squared_error(y_te, yhat_te)),
-            "MSE": float(mean_squared_error(y_te, yhat_te)),
-            "MAE": float(abs(y_te - yhat_te).mean()),
-            "DA": directional_accuracy(y_te, yhat_te),
-        },
+        tuned_config={"model": "LinearRegression", "flattened_sequence": True, "seq_len": shared_run.run_context["task"]["input_window"]},
+        metrics=metrics,
         run_id=f"{shared_run.run_context['run_id']}-baseline-lr",
     )
 
@@ -178,7 +172,12 @@ def _prepare_runs(
             batch_size=int(configs[model_key]["batch_size"]),
             experiment_name=f"best_tuned_{model_key}_comparison",
             run_note="Shared split prepared for best-tuned model comparison.",
-            training_metadata={"lr": configs[model_key]["lr"], "batch_size": configs[model_key]["batch_size"]},
+            training_metadata={
+                "lr": configs[model_key]["lr"],
+                "batch_size": configs[model_key]["batch_size"],
+                "seq_len": int(configs[model_key].get("seq_len", SEQ_LEN)),
+            },
+            seq_len=int(configs[model_key].get("seq_len", SEQ_LEN)),
             horizon=int(horizon) if horizon is not None else int(HORIZON),
             data_source=(data_source or "spy"),
             target_mode=(target_mode or TARGET_MODE),

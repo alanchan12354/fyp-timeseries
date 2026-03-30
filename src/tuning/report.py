@@ -137,6 +137,7 @@ def _collect_stage_impacts(rows: List[Dict[str, str]]) -> Dict[str, List[Dict[st
         "gru": "GRU",
         "rnn": "RNN",
         "transformer": "Transformer",
+        "baseline_lr": "Baseline-LR",
     }
     for row in rows:
         model_name = display_names.get(row["model"].lower(), row["model"])
