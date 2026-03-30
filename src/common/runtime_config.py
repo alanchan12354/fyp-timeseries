@@ -2,7 +2,7 @@ import argparse
 from dataclasses import asdict, dataclass
 from typing import Any, Mapping, Optional
 
-from .config import BATCH_SIZE, EPOCHS, HORIZON, LR, RANDOM_SEED, SCHEDULER_TYPE, TARGET_MODE, TARGET_SMOOTH_WINDOW
+from .config import BATCH_SIZE, EPOCHS, HORIZON, LR, RANDOM_SEED, SCHEDULER_TYPE, SEQ_LEN, TARGET_MODE, TARGET_SMOOTH_WINDOW
 
 
 SANITY_SINE_PROFILE_NAME = "sanity_sine"
@@ -26,6 +26,7 @@ class RuntimeTrainingConfig:
     transformer_num_layers: int = 2
     transformer_nhead: int = 4
     input_size: int = 8
+    seq_len: int = SEQ_LEN
     horizon: int = HORIZON
     data_source: str = "spy"
     target_mode: str = TARGET_MODE
@@ -88,6 +89,7 @@ class RuntimeTrainingConfig:
             "scheduler_type": self.scheduler_type,
             "random_seed": self.random_seed,
             "input_size": self.input_size,
+            "seq_len": self.seq_len,
         }
         if self.run_note:
             metadata["run_note"] = self.run_note
@@ -118,6 +120,7 @@ def add_runtime_config_args(parser: argparse.ArgumentParser) -> argparse.Argumen
     )
     parser.add_argument("--nhead", type=int, dest="transformer_nhead", help="Transformer attention head count.")
     parser.add_argument("--input-size", type=int, dest="input_size", help="Number of input channels per sequence step.")
+    parser.add_argument("--seq-len", type=int, dest="seq_len", help="Input lookback window length for sequence models.")
     parser.add_argument("--horizon", type=int, dest="horizon", help="Target horizon for horizon_return mode.")
     parser.add_argument(
         "--data-source",
@@ -178,6 +181,7 @@ _ALIAS_MAP = {
     "transformer_nhead": "transformer_nhead",
     "transformer_num_layers": "transformer_num_layers",
     "input_size": "input_size",
+    "seq_len": "seq_len",
     "horizon": "horizon",
     "data_source": "data_source",
     "target_mode": "target_mode",

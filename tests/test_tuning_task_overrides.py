@@ -12,6 +12,8 @@ class TuningTaskOverridesTests(unittest.TestCase):
                 "all",
                 "--task-id",
                 "spy_next5_volatility",
+                "--seq-len",
+                "60",
                 "--target-mode",
                 "next_volatility",
                 "--target-smooth-window",
@@ -31,6 +33,7 @@ class TuningTaskOverridesTests(unittest.TestCase):
         )
 
         self.assertEqual(args.task_id, "spy_next5_volatility")
+        self.assertEqual(args.seq_len, 60)
         self.assertEqual(args.target_mode, "next_volatility")
         self.assertEqual(args.target_smooth_window, 5)
         self.assertEqual(args.horizon, 1)
@@ -42,13 +45,14 @@ class TuningTaskOverridesTests(unittest.TestCase):
     def test_runtime_overrides_are_applied_into_candidate_config(self):
         runtime = tuning_main._config_to_runtime_dict(  # noqa: SLF001
             "gru",
-            {"lr": 1e-4, "hidden": 32, "layers": 1, "batch_size": 16},
+            {"lr": 1e-4, "hidden": 32, "layers": 1, "batch_size": 16, "seq_len": 30},
             "unit_test",
             runtime_overrides={
                 "task_id": "sine_next_day",
                 "target_mode": "sine_next_day",
                 "target_smooth_window": 1,
                 "horizon": 1,
+                "seq_len": 50,
                 "data_source": "sine",
                 "random_seed": 7,
             },
@@ -58,6 +62,7 @@ class TuningTaskOverridesTests(unittest.TestCase):
         self.assertEqual(runtime["target_mode"], "sine_next_day")
         self.assertEqual(runtime["target_smooth_window"], 1)
         self.assertEqual(runtime["horizon"], 1)
+        self.assertEqual(runtime["seq_len"], 30)
         self.assertEqual(runtime["data_source"], "sine")
         self.assertEqual(runtime["random_seed"], 7)
 

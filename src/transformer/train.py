@@ -26,6 +26,7 @@ def main(config=None, config_dict=None, cli_args=None, prepared_run=None, **over
         batch_size=runtime_config.batch_size,
         run_note=runtime_config.run_note or "Single-model training run for Transformer.",
         training_metadata=runtime_config.training_metadata(),
+        seq_len=runtime_config.seq_len,
         horizon=runtime_config.horizon,
         data_source=runtime_config.data_source,
         target_mode=runtime_config.target_mode,
