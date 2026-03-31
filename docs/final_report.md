@@ -244,6 +244,8 @@ Three metrics are reported:
 
 DA is particularly relevant in finance because a model can sometimes produce modestly inaccurate magnitudes while still being useful for direction-of-move classification.
 
+However, DA must be interpreted **by `target_mode`** rather than as a uniform cross-task score. For signed return-style targets (for example `next_return` and `next_mean_return`), DA is meaningfully discriminative because the sign directly encodes up/down direction. For level-like or strictly non-negative targets (especially `next_volatility`, defined from rolling standard deviation), sign-based DA is not a discriminative metric and can quickly saturate near a ceiling. Therefore, on `next_volatility`, model ranking should prioritise **MSE/MAE** and treat DA only as a weak supplementary indicator.
+
 ---
 
 ## 6. Experimental Design and Hyperparameter Tuning
@@ -507,6 +509,8 @@ The strong baseline result may be the most informative outcome in the report. If
 ### 8.3 Error metrics versus directional accuracy
 
 The GRU’s superior directional accuracy but weaker MSE illustrates a meaningful metric trade-off. A model can make slightly larger magnitude errors while still predicting the correct sign more often. For decision-making tasks where direction matters more than calibrated return size, that distinction could be important.
+
+At the same time, this interpretation boundary is **target-dependent**. DA comparisons are most informative for targets whose realised values are naturally signed (such as `next_return` and `next_mean_return`). For `next_volatility` (forward rolling standard deviation), the target is non-negative by construction, so sign-based DA can become near-constant and non-discriminative across models. In that case, lower MSE/MAE should be treated as the primary evidence of better forecasting quality, and DA should not be over-interpreted when comparing heterogeneous targets in a single table.
 
 ### 8.4 Comparison with expectations from literature
 
