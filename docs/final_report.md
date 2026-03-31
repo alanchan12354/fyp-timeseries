@@ -21,14 +21,16 @@ Co-Examiner:
 
 
 Submission Date:
-XX April 2026
+31 March 2026
 
 
 
 
 ## Abstract
 
-This project studies whether neural sequence models can improve short-horizon financial return forecasting when evaluated under a common and reproducible workflow. The primary archived task (Task A) is defined as predicting the daily log return of the SPDR S&P 500 ETF Trust (SPY) with `target_mode=horizon_return` and `horizon=10`, using the previous 30 daily log returns as input. Four neural architectures are compared: vanilla recurrent neural network (RNN), long short-term memory (LSTM), gated recurrent unit (GRU), and Transformer encoder. To keep the comparison fair, a flattened-sequence linear regression model is also included as a baseline on the same aligned dataset. The experimental pipeline uses Yahoo Finance data accessed through `yfinance`, chronological train/validation/test splitting, training-set-only standardisation, validation-based model selection, and staged hyperparameter tuning. The archived tuned comparison shows that LSTM achieved the lowest validation mean squared error (MSE) of 0.0001356 and the lowest test MSE of 0.0000987, while the linear-regression baseline remained highly competitive with a test MSE of 0.0001001. GRU produced the highest directional accuracy among the tuned neural models at 57.00%, whereas the Transformer underperformed the recurrent alternatives on this dataset. These findings suggest that, for this specific SPY forecasting setup, gated recurrent models remain strong practical choices, but the small margin between LSTM and a simple baseline also indicates that exploitable predictive structure in daily returns is limited. [1]–[8]
+This project benchmarks sequence models for short-horizon forecasting under a unified and reproducible pipeline that now supports **multiple target definitions** and both **real (SPY)** and **synthetic (sine)** data sources. The latest archived final-report bundle (generated at `2026-03-31T14:00:27Z`) evaluates four tasks: `sine_next_day`, `next_return`, `next_volatility`, and `next_mean_return`. Across these tasks, RNN, LSTM, GRU, Transformer, and a flattened-sequence linear-regression baseline are compared on aligned splits using MSE/MAE and directional accuracy (DA).
+
+The cross-task summary shows that **Baseline-LR** is best on `sine_next_day` and `next_volatility`, **LSTM** is best on `next_return`, and **GRU** is best on `next_mean_return`. The best test MSE values are `4.8070e-08` (sine), `9.1979e-05` (next_return), `1.7733e-05` (next_volatility), and `1.5519e-05` (next_mean_return). These outcomes reinforce two conclusions: (1) no single neural architecture dominates all task definitions, and (2) strong linear baselines remain essential in financial-style forecasting benchmarks.
 
 ---
 
@@ -60,7 +62,7 @@ The specific objectives are:
 
 ### 1.5 Scope of the project
 
-The archived metrics in this draft are strongest for one asset (SPY) and one fully populated task (`task_id=spy_h10_horizon_return`, 30-day input window, `target_mode=horizon_return`, `horizon=10`). Claims are therefore limited to that task definition, with Task B included as a structured extension point.
+The latest archived report bundle covers four fully populated tasks: `sine_next_day`, `next_return`, `next_volatility`, and `next_mean_return`. Claims in this report are scoped to these definitions, with each task tracked by explicit `task_id`, `target_mode`, `horizon`, and (where applicable) `target_smooth_window`.
 
 ### 1.6 Report organisation
 
@@ -102,23 +104,26 @@ This project is positioned as a controlled benchmark rather than a claim of trad
 
 ### 3.1 Forecasting task definition
 
-The task is formulated as a supervised learning problem on **multifeature sequences**. Let \(r_t\) denote daily log return at trading day \(t\), and let \(\mathbf{f}_t \in \mathbb{R}^8\) denote the engineered feature vector at day \(t\). The repository builds each training example from a rolling 30-day feature window:
+The forecasting system is formulated as supervised learning on multifeature sequences. Let \(\mathbf{f}_t \in \mathbb{R}^8\) denote the engineered feature vector at day \(t\), and let each sample be a rolling lookback window:
 
 \[
-X_t = [\mathbf{f}_{t-29}, \mathbf{f}_{t-28}, \ldots, \mathbf{f}_t]
+X_t = [\mathbf{f}_{t-L+1}, \ldots, \mathbf{f}_t]
 \]
 
-so sequence inputs have shape \((N, 30, 8)\).
+where \(L\) is the sequence length (`seq_len`, tuned per task/model). The repository supports multiple targets via `target_mode`:
 
-By default, the target uses repository settings in `src/common/config.py`: `HORIZON=1` and `TARGET_MODE=horizon_return`, giving:
+- `sine_next_day` (synthetic sanity task),
+- `next_return` (1-step return),
+- `next_volatility` (forward rolling volatility),
+- `next_mean_return` (forward rolling mean return),
+- plus default/general modes such as `horizon_return`.
 
-\[
-y_t = r_{t+1}
-\]
+The latest final-report archive evaluates these four task IDs:
 
-Archived experiment variants (for example, runs configured with `horizon=10`) are treated as **run-specific settings** supplied through runtime configuration/CLI overrides, rather than repository defaults.
-
-This keeps the forecasting setup as a fixed-horizon many-to-one sequence regression task, with horizon and target mode explicitly tracked per run.
+1. `sine_next_day` (`data_source=sine`, `horizon=1`, `target_smooth_window=1`),
+2. `next_return` (`data_source=spy`, `horizon=1`, `target_smooth_window=1`),
+3. `next_volatility` (`data_source=spy`, `horizon=1`, `target_smooth_window=5`),
+4. `next_mean_return` (`data_source=spy`, `horizon=1`, `target_smooth_window=5`).
 
 ### 3.2 Research questions
 
@@ -142,7 +147,7 @@ A model is considered successful if it demonstrates lower validation and test er
 
 ### 4.1 Data source and asset selection
 
-The dataset is downloaded from Yahoo Finance through the `yfinance` Python package, with SPY as the target instrument and a start date of **2010-01-01**. SPY was chosen because it tracks the S&P 500 and therefore represents broad-market behaviour rather than firm-specific noise. [9], [11]
+The latest report bundle evaluates both **synthetic** and **market** tasks. For market tasks, data are downloaded from Yahoo Finance through `yfinance` with SPY as the instrument and repository default `START=2005-01-01`. In parallel, the `sine_next_day` task uses the repository’s generated sine-series feature frame as a controlled sanity benchmark. [9], [11]
 
 ### 4.2 Return definition
 
@@ -169,11 +174,11 @@ The 8 engineered features produced by `build_spy_feature_frame` are:
 7. `volatility_5`
 8. `volatility_20`
 
-Target construction is controlled by `target_mode` (default `horizon_return`) and `horizon` (default 1), with archived alternatives such as `horizon=10` recorded at run time.
+Target construction is controlled by `target_mode`, `horizon`, and `target_smooth_window`. In the latest archived bundle, the evaluated tasks are `sine_next_day`, `next_return`, `next_volatility` (`target_smooth_window=5`), and `next_mean_return` (`target_smooth_window=5`).
 
 ### 4.4 Train/validation/test split
 
-The split is chronological rather than random. This design is essential in time-series forecasting because random shuffling would leak future information into training. In the final archived best-tuned comparison, the data were split into **2,825 training samples**, **605 validation samples**, and **607 test samples**. [5]
+Splitting is chronological rather than random for all tasks, preventing future information leakage into training. The same train/validation/test protocol is applied consistently across the four archived tasks in `reports/final_report_tasks/20260331T125121Z`.
 
 ### 4.5 Normalisation and leakage prevention
 
@@ -189,7 +194,7 @@ All models share the same high-level pipeline:
 
 1. Download SPY historical data.
 2. Compute daily log returns.
-3. Build aligned 30-step input sequences with 8 features per step and a configured target (repository default: 1-step-ahead `horizon_return`; archived variants may use different horizons such as 10).
+3. Build aligned input sequences with 8 features per step and a task-specific configured target (`sine_next_day`, `next_return`, `next_volatility`, or `next_mean_return`).
 4. Split the data chronologically into training, validation, and test sets.
 5. Fit the scaler on training inputs only.
 6. Train each model using validation-based checkpoint selection.
@@ -223,7 +228,7 @@ Repository-level defaults (for example `HORIZON=1`, `TARGET_MODE=horizon_return`
 
 The training workflow uses the Adam optimiser, mean squared error loss, early stopping with validation-loss smoothing, checkpointing of the best validation state, and scheduler-based learning-rate reduction. Hyperparameter selection is validation-driven, and the final archived best-tuned comparison was generated from the frozen winners stored in `tuning_winners.csv`. [12]
 
-![Best tuned training loss comparison](../reports/figures/best_tuned_training_loss.svg)
+![Best tuned training loss comparison](../reports/final_report_tasks/20260331T125121Z/next_return/figures/best_tuned_training_loss.svg)
 
 *Figure 1. Training-loss comparison for the best tuned models and baseline.*
 
@@ -270,24 +275,16 @@ The recurrent models and the Transformer do not share identical search spaces be
 
 ### 6.4 Best configurations obtained
 
-The final frozen staged winners used in the best-tuned comparison are shown below.
+The latest archive contains task-specific tuned winners rather than one global best configuration. Cross-task winners by test MSE are:
 
-| Model | Final tuned configuration | Validation MSE after final stage |
+| task_id | Winner | Best test MSE |
 | --- | --- | ---: |
-| LSTM | batch size 32, hidden 128, layers 1, lr 0.0005 | 0.000135338 |
-| GRU | batch size 64, hidden 32, layers 3, lr 0.001 | 0.000135147 |
-| RNN | batch size 32, hidden 64, layers 2, lr 0.0001 | 0.000140908 |
-| Transformer | batch size 32, d_model 32, num_layers 1, nhead 8, lr 0.001 | 0.000140705 |
+| `sine_next_day` | Baseline-LR | 4.807035774110167e-08 |
+| `next_return` | LSTM | 9.197905455948785e-05 |
+| `next_volatility` | Baseline-LR | 1.7733482060336406e-05 |
+| `next_mean_return` | GRU | 1.5519119187956676e-05 |
 
-The tuning archive also shows that the best single archived run for LSTM was obtained very early in the learning-rate sweep, while later sequential stages slightly shifted the final frozen configuration. This is an important methodological detail: the final comparison intentionally uses **staged winners** rather than simply picking the single lowest-loss run from the entire archive.
-
-![Best tuned validation loss comparison](../reports/figures/best_tuned_validation_loss.svg)
-
-*Figure 2. Validation-loss comparison for the best tuned models and baseline.*
-
-![Best tuned testing loss comparison](../reports/figures/best_tuned_testing_loss.svg)
-
-*Figure 3. Test-loss comparison for the best tuned models and baseline.*
+This confirms that tuning outcomes are task-dependent and should be interpreted per `task_id`.
 
 ### 6.5 Threats to validity in tuning
 
@@ -297,90 +294,71 @@ Sequential tuning is efficient, but it does not exhaustively search hyperparamet
 
 ## 7. Results
 
-This chapter reports outcomes by **task**, where each task is identified by a `task_id` and defined by a `target_mode` + `horizon` setting.
+This chapter reports outcomes by **task**, where each task is identified by `task_id` and defined by `target_mode` + `horizon` (+ `target_smooth_window` where applicable).
 
-### 7.1 Task A (`task_id=spy_h10_horizon_return`)
+### 7.1 Cross-task consolidated summary
 
-**Task definition.** `target_mode=horizon_return`, `horizon=10`.
+Table 1 summarises the best-tuned winner for each task from `overall_task_summary.md`.
 
-Table 1 summarises the archived tuned comparison of the neural models and the flattened-sequence linear-regression baseline for Task A.
+| Task | task_id | target_mode | horizon | target_smooth_window | Best model (test MSE) | Best test MSE |
+| --- | --- | --- | ---: | ---: | --- | ---: |
+| Task A | `sine_next_day` | `sine_next_day` | 1 | 1 | Baseline-LR | 4.807035774110167e-08 |
+| Task B | `next_return` | `next_return` | 1 | 1 | LSTM | 9.197905455948785e-05 |
+| Task C | `next_volatility` | `next_volatility` | 1 | 5 | Baseline-LR | 1.7733482060336406e-05 |
+| Task D | `next_mean_return` | `next_mean_return` | 1 | 5 | GRU | 1.5519119187956676e-05 |
 
-**Table 1. Task A tuned comparison (`target_mode=horizon_return`, `horizon=10`).**
+### 7.2 Per-task tuned comparison highlights
 
-| Rank | Model | Train MSE | Validation MSE | Test MSE | MAE | DA |
-| ---: | --- | ---: | ---: | ---: | ---: | ---: |
-| 1 | LSTM | 0.000311818 | 0.000135595 | 0.000098719 | 0.006570 | 0.520593 |
-| 2 | Baseline-LR | 0.000114153 | 0.000137577 | 0.000100075 | 0.006655 | 0.527183 |
-| 3 | GRU | 0.000118986 | 0.000142754 | 0.000100300 | 0.006600 | 0.570016 |
-| 4 | RNN | 0.000254451 | 0.000145849 | 0.000102793 | 0.006844 | 0.472817 |
-| 5 | Transformer | 0.000258977 | 0.000157518 | 0.000133374 | 0.007735 | 0.542010 |
+#### Task A — `sine_next_day`
+- Best model by test MSE: **Baseline-LR** (4.8070e-08).
+- Best neural model by test MSE: **LSTM** (1.1095e-07).
+- DA remains high for both baseline and recurrent models (Baseline-LR: 0.9702, LSTM: 0.9864).
 
-Task A shows that LSTM achieved the strongest validation/test MSE, while Baseline-LR remained highly competitive and GRU led directional accuracy.
+#### Task B — `next_return`
+- Best model by test MSE: **LSTM** (9.1979e-05).
+- GRU is a close second (9.2194e-05).
+- Baseline-LR is competitive but weaker on this task (1.2176e-04).
 
-### 7.2 Task B (`task_id=spy_h1_next_return`)
+#### Task C — `next_volatility`
+- Best model by test MSE: **Baseline-LR** (1.7733e-05).
+- Best neural model: **GRU** (1.9411e-05).
+- Directional accuracy is near-saturated for most models because volatility targets are non-negative and trend smoother in sign.
 
-**Task definition.** `target_mode=next_return`, `horizon=1`.
+#### Task D — `next_mean_return`
+- Best model by test MSE: **GRU** (1.5519e-05).
+- LSTM and RNN are close behind (1.6130e-05 and 1.6560e-05).
+- Baseline-LR trails tuned recurrent winners on this task (2.1937e-05).
 
-Task B is structured and reported with the same workflow as Task A (`tuning_winners` → `best_tuned_comparison_<task_id>.csv/.md`). At the time of this draft, the Task B aggregate metric table is pending final run archival, so this section records the narrative frame and artifact locations first.
+### 7.3 Updated report artifact map
 
-Recommended interpretation template once Task B metrics are frozen:
+| Task | `task_id` | Comparison report | Figures directory |
+| --- | --- | --- | --- |
+| Task A | `sine_next_day` | `reports/final_report_tasks/20260331T125121Z/sine_next_day/best_tuned_comparison_sine_next_day.csv` | `reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/` |
+| Task B | `next_return` | `reports/final_report_tasks/20260331T125121Z/next_return/best_tuned_comparison_next_return.csv` | `reports/final_report_tasks/20260331T125121Z/next_return/figures/` |
+| Task C | `next_volatility` | `reports/final_report_tasks/20260331T125121Z/next_volatility/best_tuned_comparison_next_volatility.csv` | `reports/final_report_tasks/20260331T125121Z/next_volatility/figures/` |
+| Task D | `next_mean_return` | `reports/final_report_tasks/20260331T125121Z/next_mean_return/best_tuned_comparison_next_mean_return.csv` | `reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/` |
 
-1. identify the best model by validation MSE,
-2. compare the winner against Baseline-LR using test MSE,
-3. check whether directional-accuracy ranking differs from MSE ranking.
+### 7.4 Prediction pattern visualisation (updated figures)
 
-### 7.3 Cross-task comparison (consolidated table)
+![Next-return tuned testing loss comparison](../reports/final_report_tasks/20260331T125121Z/next_return/figures/best_tuned_testing_loss.svg)
 
-Table 2 is the single consolidated cross-task view used for report-level conclusions.
+*Figure 4. Best-tuned testing-loss comparison for `next_return`.*
 
-**Table 2. Cross-task consolidated summary (`task_id`, `target_mode`, `horizon`).**
+![Next-volatility tuned testing loss comparison](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/best_tuned_testing_loss.svg)
 
-| Task | task_id | target_mode | horizon | Best model (val MSE) | Best test MSE | Baseline-LR test MSE | Best DA model |
-| --- | --- | --- | ---: | --- | ---: | ---: | --- |
-| Task A | `spy_h10_horizon_return` | `horizon_return` | 10 | LSTM | 0.000098719 | 0.000100075 | GRU (0.570016) |
-| Task B | `spy_h1_next_return` | `next_return` | 1 | _Pending final run_ | _Pending final run_ | _Pending final run_ | _Pending final run_ |
+*Figure 5. Best-tuned testing-loss comparison for `next_volatility`.*
 
-The consolidated table ensures the narrative is consistent with implementation terms (`task`, `task_id`, `target_mode`, `horizon`) and avoids mixing results from different forecast definitions.
+![Next-mean-return GRU scatter](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/gru_best_tuned_gru_comparison-20260331t135921z_scatter.png)
 
-### 7.4 Report artifact map
+*Figure 6. GRU predicted-vs-actual scatter for `next_mean_return` best-tuned comparison.*
 
-Table 3 maps each task to the generated files that support reproducibility.
+### 7.5 Summary of key findings
 
-**Table 3. Report artifact map by task.**
-
-| Task | `task_id` | Tuning winners source | Comparison reports | Figures | Run IDs |
-| --- | --- | --- | --- | --- | --- |
-| Task A | `spy_h10_horizon_return` | `reports/tuning_winners.csv` (rows filtered by `task_id`) | `reports/best_tuned_comparison_spy_h10_horizon_return.csv` and `.md` | `reports/figures/best_tuned_training_loss.svg`, `best_tuned_validation_loss.svg`, `best_tuned_testing_loss.svg` plus per-model scatter/slice plots | `best_tuned_lstm_comparison-20260320T093214Z`, `best_tuned_gru_comparison-20260320T093215Z`, `best_tuned_rnn_comparison-20260320T093215Z`, `best_tuned_transformer_comparison-20260320T093216Z` |
-| Task B | `spy_h1_next_return` | `reports/tuning_winners.csv` (rows filtered by `task_id`) | `reports/best_tuned_comparison_spy_h1_next_return.csv` and `.md` | `reports/figures/hyperparameter_model_loss_summary_spy_h1_next_return.svg` and Task B best-tuned figures after archival | _Pending final run IDs_ |
-
-### 7.5 Prediction pattern visualisation
-
-The archived scatter and prediction-slice plots provide a qualitative view of model behaviour.
-
-![LSTM scatter plot](../reports/figures/lstm_best_tuned_lstm_comparison-20260320t093214z_scatter.png)
-
-*Figure 4. LSTM predicted-vs-actual scatter plot for Task A archived best-tuned comparison.*
-
-![GRU scatter plot](../reports/figures/gru_best_tuned_gru_comparison-20260320t093215z_scatter.png)
-
-*Figure 5. GRU predicted-vs-actual scatter plot for Task A archived best-tuned comparison.*
-
-![LSTM prediction slice](../reports/figures/lstm_best_tuned_lstm_comparison-20260320t093214z_pred_slice.png)
-
-*Figure 6. LSTM prediction slice over a Task A test-set segment.*
-
-![GRU prediction slice](../reports/figures/gru_best_tuned_gru_comparison-20260320t093215z_pred_slice.png)
-
-*Figure 7. GRU prediction slice over a Task A test-set segment.*
-
-Qualitatively, the plots show that models struggle with full daily-return volatility. The better Task A models track broad direction more reliably than exact magnitude.
-
-### 7.6 Summary of key findings
-
-- For **Task A** (`target_mode=horizon_return`, `horizon=10`), **LSTM** is strongest on loss metrics.
-- For **Task A**, **Baseline-LR** remains very close to the best neural model.
-- For **Task A**, **GRU** reaches the highest directional accuracy.
-- **Task B** section and cross-task row are now structurally in place and should be finalised once its tuned comparison artifacts are archived.
+- No single architecture dominates all tasks.
+- **Baseline-LR** remains a strong benchmark and wins 2/4 tasks.
+- **LSTM** is strongest on `next_return`.
+- **GRU** is strongest on `next_mean_return`.
+- The latest report should be interpreted as a **task-conditioned benchmark** rather than a universal ranking of model families.
 
 ---
 
@@ -388,7 +366,7 @@ Qualitatively, the plots show that models struggle with full daily-return volati
 
 ### 8.1 Interpretation of the winning model
 
-The LSTM result is consistent with the literature that highlights the value of gated memory in sequence modelling. [1], [2] Relative to a vanilla RNN, the LSTM can preserve and filter temporal information more effectively, which likely helped on the 30-step return window.
+The latest bundle shows no universal single winner; instead, winners vary by task definition. This is still consistent with literature: gated recurrent models remain strong on noisy sequence forecasting, while simpler baselines can dominate when the target is smoother or effectively linear. [1], [2], [5]
 
 ### 8.2 Why the baseline remained competitive
 
@@ -404,7 +382,7 @@ The archived results broadly agree with prior expectations in two ways. First, g
 
 ### 8.5 Practical meaning of the results
 
-From a practical perspective, the project suggests that LSTM is the best default neural choice for this specific SPY setup, but the very small margin over linear regression warns against overstating the value of added complexity. A practitioner with limited compute or a strong preference for interpretability could plausibly favour the linear baseline and lose little in error performance.
+From a practical perspective, model selection should be conditioned on task definition. For the latest bundle, Baseline-LR wins two tasks, while LSTM and GRU each win one. A practitioner with limited compute or strong interpretability requirements can justifiably prioritize the baseline unless a target-specific tuned neural model demonstrates clear gains.
 
 ---
 
@@ -412,7 +390,7 @@ From a practical perspective, the project suggests that LSTM is the best default
 
 ### 9.1 Dataset limitations
 
-Only one asset, SPY, is evaluated. This means the findings cannot be assumed to generalise to single stocks, other asset classes, or international markets.
+Only one real market asset (SPY) plus one synthetic data source are evaluated. Findings should not be assumed to generalise to single stocks, other asset classes, or international markets.
 
 ### 9.2 Experimental limitations
 
@@ -420,7 +398,7 @@ The archived report is based on a limited set of recorded runs rather than repea
 
 ### 9.3 Model-comparison limitations
 
-The project currently has one fully archived task and one pending second task. Different `horizon` / `target_mode` definitions, additional features, or multivariate inputs could materially change the ranking.
+The project now includes four archived tasks, but ranking still changes across `target_mode` definitions. Additional assets, broader horizons, and multivariate external signals could materially change the observed winner ordering.
 
 ### 9.4 External validity limitations
 
@@ -436,15 +414,15 @@ The report evaluates prediction quality, not trading profitability. It does not 
 
 ### 10.1 Conclusion
 
-This project investigated whether neural sequence models improve forecasting of SPY daily log returns under a shared and reproducible benchmark with explicit `task_id`, `target_mode`, and `horizon` definitions. For the fully archived Task A comparison, **LSTM achieved the best overall loss performance** (lowest validation and test MSE). However, the **linear-regression baseline remained highly competitive**, indicating modest predictive structure in the selected window. The **GRU delivered the strongest directional accuracy**, while the **Transformer underperformed** the recurrent alternatives on the archived Task A result set.
+This project investigated whether neural sequence models improve forecasting quality under a shared, reproducible benchmark spanning both synthetic and market data tasks with explicit `task_id`, `target_mode`, `horizon`, and `target_smooth_window` definitions. The latest archived bundle shows **task-dependent winners**: Baseline-LR (`sine_next_day`, `next_volatility`), LSTM (`next_return`), and GRU (`next_mean_return`). This supports a practical conclusion that architecture superiority depends on target construction and data regime, and that linear baselines remain essential comparators.
 
 ### 10.2 Contributions of the project
 
 The project makes three main contributions:
 
-1. It defines a clear shared forecasting task for SPY daily log returns.
+1. It defines a clear multi-task forecasting benchmark spanning synthetic and SPY-based targets.
 2. It implements a reproducible comparison pipeline across multiple neural architectures and a linear baseline.
-3. It provides a staged tuning and reporting workflow that supports evidence-based discussion rather than anecdotal model selection.
+3. It provides a staged tuning and reporting workflow with per-task artifacts and cross-task summary outputs.
 
 ### 10.3 Future work
 
@@ -457,7 +435,7 @@ Several extensions would strengthen the study:
 - trading simulation with transaction costs,
 - more extensive Transformer tuning or financial-specific attention architectures.
 
-Overall, the most defensible conclusion is not that one neural architecture universally dominates, but that **LSTM is the strongest model for the current archived SPY setup while simple baselines remain difficult to beat by a large margin**.
+Overall, the most defensible conclusion is not that one neural architecture universally dominates, but that **model preference is task-dependent and simple baselines remain difficult to beat by a large margin**.
 
 ---
 
@@ -489,34 +467,40 @@ Overall, the most defensible conclusion is not that one neural architecture univ
 
 ---
 
-## Appendix A. Final tuned configurations
+## Appendix A. Final tuned configurations (latest bundle highlights)
 
-| Model | Tuned hyperparameters | Archived run ID |
-| --- | --- | --- |
-| LSTM | `{"batch_size": 32, "hidden": 128, "layers": 1, "lr": 0.0005}` | `best_tuned_lstm_comparison-20260320T093214Z` |
-| GRU | `{"batch_size": 64, "hidden": 32, "layers": 3, "lr": 0.001}` | `best_tuned_gru_comparison-20260320T093215Z` |
-| RNN | `{"batch_size": 32, "hidden": 64, "layers": 2, "lr": 0.0001}` | `best_tuned_rnn_comparison-20260320T093215Z` |
-| Transformer | `{"batch_size": 32, "d_model": 32, "lr": 0.001, "nhead": 8, "num_layers": 1}` | `best_tuned_transformer_comparison-20260320T093216Z` |
-| Baseline-LR | `{"flattened_sequence": true, "model": "LinearRegression"}` | `best_tuned_lstm_comparison-20260320T093214Z-baseline-lr` |
+| Task | Winner | Tuned hyperparameters | Archived run ID |
+| --- | --- | --- | --- |
+| `sine_next_day` | Baseline-LR | `{"flattened_sequence": true, "model": "LinearRegression", "seq_len": 30}` | `best_tuned_lstm_comparison-20260331T130042Z-baseline-lr` |
+| `next_return` | LSTM | `{"batch_size": 32, "hidden": 128, "layers": 3, "lr": 0.0005, "seq_len": 30}` | `best_tuned_lstm_comparison-20260331T132130Z` |
+| `next_volatility` | Baseline-LR | `{"flattened_sequence": true, "model": "LinearRegression", "seq_len": 20}` | `best_tuned_lstm_comparison-20260331T134030Z-baseline-lr` |
+| `next_mean_return` | GRU | `{"batch_size": 128, "hidden": 128, "layers": 3, "lr": 0.001, "seq_len": 30}` | `best_tuned_gru_comparison-20260331T135921Z` |
 
 ## Appendix B. Additional figures
 
-![RNN scatter plot](../reports/figures/rnn_best_tuned_rnn_comparison-20260320t093215z_scatter.png)
+![Sine task testing loss](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/best_tuned_testing_loss.svg)
 
-*Figure A1. RNN predicted-vs-actual scatter plot.*
+*Figure A1. Best-tuned testing-loss comparison for `sine_next_day`.*
 
-![Transformer scatter plot](../reports/figures/transformer_best_tuned_transformer_comparison-20260320t093216z_scatter.png)
+![Next-return LSTM scatter](../reports/final_report_tasks/20260331T125121Z/next_return/figures/lstm_best_tuned_lstm_comparison-20260331t132130z_scatter.png)
 
-*Figure A2. Transformer predicted-vs-actual scatter plot.*
+*Figure A2. LSTM predicted-vs-actual scatter for `next_return`.*
 
-![RNN prediction slice](../reports/figures/rnn_best_tuned_rnn_comparison-20260320t093215z_pred_slice.png)
+![Next-volatility baseline/testing context](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/best_tuned_testing_loss.svg)
 
-*Figure A3. RNN prediction slice.*
+*Figure A3. Best-tuned testing-loss comparison for `next_volatility`.*
 
-![Transformer prediction slice](../reports/figures/transformer_best_tuned_transformer_comparison-20260320t093216z_pred_slice.png)
+![Next-mean-return GRU prediction slice](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/gru_best_tuned_gru_comparison-20260331t135921z_pred_slice.png)
 
-*Figure A4. Transformer prediction slice.*
+*Figure A4. GRU prediction slice for `next_mean_return`.*
 
 ## Appendix C. Reproducibility notes
 
-The archived best-tuned comparison discussed in this report corresponds to runs dated **2026-03-20 UTC** and uses the staged winners recorded in `reports/tuning_winners.csv`. The experiment log records a git commit of `9a953470255dba340544b395a87656c609920bc7` for the final comparison runs and preserves run IDs, metrics, package versions, and artifact paths for reproducibility.
+The latest archived final-report bundle used in this report is `reports/final_report_tasks/20260331T125121Z`, generated at **2026-03-31T14:00:27Z (UTC)**. It contains per-task tuning logs, winners, tuned-comparison CSV/Markdown reports, and task-specific figures for:
+
+- `sine_next_day`
+- `next_return`
+- `next_volatility`
+- `next_mean_return`
+
+The bundle root includes `overall_task_summary.csv` / `.md` for the final cross-task synthesis.
