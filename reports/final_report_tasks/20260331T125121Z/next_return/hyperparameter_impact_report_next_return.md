@@ -10,6 +10,7 @@ This report summarises how the tuning workflow changed model performance and com
 | GRU | 0.000248079 | 9.21956e-05 | 0.000136736 | 0.00666861 | 51.51% | `{"hidden": 64, "input_size": 8, "layers": 3, "random_seed": 42}` | `gru_experiment-20260331T130619Z` |
 | RNN | 0.000269338 | 0.000112669 | 0.000126425 | 0.00711664 | 47.80% | `{"hidden": 128, "input_size": 8, "layers": 1, "random_seed": 42}` | `rnn_experiment-20260331T130833Z` |
 | Transformer | 0.000280221 | 0.00013229 | 0.000172529 | 0.00821334 | 44.15% | `{"d_model": 64, "dropout": 0.1, "input_size": 8, "nhead": 4, "num_layers": 2, "random_seed": 42}` | `transformer_experiment-20260331T131540Z` |
+| Baseline-LR | 0.000372807 | 0.000121759 | 0.000106213 | 0.00766729 | 48.93% | `{"details": "{\"flattened_sequence\": true, \"model\": \"LinearRegression\", \"seq_len\": 30}", "source": "best_tuned_comparison_csv"}` | `best_tuned_lstm_comparison-20260331T132130Z-baseline-lr` |
 
 ## Stage-by-stage hyper-parameter impact
 
@@ -61,6 +62,6 @@ The tuning workflow was sequential, so each stage winner was selected while earl
 
 ## Figure
 
-![Best tuned model losses](figures\hyperparameter_model_loss_summary_next_return.svg)
+![Best tuned model losses](figures/hyperparameter_model_loss_summary_next_return.svg)
 
 The figure uses one shared y-axis across three subplots so the training, testing, and validation losses remain directly comparable.

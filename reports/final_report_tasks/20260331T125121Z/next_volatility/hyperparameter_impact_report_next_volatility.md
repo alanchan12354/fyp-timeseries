@@ -8,6 +8,7 @@ This report summarises how the tuning workflow changed model performance and com
 | :--- | ---: | ---: | ---: | ---: | ---: | :--- | :--- |
 | GRU | 3.85708e-05 | 1.94298e-05 | 0.00036366 | 0.00273193 | 100.00% | `{"hidden": 128, "input_size": 8, "layers": 3, "random_seed": 42}` | `gru_experiment-20260331T132703Z` |
 | LSTM | 3.90142e-05 | 1.97734e-05 | 2.08138e-05 | 0.00269503 | 100.00% | `{"hidden": 64, "input_size": 8, "layers": 3, "random_seed": 42}` | `lstm_experiment-20260331T132545Z` |
+| Baseline-LR | 4.13279e-05 | 1.77335e-05 | 1.39722e-05 | 0.00256373 | 100.00% | `{"details": "{\"flattened_sequence\": true, \"model\": \"LinearRegression\", \"seq_len\": 20}", "source": "best_tuned_comparison_csv"}` | `best_tuned_lstm_comparison-20260331T134030Z-baseline-lr` |
 | RNN | 4.32835e-05 | 2.10737e-05 | 1.52922e-05 | 0.00288465 | 100.00% | `{"hidden": 64, "input_size": 8, "layers": 3, "random_seed": 42}` | `rnn_experiment-20260331T132945Z` |
 | Transformer | 4.90387e-05 | 1.74755e-05 | 3.0873e-05 | 0.00272577 | 100.00% | `{"d_model": 64, "dropout": 0.1, "input_size": 8, "nhead": 4, "num_layers": 1, "random_seed": 42}` | `transformer_experiment-20260331T133850Z` |
 
@@ -61,6 +62,6 @@ The tuning workflow was sequential, so each stage winner was selected while earl
 
 ## Figure
 
-![Best tuned model losses](figures\hyperparameter_model_loss_summary_next_volatility.svg)
+![Best tuned model losses](figures/hyperparameter_model_loss_summary_next_volatility.svg)
 
 The figure uses one shared y-axis across three subplots so the training, testing, and validation losses remain directly comparable.

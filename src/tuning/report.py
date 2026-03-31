@@ -141,7 +141,8 @@ def _inject_baseline_from_comparison_csv(best_by_model: Dict[str, Dict[str, Any]
         return
     comparison_rows = _load_csv_rows(csv_path)
     for row in comparison_rows:
-        if str(row.get("model") or "").strip() != "Baseline-LR":
+        model_value = str(row.get("model", row.get("Model", "")) or "").strip()
+        if model_value.lower() != "baseline-lr":
             continue
         best_by_model["Baseline-LR"] = {
             "model_name": "Baseline-LR",
@@ -154,7 +155,7 @@ def _inject_baseline_from_comparison_csv(best_by_model: Dict[str, Dict[str, Any]
             },
             "hyperparameters": {
                 "source": "best_tuned_comparison_csv",
-                "details": row.get("hyperparameters", ""),
+                "details": row.get("hyperparameters", row.get("tuned_hyperparameters", "")),
             },
             "run_id": row.get("run_id", "baseline-lr-from-comparison"),
         }

@@ -6,6 +6,7 @@ This report summarises how the tuning workflow changed model performance and com
 
 | Model | Best validation MSE | Best testing MSE | Best training MSE | MAE | DA | Hyperparameters | Run ID |
 | :--- | ---: | ---: | ---: | ---: | ---: | :--- | :--- |
+| Baseline-LR | 4.59256e-08 | 4.80704e-08 | 3.58372e-08 | 0.00017406 | 97.02% | `{"details": "{\"flattened_sequence\": true, \"model\": \"LinearRegression\", \"seq_len\": 30}", "source": "best_tuned_comparison_csv"}` | `best_tuned_lstm_comparison-20260331T130042Z-baseline-lr` |
 | LSTM | 1.49605e-06 | 1.10954e-07 | 2.1573e-07 | 0.000261717 | 98.64% | `{"hidden": 128, "input_size": 8, "layers": 2, "random_seed": 42}` | `lstm_experiment-20260331T125144Z` |
 | RNN | 1.72386e-06 | 1.60138e-06 | 1.67542e-06 | 0.000966363 | 94.86% | `{"hidden": 64, "input_size": 8, "layers": 2, "random_seed": 42}` | `rnn_experiment-20260331T125408Z` |
 | GRU | 3.14724e-06 | 2.29354e-06 | 2.36252e-06 | 0.00118988 | 95.60% | `{"hidden": 64, "input_size": 8, "layers": 2, "random_seed": 42}` | `gru_experiment-20260331T125317Z` |
@@ -54,13 +55,13 @@ The tuning workflow was sequential, so each stage winner was selected while earl
 
 ## Interpretation
 
-- **Validation winner:** LSTM achieved the lowest validation MSE at 1.49605e-06.
-- **Testing winner:** LSTM achieved the lowest testing MSE at 1.10954e-07.
+- **Validation winner:** Baseline-LR achieved the lowest validation MSE at 4.59256e-08.
+- **Testing winner:** Baseline-LR achieved the lowest testing MSE at 4.80704e-08.
 - **Directional winner:** LSTM achieved the highest directional accuracy at 98.64%.
 - Across the current tuning archive, recurrent models stayed tightly grouped, while the Transformer remained materially higher-loss than the recurrent models after tuning.
 
 ## Figure
 
-![Best tuned model losses](figures\hyperparameter_model_loss_summary_sine_next_day.svg)
+![Best tuned model losses](figures/hyperparameter_model_loss_summary_sine_next_day.svg)
 
 The figure uses one shared y-axis across three subplots so the training, testing, and validation losses remain directly comparable.
