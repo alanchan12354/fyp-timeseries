@@ -1,0 +1,5 @@
+task_id,target_mode,horizon,target_smooth_window,best_model_by_test_mse,best_test_mse,best_val_mse,best_train_mse
+sine_next_day,sine_next_day,1,1,Baseline-LR,4.807035774110167e-08,4.592560596418131e-08,3.5837217038958094e-08
+next_return,next_return,1,1,LSTM,9.197905455948785e-05,0.00024397663164999533,0.0001435192285923164
+next_volatility,next_volatility,1,5,Baseline-LR,1.7733482060336406e-05,4.132786441334198e-05,1.3972189948221182e-05
+next_mean_return,next_mean_return,1,5,GRU,1.5519119187956676e-05,4.415748008337693e-05,2.2154046297339716e-05
