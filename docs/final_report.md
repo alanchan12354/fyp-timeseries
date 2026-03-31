@@ -40,7 +40,7 @@ The cross-task summary shows that **Baseline-LR** is best on `sine_next_day` and
 
 Financial time-series forecasting remains a difficult problem because market data are noisy, non-stationary, and often only weakly predictable. Even when useful structure exists, the signal-to-noise ratio is usually small, particularly for return prediction rather than price-level prediction. This challenge has motivated extensive use of machine learning and deep learning methods for sequence modelling, especially recurrent architectures and attention-based models. [1], [5], [8]
 
-This project focuses on **forecasting SPY daily log returns**. SPY is a widely used exchange-traded fund that tracks the S&P 500 Index and is therefore a reasonable proxy for broad U.S. equity-market behaviour. Using SPY also avoids the idiosyncratic noise that can dominate single-stock prediction tasks. [9]
+This project focuses on a **configurable short-horizon forecasting system** where targets are defined by `target_mode`, `horizon`, and `target_smooth_window`. The final archive includes one synthetic sanity task (`sine_next_day`) and three SPY market tasks (`next_return`, `next_volatility`, `next_mean_return`). SPY remains a reasonable proxy for broad U.S. equity-market behaviour, while the synthetic sine task provides a controlled check that the pipeline behaves sensibly under an easier signal regime. [9]
 
 ### 1.2 Problem statement
 
@@ -48,7 +48,7 @@ The core problem is not simply to generate forecasts, but to determine whether m
 
 ### 1.3 Research aim
 
-The aim of this project is to benchmark several neural sequence architectures on a common SPY forecasting task and determine whether any of them outperform a flattened-sequence linear-regression baseline in terms of prediction error and directional accuracy.
+The aim of this project is to benchmark several neural sequence architectures across the implemented task system—covering both the synthetic sanity task and multiple SPY target definitions—and determine whether any of them outperform a flattened-sequence linear-regression baseline in prediction error and directional accuracy under matched splits and preprocessing.
 
 ### 1.4 Objectives
 
@@ -96,7 +96,7 @@ Transformers replace recurrence with self-attention, which can model pairwise re
 
 ### 2.6 Research gap and project positioning
 
-This project is positioned as a controlled benchmark rather than a claim of trading-system superiority. Its contribution is to compare RNN, LSTM, GRU, Transformer, and linear regression on the same SPY return-prediction task using one aligned preprocessing and evaluation workflow. That framing is important because it turns the work into a fair methodological comparison instead of a set of disconnected training runs.
+This project is positioned as a controlled benchmark rather than a claim of trading-system superiority. Its contribution is to compare RNN, LSTM, GRU, Transformer, and linear regression under one aligned preprocessing/evaluation workflow across explicitly defined tasks: `sine_next_day` (synthetic sanity), plus SPY `next_return`, `next_volatility`, and `next_mean_return` (market targets). This framing avoids overgeneralising from any single return definition and keeps conclusions tied to concrete `target_mode`/`horizon`/`target_smooth_window` settings.
 
 ---
 
@@ -129,9 +129,10 @@ The latest final-report archive evaluates these four task IDs:
 
 The report addresses the following research questions:
 
-1. Which neural architecture performs best on the shared SPY forecasting setup?
-2. Does a tuned neural model outperform the linear-regression baseline?
-3. Is lower MSE associated with better directional accuracy?
+1. Which neural architecture performs best under the shared pipeline when evaluated task-by-task (`sine_next_day`, `next_return`, `next_volatility`, `next_mean_return`)?
+2. How do model rankings differ between the synthetic sanity task (`sine_next_day`) and the SPY market tasks (`next_return`, `next_volatility`, `next_mean_return`)?
+3. Does a tuned neural model outperform the linear-regression baseline within each task definition rather than only on a single return target?
+4. Is lower MSE associated with better directional accuracy across these task definitions?
 
 ### 3.3 Project objectives
 
