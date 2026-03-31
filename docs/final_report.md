@@ -340,17 +340,111 @@ Table 1 summarises the best-tuned winner for each task from `overall_task_summar
 
 ### 7.4 Prediction pattern visualisation (updated figures)
 
-![Next-return tuned testing loss comparison](../reports/final_report_tasks/20260331T125121Z/next_return/figures/best_tuned_testing_loss.svg)
+To ensure the final report directly embeds the key visuals from `reports/final_report_tasks/20260331T125121Z`, the most important per-task figures are shown below as Markdown images.
 
-*Figure 4. Best-tuned testing-loss comparison for `next_return`.*
+#### Task A — `sine_next_day`
 
-![Next-volatility tuned testing loss comparison](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/best_tuned_testing_loss.svg)
+![Sine next day best tuned training loss](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/best_tuned_training_loss.svg)
 
-*Figure 5. Best-tuned testing-loss comparison for `next_volatility`.*
+*Figure 4A-1. Best-tuned training-loss comparison for `sine_next_day`.*
 
-![Next-mean-return GRU scatter](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/gru_best_tuned_gru_comparison-20260331t135921z_scatter.png)
+![Sine next day best tuned validation loss](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/best_tuned_validation_loss.svg)
 
-*Figure 6. GRU predicted-vs-actual scatter for `next_mean_return` best-tuned comparison.*
+*Figure 4A-2. Best-tuned validation-loss comparison for `sine_next_day`.*
+
+![Sine next day best tuned testing loss](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/best_tuned_testing_loss.svg)
+
+*Figure 4A-3. Best-tuned testing-loss comparison for `sine_next_day`.*
+
+![Sine next day hyperparameter impact summary](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/hyperparameter_model_loss_summary_sine_next_day.svg)
+
+*Figure 4A-4. Hyperparameter-impact model-loss summary for `sine_next_day`.*
+
+![Sine next day LSTM scatter](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/lstm_best_tuned_lstm_comparison-20260331t130042z_scatter.png)
+
+*Figure 4A-5. LSTM predicted-vs-actual scatter for `sine_next_day` tuned comparison.*
+
+![Sine next day LSTM prediction slice](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/lstm_best_tuned_lstm_comparison-20260331t130042z_pred_slice.png)
+
+*Figure 4A-6. LSTM prediction slice for `sine_next_day` tuned comparison.*
+
+#### Task B — `next_return`
+
+![Next return best tuned training loss](../reports/final_report_tasks/20260331T125121Z/next_return/figures/best_tuned_training_loss.svg)
+
+*Figure 4B-1. Best-tuned training-loss comparison for `next_return`.*
+
+![Next return best tuned validation loss](../reports/final_report_tasks/20260331T125121Z/next_return/figures/best_tuned_validation_loss.svg)
+
+*Figure 4B-2. Best-tuned validation-loss comparison for `next_return`.*
+
+![Next return best tuned testing loss](../reports/final_report_tasks/20260331T125121Z/next_return/figures/best_tuned_testing_loss.svg)
+
+*Figure 4B-3. Best-tuned testing-loss comparison for `next_return`.*
+
+![Next return hyperparameter impact summary](../reports/final_report_tasks/20260331T125121Z/next_return/figures/hyperparameter_model_loss_summary_next_return.svg)
+
+*Figure 4B-4. Hyperparameter-impact model-loss summary for `next_return`.*
+
+![Next return LSTM scatter](../reports/final_report_tasks/20260331T125121Z/next_return/figures/lstm_best_tuned_lstm_comparison-20260331t132130z_scatter.png)
+
+*Figure 4B-5. LSTM predicted-vs-actual scatter for `next_return` tuned comparison.*
+
+![Next return LSTM prediction slice](../reports/final_report_tasks/20260331T125121Z/next_return/figures/lstm_best_tuned_lstm_comparison-20260331t132130z_pred_slice.png)
+
+*Figure 4B-6. LSTM prediction slice for `next_return` tuned comparison.*
+
+#### Task C — `next_volatility`
+
+![Next volatility best tuned training loss](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/best_tuned_training_loss.svg)
+
+*Figure 4C-1. Best-tuned training-loss comparison for `next_volatility`.*
+
+![Next volatility best tuned validation loss](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/best_tuned_validation_loss.svg)
+
+*Figure 4C-2. Best-tuned validation-loss comparison for `next_volatility`.*
+
+![Next volatility best tuned testing loss](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/best_tuned_testing_loss.svg)
+
+*Figure 4C-3. Best-tuned testing-loss comparison for `next_volatility`.*
+
+![Next volatility hyperparameter impact summary](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/hyperparameter_model_loss_summary_next_volatility.svg)
+
+*Figure 4C-4. Hyperparameter-impact model-loss summary for `next_volatility`.*
+
+![Next volatility GRU scatter](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/gru_best_tuned_gru_comparison-20260331t134031z_scatter.png)
+
+*Figure 4C-5. GRU predicted-vs-actual scatter for `next_volatility` tuned comparison.*
+
+![Next volatility GRU prediction slice](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/gru_best_tuned_gru_comparison-20260331t134031z_pred_slice.png)
+
+*Figure 4C-6. GRU prediction slice for `next_volatility` tuned comparison.*
+
+#### Task D — `next_mean_return`
+
+![Next mean return best tuned training loss](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/best_tuned_training_loss.svg)
+
+*Figure 4D-1. Best-tuned training-loss comparison for `next_mean_return`.*
+
+![Next mean return best tuned validation loss](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/best_tuned_validation_loss.svg)
+
+*Figure 4D-2. Best-tuned validation-loss comparison for `next_mean_return`.*
+
+![Next mean return best tuned testing loss](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/best_tuned_testing_loss.svg)
+
+*Figure 4D-3. Best-tuned testing-loss comparison for `next_mean_return`.*
+
+![Next mean return hyperparameter impact summary](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/hyperparameter_model_loss_summary_next_mean_return.svg)
+
+*Figure 4D-4. Hyperparameter-impact model-loss summary for `next_mean_return`.*
+
+![Next mean return GRU scatter](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/gru_best_tuned_gru_comparison-20260331t135921z_scatter.png)
+
+*Figure 4D-5. GRU predicted-vs-actual scatter for `next_mean_return` tuned comparison.*
+
+![Next mean return GRU prediction slice](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/gru_best_tuned_gru_comparison-20260331t135921z_pred_slice.png)
+
+*Figure 4D-6. GRU prediction slice for `next_mean_return` tuned comparison.*
 
 ### 7.5 Summary of key findings
 
@@ -478,21 +572,7 @@ Overall, the most defensible conclusion is not that one neural architecture univ
 
 ## Appendix B. Additional figures
 
-![Sine task testing loss](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/best_tuned_testing_loss.svg)
-
-*Figure A1. Best-tuned testing-loss comparison for `sine_next_day`.*
-
-![Next-return LSTM scatter](../reports/final_report_tasks/20260331T125121Z/next_return/figures/lstm_best_tuned_lstm_comparison-20260331t132130z_scatter.png)
-
-*Figure A2. LSTM predicted-vs-actual scatter for `next_return`.*
-
-![Next-volatility baseline/testing context](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/best_tuned_testing_loss.svg)
-
-*Figure A3. Best-tuned testing-loss comparison for `next_volatility`.*
-
-![Next-mean-return GRU prediction slice](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/gru_best_tuned_gru_comparison-20260331t135921z_pred_slice.png)
-
-*Figure A4. GRU prediction slice for `next_mean_return`.*
+All key figures from the archived final-report bundle are embedded in **Section 7.4** as Markdown images, grouped by task (`sine_next_day`, `next_return`, `next_volatility`, `next_mean_return`) and figure type (training/validation/testing loss, hyperparameter summary, scatter, prediction slice).
 
 ## Appendix C. Reproducibility notes
 
