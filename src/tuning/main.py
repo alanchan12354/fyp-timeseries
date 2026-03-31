@@ -302,7 +302,7 @@ def _config_to_runtime_dict(
     if model_name in RECURRENT_MODELS:
         runtime["recurrent_hidden_size"] = frozen_config["hidden"]
         runtime["recurrent_layer_count"] = frozen_config["layers"]
-    else:
+    elif model_name == "transformer":
         runtime["transformer_d_model"] = frozen_config["d_model"]
         runtime["transformer_num_layers"] = frozen_config["num_layers"]
         runtime["transformer_nhead"] = frozen_config["nhead"]
