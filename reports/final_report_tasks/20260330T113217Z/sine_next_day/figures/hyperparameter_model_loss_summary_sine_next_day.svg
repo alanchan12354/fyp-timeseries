@@ -15,18 +15,21 @@
 <text x="57" y="59.00" font-size="10" text-anchor="end" font-family="Arial">5.45e-04</text>
 <line x1="65" y1="55" x2="65" y2="305" stroke="#333333" stroke-width="1" />
 <line x1="65" y1="305" x2="455" y2="305" stroke="#333333" stroke-width="1" />
-<rect x="83.00" y="303.43" width="75.00" height="1.57" fill="#4C78A8" />
-<text x="120.50" y="297.43" font-size="10" text-anchor="middle" font-family="Arial">3.42e-06</text>
-<text x="120.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">GRU</text>
-<rect x="176.00" y="304.90" width="75.00" height="0.10" fill="#59A14F" />
-<text x="213.50" y="298.90" font-size="10" text-anchor="middle" font-family="Arial">2.16e-07</text>
-<text x="213.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">LSTM</text>
-<rect x="269.00" y="303.38" width="75.00" height="1.62" fill="#F28E2B" />
-<text x="306.50" y="297.38" font-size="10" text-anchor="middle" font-family="Arial">3.52e-06</text>
-<text x="306.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">RNN</text>
-<rect x="362.00" y="66.90" width="75.00" height="238.10" fill="#E15759" />
-<text x="399.50" y="60.90" font-size="10" text-anchor="middle" font-family="Arial">5.19e-04</text>
-<text x="399.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">Transformer</text>
+<rect x="83.00" y="304.98" width="56.40" height="0.02" fill="#4C78A8" />
+<text x="111.20" y="298.98" font-size="10" text-anchor="middle" font-family="Arial">3.58e-08</text>
+<text x="111.20" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">Baseline-LR</text>
+<rect x="157.40" y="304.90" width="56.40" height="0.10" fill="#59A14F" />
+<text x="185.60" y="298.90" font-size="10" text-anchor="middle" font-family="Arial">2.16e-07</text>
+<text x="185.60" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">LSTM</text>
+<rect x="231.80" y="303.38" width="56.40" height="1.62" fill="#F28E2B" />
+<text x="260.00" y="297.38" font-size="10" text-anchor="middle" font-family="Arial">3.52e-06</text>
+<text x="260.00" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">RNN</text>
+<rect x="306.20" y="303.43" width="56.40" height="1.57" fill="#E15759" />
+<text x="334.40" y="297.43" font-size="10" text-anchor="middle" font-family="Arial">3.42e-06</text>
+<text x="334.40" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">GRU</text>
+<rect x="380.60" y="66.90" width="56.40" height="238.10" fill="#4C78A8" />
+<text x="408.80" y="60.90" font-size="10" text-anchor="middle" font-family="Arial">5.19e-04</text>
+<text x="408.80" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">Transformer</text>
 <text x="260.0" y="412" font-size="12" text-anchor="middle" font-family="Arial">Model</text>
 <text x="690.0" y="45" font-size="16" text-anchor="middle" font-family="Arial">Testing Loss</text>
 <line x1="495" y1="305.00" x2="885" y2="305.00" stroke="#dddddd" stroke-width="1" />
@@ -36,18 +39,21 @@
 <line x1="495" y1="55.00" x2="885" y2="55.00" stroke="#dddddd" stroke-width="1" />
 <line x1="495" y1="55" x2="495" y2="305" stroke="#333333" stroke-width="1" />
 <line x1="495" y1="305" x2="885" y2="305" stroke="#333333" stroke-width="1" />
-<rect x="513.00" y="303.23" width="75.00" height="1.77" fill="#4C78A8" />
-<text x="550.50" y="297.23" font-size="10" text-anchor="middle" font-family="Arial">3.86e-06</text>
-<text x="550.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">GRU</text>
-<rect x="606.00" y="304.95" width="75.00" height="0.05" fill="#59A14F" />
-<text x="643.50" y="298.95" font-size="10" text-anchor="middle" font-family="Arial">1.11e-07</text>
-<text x="643.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">LSTM</text>
-<rect x="699.00" y="303.40" width="75.00" height="1.60" fill="#F28E2B" />
-<text x="736.50" y="297.40" font-size="10" text-anchor="middle" font-family="Arial">3.48e-06</text>
-<text x="736.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">RNN</text>
-<rect x="792.00" y="300.14" width="75.00" height="4.86" fill="#E15759" />
-<text x="829.50" y="294.14" font-size="10" text-anchor="middle" font-family="Arial">1.06e-05</text>
-<text x="829.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">Transformer</text>
+<rect x="513.00" y="304.98" width="56.40" height="0.02" fill="#4C78A8" />
+<text x="541.20" y="298.98" font-size="10" text-anchor="middle" font-family="Arial">4.81e-08</text>
+<text x="541.20" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">Baseline-LR</text>
+<rect x="587.40" y="304.95" width="56.40" height="0.05" fill="#59A14F" />
+<text x="615.60" y="298.95" font-size="10" text-anchor="middle" font-family="Arial">1.11e-07</text>
+<text x="615.60" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">LSTM</text>
+<rect x="661.80" y="303.40" width="56.40" height="1.60" fill="#F28E2B" />
+<text x="690.00" y="297.40" font-size="10" text-anchor="middle" font-family="Arial">3.48e-06</text>
+<text x="690.00" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">RNN</text>
+<rect x="736.20" y="303.23" width="56.40" height="1.77" fill="#E15759" />
+<text x="764.40" y="297.23" font-size="10" text-anchor="middle" font-family="Arial">3.86e-06</text>
+<text x="764.40" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">GRU</text>
+<rect x="810.60" y="300.14" width="56.40" height="4.86" fill="#4C78A8" />
+<text x="838.80" y="294.14" font-size="10" text-anchor="middle" font-family="Arial">1.06e-05</text>
+<text x="838.80" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">Transformer</text>
 <text x="690.0" y="412" font-size="12" text-anchor="middle" font-family="Arial">Model</text>
 <text x="1120.0" y="45" font-size="16" text-anchor="middle" font-family="Arial">Validation Loss</text>
 <line x1="925" y1="305.00" x2="1315" y2="305.00" stroke="#dddddd" stroke-width="1" />
@@ -57,17 +63,20 @@
 <line x1="925" y1="55.00" x2="1315" y2="55.00" stroke="#dddddd" stroke-width="1" />
 <line x1="925" y1="55" x2="925" y2="305" stroke="#333333" stroke-width="1" />
 <line x1="925" y1="305" x2="1315" y2="305" stroke="#333333" stroke-width="1" />
-<rect x="943.00" y="303.12" width="75.00" height="1.88" fill="#4C78A8" />
-<text x="980.50" y="297.12" font-size="10" text-anchor="middle" font-family="Arial">4.09e-06</text>
-<text x="980.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">GRU</text>
-<rect x="1036.00" y="304.31" width="75.00" height="0.69" fill="#59A14F" />
-<text x="1073.50" y="298.31" font-size="10" text-anchor="middle" font-family="Arial">1.50e-06</text>
-<text x="1073.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">LSTM</text>
-<rect x="1129.00" y="303.47" width="75.00" height="1.53" fill="#F28E2B" />
-<text x="1166.50" y="297.47" font-size="10" text-anchor="middle" font-family="Arial">3.34e-06</text>
-<text x="1166.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">RNN</text>
-<rect x="1222.00" y="299.50" width="75.00" height="5.50" fill="#E15759" />
-<text x="1259.50" y="293.50" font-size="10" text-anchor="middle" font-family="Arial">1.20e-05</text>
-<text x="1259.50" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">Transformer</text>
+<rect x="943.00" y="304.98" width="56.40" height="0.02" fill="#4C78A8" />
+<text x="971.20" y="298.98" font-size="10" text-anchor="middle" font-family="Arial">4.59e-08</text>
+<text x="971.20" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">Baseline-LR</text>
+<rect x="1017.40" y="304.31" width="56.40" height="0.69" fill="#59A14F" />
+<text x="1045.60" y="298.31" font-size="10" text-anchor="middle" font-family="Arial">1.50e-06</text>
+<text x="1045.60" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">LSTM</text>
+<rect x="1091.80" y="303.47" width="56.40" height="1.53" fill="#F28E2B" />
+<text x="1120.00" y="297.47" font-size="10" text-anchor="middle" font-family="Arial">3.34e-06</text>
+<text x="1120.00" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">RNN</text>
+<rect x="1166.20" y="303.12" width="56.40" height="1.88" fill="#E15759" />
+<text x="1194.40" y="297.12" font-size="10" text-anchor="middle" font-family="Arial">4.09e-06</text>
+<text x="1194.40" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">GRU</text>
+<rect x="1240.60" y="299.50" width="56.40" height="5.50" fill="#4C78A8" />
+<text x="1268.80" y="293.50" font-size="10" text-anchor="middle" font-family="Arial">1.20e-05</text>
+<text x="1268.80" y="325.00" font-size="11" text-anchor="middle" font-family="Arial">Transformer</text>
 <text x="1120.0" y="412" font-size="12" text-anchor="middle" font-family="Arial">Model</text>
 </svg>

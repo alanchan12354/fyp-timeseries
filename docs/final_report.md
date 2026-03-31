@@ -342,38 +342,40 @@ Table 2 is the single consolidated cross-task view used for report-level conclus
 
 The consolidated table ensures the narrative is consistent with implementation terms (`task`, `task_id`, `target_mode`, `horizon`) and avoids mixing results from different forecast definitions.
 
-### 7.4 Report artifact map
+### 7.4 Report artifact map (updated four-task bundle)
 
-Table 3 maps each task to the generated files that support reproducibility.
+Table 3 maps the latest four-task final-report archive (`reports/final_report_tasks/20260331T125121Z`) to its reproducibility artifacts.
 
-**Table 3. Report artifact map by task.**
+**Table 3. Report artifact map by task (updated).**
 
-| Task | `task_id` | Tuning winners source | Comparison reports | Figures | Run IDs |
+| Task | `task_id` | Tuning winners source | Comparison reports | Hyperparameter summary figure (with Baseline-LR) | Prediction-pattern figures |
 | --- | --- | --- | --- | --- | --- |
-| Task A | `spy_h10_horizon_return` | `reports/tuning_winners.csv` (rows filtered by `task_id`) | `reports/best_tuned_comparison_spy_h10_horizon_return.csv` and `.md` | `reports/figures/best_tuned_training_loss.svg`, `best_tuned_validation_loss.svg`, `best_tuned_testing_loss.svg` plus per-model scatter/slice plots | `best_tuned_lstm_comparison-20260320T093214Z`, `best_tuned_gru_comparison-20260320T093215Z`, `best_tuned_rnn_comparison-20260320T093215Z`, `best_tuned_transformer_comparison-20260320T093216Z` |
-| Task B | `spy_h1_next_return` | `reports/tuning_winners.csv` (rows filtered by `task_id`) | `reports/best_tuned_comparison_spy_h1_next_return.csv` and `.md` | `reports/figures/hyperparameter_model_loss_summary_spy_h1_next_return.svg` and Task B best-tuned figures after archival | _Pending final run IDs_ |
+| Task A | `sine_next_day` | `reports/final_report_tasks/20260331T125121Z/sine_next_day/tuning_winners.csv` | `best_tuned_comparison_sine_next_day.csv` and `.md` | `figures/hyperparameter_model_loss_summary_sine_next_day.svg` | `figures/*_scatter.png`, `figures/*_pred_slice.png` |
+| Task B | `next_return` | `reports/final_report_tasks/20260331T125121Z/next_return/tuning_winners.csv` | `best_tuned_comparison_next_return.csv` and `.md` | `figures/hyperparameter_model_loss_summary_next_return.svg` | `figures/*_scatter.png`, `figures/*_pred_slice.png` |
+| Task C | `next_volatility` | `reports/final_report_tasks/20260331T125121Z/next_volatility/tuning_winners.csv` | `best_tuned_comparison_next_volatility.csv` and `.md` | `figures/hyperparameter_model_loss_summary_next_volatility.svg` | `figures/*_scatter.png`, `figures/*_pred_slice.png` |
+| Task D | `next_mean_return` | `reports/final_report_tasks/20260331T125121Z/next_mean_return/tuning_winners.csv` | `best_tuned_comparison_next_mean_return.csv` and `.md` | `figures/hyperparameter_model_loss_summary_next_mean_return.svg` | `figures/*_scatter.png`, `figures/*_pred_slice.png` |
 
-### 7.5 Prediction pattern visualisation
+### 7.5 Prediction pattern visualisation (updated figures)
 
-The archived scatter and prediction-slice plots provide a qualitative view of model behaviour.
+The updated archive includes scatter and prediction-slice figures for every task. Representative examples are shown below.
 
-![LSTM scatter plot](../reports/figures/lstm_best_tuned_lstm_comparison-20260320t093214z_scatter.png)
+![Task A (sine_next_day) LSTM scatter](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/lstm_best_tuned_lstm_comparison-20260331t130042z_scatter.png)
 
-*Figure 4. LSTM predicted-vs-actual scatter plot for Task A archived best-tuned comparison.*
+*Figure 4. Task A (`sine_next_day`) LSTM predicted-vs-actual scatter plot.*
 
-![GRU scatter plot](../reports/figures/gru_best_tuned_gru_comparison-20260320t093215z_scatter.png)
+![Task B (next_return) GRU prediction slice](../reports/final_report_tasks/20260331T125121Z/next_return/figures/gru_best_tuned_gru_comparison-20260331t132131z_pred_slice.png)
 
-*Figure 5. GRU predicted-vs-actual scatter plot for Task A archived best-tuned comparison.*
+*Figure 5. Task B (`next_return`) GRU prediction slice over a test-set segment.*
 
-![LSTM prediction slice](../reports/figures/lstm_best_tuned_lstm_comparison-20260320t093214z_pred_slice.png)
+![Task C (next_volatility) RNN scatter](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/rnn_best_tuned_rnn_comparison-20260331t134031z_scatter.png)
 
-*Figure 6. LSTM prediction slice over a Task A test-set segment.*
+*Figure 6. Task C (`next_volatility`) RNN predicted-vs-actual scatter plot.*
 
-![GRU prediction slice](../reports/figures/gru_best_tuned_gru_comparison-20260320t093215z_pred_slice.png)
+![Task D (next_mean_return) Transformer prediction slice](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/transformer_best_tuned_transformer_comparison-20260331t135922z_pred_slice.png)
 
-*Figure 7. GRU prediction slice over a Task A test-set segment.*
+*Figure 7. Task D (`next_mean_return`) Transformer prediction slice over a test-set segment.*
 
-Qualitatively, the plots show that models struggle with full daily-return volatility. The better Task A models track broad direction more reliably than exact magnitude.
+Across all four tasks, models capture broad movement patterns but still exhibit amplitude under/over-shooting in high-volatility intervals.
 
 ### 7.6 Summary of key findings
 
