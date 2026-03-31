@@ -161,7 +161,7 @@ Using returns instead of prices reduces scale effects and makes the target more 
 
 ### 4.3 Sequence construction
 
-For neural models, the repository builds three-dimensional input tensors of shape \((N, 30, 8)\), where each sample contains 30 consecutive days of 8 engineered features and one scalar target.
+For neural models, the repository builds three-dimensional input tensors of shape \((N, \texttt{seq\_len}, 8)\), where each sample contains `seq_len` consecutive days of 8 engineered features and one scalar target. The tuned search space includes `seq_len ∈ {20, 30, 60}` in `src/tuning/main.py`.
 
 The 8 engineered features produced by `build_spy_feature_frame` are:
 
@@ -175,6 +175,15 @@ The 8 engineered features produced by `build_spy_feature_frame` are:
 8. `volatility_20`
 
 Target construction is controlled by `target_mode`, `horizon`, and `target_smooth_window`. In the latest archived bundle, the evaluated tasks are `sine_next_day`, `next_return`, `next_volatility` (`target_smooth_window=5`), and `next_mean_return` (`target_smooth_window=5`).
+
+For transparency, the archived best-tuned comparisons use the following winning `seq_len` values by task (best test-MSE run per task):
+
+| Task | Best test-MSE winner | Winning `seq_len` |
+| --- | --- | ---: |
+| `sine_next_day` | Baseline-LR | 30 |
+| `next_return` | LSTM | 30 |
+| `next_volatility` | Baseline-LR | 20 |
+| `next_mean_return` | GRU | 30 |
 
 ### 4.4 Train/validation/test split
 
@@ -202,11 +211,11 @@ All models share the same high-level pipeline:
 
 ### 5.2 Baseline model
 
-The baseline is a flattened-sequence **linear regression** model. It uses the same multifeature 30-step window as the neural models, but reshapes each \((30, 8)\) sequence into a tabular vector (240 features) so the target alignment remains identical. This baseline tests whether nonlinear sequence modelling provides gains beyond a strong linear model on the same information set. [5], [10]
+The baseline is a flattened-sequence **linear regression** model. It uses the same multifeature `seq_len` window as the neural models, but reshapes each \((\texttt{seq\_len}, 8)\) sequence into a tabular vector (`seq_len × 8` features) so the target alignment remains identical. This baseline tests whether nonlinear sequence modelling provides gains beyond a strong linear model on the same information set. [5], [10]
 
 ### 5.3 RNN model
 
-The vanilla RNN model consists of a recurrent layer over the 30-step input sequence followed by a linear output layer that maps the last hidden state to a scalar forecast. This architecture serves as the simplest neural sequence benchmark. [6]
+The vanilla RNN model consists of a recurrent layer over the `seq_len` input sequence followed by a linear output layer that maps the last hidden state to a scalar forecast. This architecture serves as the simplest neural sequence benchmark. [6]
 
 ### 5.4 LSTM model
 
