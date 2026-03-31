@@ -74,6 +74,13 @@ def _task_aware_paths(task_id: str | None) -> tuple[str, str]:
     )
 
 
+def _task_comparison_csv_path(task_id: str | None) -> str:
+    if not task_id:
+        return os.path.join(REPORTS_DIR, "best_tuned_comparison.csv")
+    suffix = _slugify_task_id(task_id)
+    return os.path.join(REPORTS_DIR, f"best_tuned_comparison_{suffix}.csv")
+
+
 def _ensure_requested_tasks_have_winners(tuning_rows: Sequence[Dict[str, str]], task_ids: Sequence[str]) -> None:
     if not task_ids:
         return
@@ -127,6 +134,31 @@ def _collect_best_runs(rows: Iterable[Dict[str, Any]]) -> Dict[str, Dict[str, An
         if current_best is None or row["metrics"]["best_val_MSE"] < current_best["metrics"]["best_val_MSE"]:
             best_by_model[model_name] = row
     return best_by_model
+
+
+def _inject_baseline_from_comparison_csv(best_by_model: Dict[str, Dict[str, Any]], csv_path: str) -> None:
+    if "Baseline-LR" in best_by_model or not os.path.exists(csv_path):
+        return
+    comparison_rows = _load_csv_rows(csv_path)
+    for row in comparison_rows:
+        if str(row.get("model") or "").strip() != "Baseline-LR":
+            continue
+        best_by_model["Baseline-LR"] = {
+            "model_name": "Baseline-LR",
+            "metrics": {
+                "best_train_MSE": _parse_float(row.get("best_train_MSE", row.get("train_mse"))),
+                "best_val_MSE": _parse_float(row.get("best_val_MSE", row.get("val_mse"))),
+                "best_test_MSE": _parse_float(row.get("best_test_MSE", row.get("test_mse"))),
+                "MAE": _parse_float(row.get("MAE", row.get("mae"))),
+                "DA": _parse_float(row.get("DA", row.get("da"))),
+            },
+            "hyperparameters": {
+                "source": "best_tuned_comparison_csv",
+                "details": row.get("hyperparameters", ""),
+            },
+            "run_id": row.get("run_id", "baseline-lr-from-comparison"),
+        }
+        break
 
 
 def _collect_stage_impacts(rows: List[Dict[str, str]]) -> Dict[str, List[Dict[str, Any]]]:
@@ -346,6 +378,7 @@ def main(argv: list[str] | None = None) -> Dict[str, Any]:
         filtered_experiment_rows = _filter_rows_by_task_id(experiment_rows, task_id)
         filtered_tuning_rows = _filter_rows_by_task_id(tuning_rows, task_id)
         best_by_model = _collect_best_runs(filtered_experiment_rows)
+        _inject_baseline_from_comparison_csv(best_by_model, _task_comparison_csv_path(task_id))
         stage_impacts = _collect_stage_impacts(filtered_tuning_rows)
         report_path, figure_path = _task_aware_paths(task_id)
         _build_comparison_figure(best_by_model, out_path=figure_path)
