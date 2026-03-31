@@ -344,6 +344,42 @@ Table 1 summarises the best-tuned winner for each task from `overall_task_summar
 
 To ensure the final report directly embeds the key visuals from `reports/final_report_tasks/20260331T125121Z`, the most important per-task figures are shown below as Markdown images.
 
+#### Key figures (quick reference)
+
+This quick-reference block surfaces a compact set of high-signal visuals before the full per-task gallery. For tasks where the overall winner is Baseline-LR (which has no scatter/pred-slice plots in the archive), the best neural model’s scatter/pred-slice is shown.
+
+- **Task A (`sine_next_day`)** — cross-model testing-loss summary + best-neural (LSTM) prediction views
+
+![Task A key testing loss](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/best_tuned_testing_loss.svg)
+
+![Task A key winner scatter](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/lstm_best_tuned_lstm_comparison-20260331t130042z_scatter.png)
+
+![Task A key winner prediction slice](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/lstm_best_tuned_lstm_comparison-20260331t130042z_pred_slice.png)
+
+- **Task B (`next_return`)** — cross-model testing-loss summary + winner (LSTM) prediction views
+
+![Task B key testing loss](../reports/final_report_tasks/20260331T125121Z/next_return/figures/best_tuned_testing_loss.svg)
+
+![Task B key winner scatter](../reports/final_report_tasks/20260331T125121Z/next_return/figures/lstm_best_tuned_lstm_comparison-20260331t132130z_scatter.png)
+
+![Task B key winner prediction slice](../reports/final_report_tasks/20260331T125121Z/next_return/figures/lstm_best_tuned_lstm_comparison-20260331t132130z_pred_slice.png)
+
+- **Task C (`next_volatility`)** — cross-model testing-loss summary + best-neural (GRU) prediction views
+
+![Task C key testing loss](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/best_tuned_testing_loss.svg)
+
+![Task C key winner scatter](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/gru_best_tuned_gru_comparison-20260331t134031z_scatter.png)
+
+![Task C key winner prediction slice](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/gru_best_tuned_gru_comparison-20260331t134031z_pred_slice.png)
+
+- **Task D (`next_mean_return`)** — cross-model testing-loss summary + winner (GRU) prediction views
+
+![Task D key testing loss](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/best_tuned_testing_loss.svg)
+
+![Task D key winner scatter](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/gru_best_tuned_gru_comparison-20260331t135921z_scatter.png)
+
+![Task D key winner prediction slice](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/gru_best_tuned_gru_comparison-20260331t135921z_pred_slice.png)
+
 #### Task A — `sine_next_day`
 
 ![Sine next day best tuned training loss](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/best_tuned_training_loss.svg)
