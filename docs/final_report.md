@@ -224,6 +224,8 @@ The Transformer model first projects each 8-dimensional timestep feature vector 
 
 Repository-level defaults (for example `HORIZON=1`, `TARGET_MODE=horizon_return`) are defined in `src/common/config.py`. Run-specific overrides (including CLI overrides such as `--horizon` and `--target-mode`) are resolved through `src/common/runtime_config.py` and then passed into experiment preparation, so archived experiments may intentionally differ from defaults.
 
+For this report, the **archived final metrics are taken from runtime-resolved experiment configs** (effective CLI + staged-winner selections), **not** from static defaults in `src/common/config.py`. Concretely, run truth is read from `reports/final_report_tasks/20260331T125121Z/tuning_winners.csv`, per-task `reports/final_report_tasks/20260331T125121Z/*/best_tuned_comparison_*.md`, and the bundle-level synthesis `reports/final_report_tasks/20260331T125121Z/overall_task_summary.md`.
+
 ### 5.8 Training strategy
 
 The training workflow uses the Adam optimiser, mean squared error loss, early stopping with validation-loss smoothing, checkpointing of the best validation state, and scheduler-based learning-rate reduction. Hyperparameter selection is validation-driven, and the final archived best-tuned comparison was generated from the frozen winners stored in `tuning_winners.csv`. [12]
@@ -583,4 +585,10 @@ The latest archived final-report bundle used in this report is `reports/final_re
 - `next_volatility`
 - `next_mean_return`
 
-The bundle root includes `overall_task_summary.csv` / `.md` for the final cross-task synthesis.
+Reproducibility source-of-truth note: final reported metrics in this document are resolved from **runtime-effective** configs (CLI overrides + staged winner promotion), not from static defaults. The concrete artifacts used as run truth are:
+
+- `reports/final_report_tasks/20260331T125121Z/tuning_winners.csv`
+- `reports/final_report_tasks/20260331T125121Z/*/best_tuned_comparison_*.md`
+- `reports/final_report_tasks/20260331T125121Z/overall_task_summary.md`
+
+The bundle root also includes `overall_task_summary.csv` for tabular export of the same cross-task synthesis.
