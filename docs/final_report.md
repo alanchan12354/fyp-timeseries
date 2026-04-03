@@ -278,13 +278,124 @@ The GRU model is structurally similar to the LSTM model but uses update and rese
 
 The Transformer model first projects each 8-dimensional timestep feature vector into a learned embedding space, adds positional encodings, applies stacked Transformer encoder layers, and uses the final time-step representation for scalar prediction. This architecture is intended to test whether self-attention can outperform recurrence on this multifeature financial sequence problem. [4]
 
-### 5.7 Configuration source of truth
+### 5.7 Mathematical Formulation of Models
+
+This subsection summarises compact model equations used in the benchmark. Extended derivations are deferred to the appendix.
+
+#### 5.7.1 AR/ARIMA/SARIMA (reference only; not used in final benchmark)
+
+Backshift form:
+\[
+\Phi(B^s)\,\phi(B)\,(1-B)^d(1-B^s)^D y_t
+=
+\Theta(B^s)\,\theta(B)\,\varepsilon_t.
+\]
+
+- \(B\): backshift operator (\(B y_t = y_{t-1}\)); \(s\): seasonal period.
+- \(d, D\): non-seasonal/seasonal differencing orders.
+- \(\phi,\theta,\Phi,\Theta\): non-seasonal and seasonal AR/MA polynomials.
+- \(\varepsilon_t\): white-noise innovation.
+- **Time dependence:** imposed through lag polynomials and differencing on past observations/errors.
+- **Training objective:** typically maximum likelihood (equivalently minimising one-step-ahead squared innovations under Gaussian errors).
+
+#### 5.7.2 Exponential smoothing family (reference only; not used in final benchmark)
+
+Example additive Holt-Winters updates:
+\[
+\ell_t=\alpha(y_t-s_{t-m})+(1-\alpha)(\ell_{t-1}+b_{t-1}),\quad
+b_t=\beta(\ell_t-\ell_{t-1})+(1-\beta)b_{t-1},
+\]
+\[
+s_t=\gamma(y_t-\ell_t)+(1-\gamma)s_{t-m},\quad
+\hat{y}_{t+h|t}=\ell_t+h\,b_t+s_{t-m+h_m}.
+\]
+
+- \(\ell_t\): level, \(b_t\): trend, \(s_t\): seasonal state, \(m\): season length.
+- \(\alpha,\beta,\gamma\in(0,1)\): smoothing parameters.
+- \(\hat{y}_{t+h|t}\): \(h\)-step forecast.
+- **Time dependence:** recursive state updates propagate recent observations with exponential forgetting.
+- **Training objective:** minimise in-sample squared forecast error or maximise likelihood over smoothing parameters.
+
+#### 5.7.3 Regression baseline used (Baseline-LR)
+
+Flattened-sequence linear regression:
+\[
+\hat{y}_t = w^\top \mathrm{vec}(X_{t-L+1:t}) + b,
+\]
+where \(X_{t-L+1:t}\in\mathbb{R}^{L\times F}\), \(L=\texttt{seq\_len}\), \(F=8\), and \(\mathrm{vec}(\cdot)\in\mathbb{R}^{LF}\).
+
+- \(w\in\mathbb{R}^{LF}\), \(b\in\mathbb{R}\): regression parameters.
+- \(\hat{y}_t\): one-step-ahead target forecast.
+- **Time dependence:** encoded explicitly via lagged features in the flattened lookback window.
+- **Training objective:** least squares \(\min_{w,b}\sum_t (y_t-\hat{y}_t)^2\) (MSE).
+
+#### 5.7.4 RNN/LSTM/GRU models used
+
+**Vanilla RNN**
+\[
+h_t=\tanh(W_x x_t + W_h h_{t-1}+b_h),\qquad
+\hat{y}_t = W_o h_t + b_o.
+\]
+
+- \(x_t\in\mathbb{R}^F\): feature vector at time \(t\); \(h_t\): hidden state.
+- **Time dependence:** recurrent transition carries history through \(h_{t-1}\to h_t\).
+- **Training objective:** minimise sequence-level MSE, \(\min_\Theta \sum_t (y_t-\hat{y}_t)^2\), via backpropagation through time.
+
+**LSTM (compact gates)**
+\[
+\begin{aligned}
+i_t&=\sigma(W_i[x_t;h_{t-1}]+b_i),\quad
+f_t=\sigma(W_f[x_t;h_{t-1}]+b_f),\\
+\tilde{c}_t&=\tanh(W_c[x_t;h_{t-1}]+b_c),\quad
+o_t=\sigma(W_o[x_t;h_{t-1}]+b_o),\\
+c_t&=f_t\odot c_{t-1}+i_t\odot \tilde{c}_t,\quad
+h_t=o_t\odot\tanh(c_t),\\
+\hat{y}_t&=W_y h_t+b_y.
+\end{aligned}
+\]
+
+- \(i_t,f_t,o_t\): input/forget/output gates; \(c_t\): cell state.
+- **Time dependence:** controlled memory path \(c_{t-1}\to c_t\) mitigates vanishing gradients.
+- **Training objective:** MSE minimisation with Adam over all network parameters.
+
+**GRU (compact gates)**
+\[
+\begin{aligned}
+z_t&=\sigma(W_z[x_t;h_{t-1}]+b_z),\quad
+r_t=\sigma(W_r[x_t;h_{t-1}]+b_r),\\
+\tilde{h}_t&=\tanh(W_h[x_t;r_t\odot h_{t-1}]+b_h),\\
+h_t&=(1-z_t)\odot h_{t-1}+z_t\odot \tilde{h}_t,\quad
+\hat{y}_t=W_y h_t+b_y.
+\end{aligned}
+\]
+
+- \(z_t,r_t\): update/reset gates.
+- **Time dependence:** gated interpolation between previous and candidate hidden states.
+- **Training objective:** MSE minimisation with backpropagation through time.
+
+#### 5.7.5 Transformer model used
+
+Scaled dot-product self-attention:
+\[
+\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right)V,
+\]
+with \(Q=XW_Q,\;K=XW_K,\;V=XW_V\), and forecast head
+\[
+\hat{y}_t = W_h z_t + b_h,
+\]
+where \(z_t\) is the final encoder representation (last position) after positional encoding and stacked encoder blocks.
+
+- \(d_k\): key/query dimension; \(W_Q,W_K,W_V,W_h\): trainable projections.
+- **Time dependence:** attention directly mixes information across all sequence positions using content + positional encoding.
+- **Training objective:** MSE minimisation on one-step forecasts, optimised with Adam.
+
+### 5.8 Configuration source of truth
 
 Repository-level defaults (for example `HORIZON=1`, `TARGET_MODE=horizon_return`) are defined in `src/common/config.py`. Run-specific overrides (including CLI overrides such as `--horizon` and `--target-mode`) are resolved through `src/common/runtime_config.py` and then passed into experiment preparation, so archived experiments may intentionally differ from defaults.
 
 For this report, the **archived final metrics are taken from runtime-resolved experiment configs** (effective CLI + staged-winner selections), **not** from static defaults in `src/common/config.py`. Concretely, run truth is read from `reports/final_report_tasks/20260331T125121Z/tuning_winners.csv`, per-task `reports/final_report_tasks/20260331T125121Z/*/best_tuned_comparison_*.md`, and the bundle-level synthesis `reports/final_report_tasks/20260331T125121Z/overall_task_summary.md`.
 
-### 5.8 Training strategy
+### 5.9 Training strategy
 
 The training workflow uses the Adam optimiser, mean squared error loss, early stopping with validation-loss smoothing, checkpointing of the best validation state, and scheduler-based learning-rate reduction. Hyperparameter selection is validation-driven, and the final archived best-tuned comparison was generated from the frozen winners stored in `tuning_winners.csv`. [12]
 
@@ -297,7 +408,7 @@ Figure 1 is included to demonstrate that the tuned pipeline produces stable conv
 - **What it shows:** All tuned models converge, but with distinct loss levels across families.
 - **Conclusion supported:** Supports the report’s model-comparison setup and motivates deeper task-level result analysis.
 
-### 5.9 Evaluation metrics
+### 5.10 Evaluation metrics
 
 Three metrics are reported:
 
