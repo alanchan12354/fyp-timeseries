@@ -23,8 +23,6 @@ Co-Examiner:
 Submission Date:
 31 March 2026
 
-**Document Status:** Draft for supervisor review
-
 ## 2. Abstract
 
 This project benchmarks sequence models for short-horizon forecasting under a unified and reproducible pipeline that now supports **multiple target definitions** and both **real (SPY)** and **synthetic (sine)** data sources. The latest archived final-report bundle (generated at `2026-03-31T20:31:21Z`) evaluates four tasks: `sine_next_day`, `next_return`, `next_volatility`, and `next_mean_return`. Across these tasks, RNN, LSTM, GRU, Transformer, and a flattened-sequence linear-regression baseline are compared on aligned splits using MSE/MAE and directional accuracy (DA).
@@ -39,8 +37,7 @@ The cross-task summary shows that **Baseline-LR** is best on `sine_next_day` and
 - 2. Abstract
 - 3. Table of contents
 - 4. List of tables and figures
-- 5. Pre-submission checklist (run before final PDF generation)
-- 6. Main body
+- 5. Main body
   - Chapter 1. Introduction
   - Chapter 2. Background and Literature Context
   - Chapter 3. Problem Statement and Objectives
@@ -62,35 +59,15 @@ The cross-task summary shows that **Baseline-LR** is best on `sine_next_day` and
 - Table 1. Cross-task consolidated summary.
 - Table 2. Updated report artifact map.
 - Table A-1. Final tuned configurations (latest bundle highlights).
-- Table C-1. Pre-submission checklist.
 
 ### Figures
 
 - Figure 1. Training-loss comparison for the best tuned models and baseline.
 - Figure 4A-1 to Figure 4D-6. Per-task training/validation/testing, hyperparameter impact, scatter, and prediction-slice visuals.
 
-## 5. Pre-submission Checklist (Run Before Final PDF Generation)
+## 5. Main Body
 
-Use this one-page checklist immediately before producing the final PDF.
-
-| Item                                                                        | Check |
-| --------------------------------------------------------------------------- | ----- |
-| Required sections present (**10.2.1** structure and front/main/back matter) | ☐     |
-| Table of contents, list of figures, and list of tables are updated          | ☐     |
-| All figures are cited in text and interpreted                               | ☐     |
-| Core formulas are included and correctly formatted                          | ☐     |
-| Contributions section is present and complete                               | ☐     |
-| References and appendices are complete and consistent                       | ☐     |
-
-**Pre-submission run record**
-
-- Date: __________
-- Checked by: __________
-- Notes/actions before PDF export: ______________________________________
-
-## 6. Main Body
-
-\newpage
+---
 
 ### Chapter 1. Introduction
 
@@ -128,8 +105,6 @@ The remainder of this report covers background literature, formal task definitio
 
 ---
 
-\newpage
-
 ### Chapter 2. Background and Literature Context
 
 ### 2.1 Financial time-series forecasting
@@ -160,19 +135,17 @@ This project is positioned as a controlled benchmark rather than a claim of trad
 
 ---
 
-\newpage
-
 ### Chapter 3. Problem Statement and Objectives
 
 ### 3.1 Forecasting task definition
 
-The forecasting system is formulated as supervised learning on multifeature sequences. Let \(\mathbf{f}\_t \in \mathbb{R}^8\) denote the engineered feature vector at day \(t\), and let each sample be a rolling lookback window:
+The forecasting system is formulated as supervised learning on multifeature sequences. Let `f_t in R^8` denote the engineered feature vector at day `t`, and let each sample be a rolling lookback window:
 
-\[
-X*t = [\mathbf{f}*{t-L+1}, \ldots, \mathbf{f}\_t]
-\]
+```text
+X_t = [f_{t-L+1}, ..., f_t]
+```
 
-where \(L\) is the sequence length (`seq_len`, tuned per task/model). The repository supports multiple targets via `target_mode`:
+where `L` is the sequence length (`seq_len`, tuned per task/model). The repository supports multiple targets via `target_mode`:
 
 - `sine_next_day` (synthetic sanity task),
 - `next_return` (1-step return),
@@ -206,8 +179,6 @@ A model is considered successful if it demonstrates lower validation and test er
 
 ---
 
-\newpage
-
 ### Chapter 4. Data and Pre-processing
 
 ### 4.1 Data source and asset selection
@@ -218,15 +189,15 @@ The latest report bundle evaluates both **synthetic** and **market** tasks. For 
 
 The raw downloaded close series is converted to **daily log returns**:
 
-\[
-r*t = \log\left(\frac{P_t}{P*{t-1}}\right)
-\]
+```text
+r_t = log(P_t / P_{t-1})
+```
 
 Using returns instead of prices reduces scale effects and makes the target more appropriate for short-horizon statistical learning. [5]
 
 ### 4.3 Sequence construction
 
-For neural models, the repository builds three-dimensional input tensors of shape \((N, \texttt{seq_len}, 8)\), where each sample contains `seq_len` consecutive days of 8 engineered features and one scalar target. The tuned search space includes `seq_len ∈ {20, 30, 60}` in `src/tuning/main.py`.
+For neural models, the repository builds three-dimensional input tensors of shape `(N, seq_len, 8)`, where each sample contains `seq_len` consecutive days of 8 engineered features and one scalar target. The tuned search space includes `seq_len ∈ {20, 30, 60}` in `src/tuning/main.py`.
 
 The 8 engineered features produced by `build_spy_feature_frame` are:
 
@@ -260,8 +231,6 @@ The input sequences are standardised with `StandardScaler`, fitted only on the t
 
 ---
 
-\newpage
-
 ### Chapter 5. Methodology
 
 ### 5.1 Overall pipeline
@@ -278,7 +247,7 @@ All models share the same high-level pipeline:
 
 ### 5.2 Baseline model
 
-The baseline is a flattened-sequence **linear regression** model. It uses the same multifeature `seq_len` window as the neural models, but reshapes each \((\texttt{seq_len}, 8)\) sequence into a tabular vector (`seq_len × 8` features) so the target alignment remains identical. This baseline tests whether nonlinear sequence modelling provides gains beyond a strong linear model on the same information set. [5], [10]
+The baseline is a flattened-sequence **linear regression** model. It uses the same multifeature `seq_len` window as the neural models, but reshapes each `(seq_len, 8)` sequence into a tabular vector (`seq_len × 8` features) so the target alignment remains identical. This baseline tests whether nonlinear sequence modelling provides gains beyond a strong linear model on the same information set. [5], [10]
 
 ### 5.3 RNN model
 
@@ -303,107 +272,103 @@ This subsection summarises compact model equations used in the benchmark. Extend
 #### 5.7.1 AR/ARIMA/SARIMA (reference only; not used in final benchmark)
 
 Backshift form:
-\[
-\Phi(B^s)\,\phi(B)\,(1-B)^d(1-B^s)^D y_t
+```text
+Phi(B^s) phi(B) (1 - B)^d (1 - B^s)^D y_t
 =
-\Theta(B^s)\,\theta(B)\,\varepsilon_t.
-\]
+Theta(B^s) theta(B) epsilon_t
+```
 
-- \(B\): backshift operator (\(B y*t = y*{t-1}\)); \(s\): seasonal period.
-- \(d, D\): non-seasonal/seasonal differencing orders.
-- \(\phi,\theta,\Phi,\Theta\): non-seasonal and seasonal AR/MA polynomials.
-- \(\varepsilon_t\): white-noise innovation.
+- `B`: backshift operator (`B y_t = y_{t-1}`); `s`: seasonal period.
+- `d, D`: non-seasonal/seasonal differencing orders.
+- `phi, theta, Phi, Theta`: non-seasonal and seasonal AR/MA polynomials.
+- `epsilon_t`: white-noise innovation.
 - **Time dependence:** imposed through lag polynomials and differencing on past observations/errors.
 - **Training objective:** typically maximum likelihood (equivalently minimising one-step-ahead squared innovations under Gaussian errors).
 
 #### 5.7.2 Exponential smoothing family (reference only; not used in final benchmark)
 
 Example additive Holt-Winters updates:
-\[
-\ell*t=\alpha(y_t-s*{t-m})+(1-\alpha)(\ell*{t-1}+b*{t-1}),\quad
-b*t=\beta(\ell_t-\ell*{t-1})+(1-\beta)b*{t-1},
-\]
-\[
-s_t=\gamma(y_t-\ell_t)+(1-\gamma)s*{t-m},\quad
-\hat{y}_{t+h|t}=\ell_t+h\,b_t+s_{t-m+h_m}.
-\]
+```text
+ell_t = alpha(y_t - s_{t-m}) + (1 - alpha)(ell_{t-1} + b_{t-1})
+b_t   = beta(ell_t - ell_{t-1}) + (1 - beta)b_{t-1}
+```
+```text
+s_t = gamma(y_t - ell_t) + (1 - gamma)s_{t-m}
+y_hat_{t+h|t} = ell_t + h b_t + s_{t-m+h_m}
+```
 
-- \(\ell_t\): level, \(b_t\): trend, \(s_t\): seasonal state, \(m\): season length.
-- \(\alpha,\beta,\gamma\in(0,1)\): smoothing parameters.
-- \(\hat{y}\_{t+h|t}\): \(h\)-step forecast.
+- `ell_t`: level, `b_t`: trend, `s_t`: seasonal state, `m`: season length.
+- `alpha, beta, gamma in (0, 1)`: smoothing parameters.
+- `y_hat_{t+h|t}`: `h`-step forecast.
 - **Time dependence:** recursive state updates propagate recent observations with exponential forgetting.
 - **Training objective:** minimise in-sample squared forecast error or maximise likelihood over smoothing parameters.
 
 #### 5.7.3 Regression baseline used (Baseline-LR)
 
 Flattened-sequence linear regression:
-\[
-\hat{y}_t = w^\top \mathrm{vec}(X_{t-L+1:t}) + b,
-\]
-where \(X\_{t-L+1:t}\in\mathbb{R}^{L\times F}\), \(L=\texttt{seq_len}\), \(F=8\), and \(\mathrm{vec}(\cdot)\in\mathbb{R}^{LF}\).
+```text
+y_hat_t = w^T vec(X_{t-L+1:t}) + b
+```
+where `X_{t-L+1:t} in R^{L x F}`, `L = seq_len`, `F = 8`, and `vec(.) in R^{LF}`.
 
-- \(w\in\mathbb{R}^{LF}\), \(b\in\mathbb{R}\): regression parameters.
-- \(\hat{y}\_t\): one-step-ahead target forecast.
+- `w in R^{LF}`, `b in R`: regression parameters.
+- `y_hat_t`: one-step-ahead target forecast.
 - **Time dependence:** encoded explicitly via lagged features in the flattened lookback window.
-- **Training objective:** least squares \(\min\_{w,b}\sum_t (y_t-\hat{y}\_t)^2\) (MSE).
+- **Training objective:** least squares `min_{w,b} sum_t (y_t - y_hat_t)^2` (MSE).
 
 #### 5.7.4 RNN/LSTM/GRU models used
 
 **Vanilla RNN**
-\[
-h*t=\tanh(W_x x_t + W_h h*{t-1}+b_h),\qquad
-\hat{y}\_t = W_o h_t + b_o.
-\]
+```text
+h_t = tanh(W_x x_t + W_h h_{t-1} + b_h)
+y_hat_t = W_o h_t + b_o
+```
 
-- \(x_t\in\mathbb{R}^F\): feature vector at time \(t\); \(h_t\): hidden state.
-- **Time dependence:** recurrent transition carries history through \(h\_{t-1}\to h_t\).
-- **Training objective:** minimise sequence-level MSE, \(\min\_\Theta \sum_t (y_t-\hat{y}\_t)^2\), via backpropagation through time.
+- `x_t in R^F`: feature vector at time `t`; `h_t`: hidden state.
+- **Time dependence:** recurrent transition carries history through `h_{t-1} -> h_t`.
+- **Training objective:** minimise sequence-level MSE, `min_Theta sum_t (y_t - y_hat_t)^2`, via backpropagation through time.
 
 **LSTM (compact gates)**
-\[
-\begin{aligned}
-i*t&=\sigma(W_i[x_t;h*{t-1}]+b*i),\quad
-f_t=\sigma(W_f[x_t;h*{t-1}]+b*f),\\
-\tilde{c}\_t&=\tanh(W_c[x_t;h*{t-1}]+b*c),\quad
-o_t=\sigma(W_o[x_t;h*{t-1}]+b*o),\\
-c_t&=f_t\odot c*{t-1}+i_t\odot \tilde{c}\_t,\quad
-h_t=o_t\odot\tanh(c_t),\\
-\hat{y}\_t&=W_y h_t+b_y.
-\end{aligned}
-\]
+```text
+i_t      = sigmoid(W_i[x_t; h_{t-1}] + b_i)
+f_t      = sigmoid(W_f[x_t; h_{t-1}] + b_f)
+c_tilde_t = tanh(W_c[x_t; h_{t-1}] + b_c)
+o_t      = sigmoid(W_o[x_t; h_{t-1}] + b_o)
+c_t      = f_t * c_{t-1} + i_t * c_tilde_t
+h_t      = o_t * tanh(c_t)
+y_hat_t  = W_y h_t + b_y
+```
 
-- \(i_t,f_t,o_t\): input/forget/output gates; \(c_t\): cell state.
-- **Time dependence:** controlled memory path \(c\_{t-1}\to c_t\) mitigates vanishing gradients.
+- `i_t, f_t, o_t`: input/forget/output gates; `c_t`: cell state.
+- **Time dependence:** controlled memory path `c_{t-1} -> c_t` mitigates vanishing gradients.
 - **Training objective:** MSE minimisation with Adam over all network parameters.
 
 **GRU (compact gates)**
-\[
-\begin{aligned}
-z*t&=\sigma(W_z[x_t;h*{t-1}]+b*z),\quad
-r_t=\sigma(W_r[x_t;h*{t-1}]+b*r),\\
-\tilde{h}\_t&=\tanh(W_h[x_t;r_t\odot h*{t-1}]+b*h),\\
-h_t&=(1-z_t)\odot h*{t-1}+z_t\odot \tilde{h}\_t,\quad
-\hat{y}\_t=W_y h_t+b_y.
-\end{aligned}
-\]
+```text
+z_t      = sigmoid(W_z[x_t; h_{t-1}] + b_z)
+r_t      = sigmoid(W_r[x_t; h_{t-1}] + b_r)
+h_tilde_t = tanh(W_h[x_t; r_t * h_{t-1}] + b_h)
+h_t      = (1 - z_t) * h_{t-1} + z_t * h_tilde_t
+y_hat_t  = W_y h_t + b_y
+```
 
-- \(z_t,r_t\): update/reset gates.
+- `z_t, r_t`: update/reset gates.
 - **Time dependence:** gated interpolation between previous and candidate hidden states.
 - **Training objective:** MSE minimisation with backpropagation through time.
 
 #### 5.7.5 Transformer model used
 
 Scaled dot-product self-attention:
-\[
-\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right)V,
-\]
-with \(Q=XW_Q,\;K=XW_K,\;V=XW_V\), and forecast head
-\[
-\hat{y}\_t = W_h z_t + b_h,
-\]
-where \(z_t\) is the final encoder representation (last position) after positional encoding and stacked encoder blocks.
+```text
+Attention(Q, K, V) = softmax(QK^T / sqrt(d_k)) V
+```
+with `Q = XW_Q, K = XW_K, V = XW_V`, and forecast head
+```text
+y_hat_t = W_h z_t + b_h
+```
+where `z_t` is the final encoder representation (last position) after positional encoding and stacked encoder blocks.
 
-- \(d_k\): key/query dimension; \(W_Q,W_K,W_V,W_h\): trainable projections.
+- `d_k`: key/query dimension; `W_Q, W_K, W_V, W_h`: trainable projections.
 - **Time dependence:** attention directly mixes information across all sequence positions using content + positional encoding.
 - **Training objective:** MSE minimisation on one-step forecasts, optimised with Adam.
 
@@ -440,8 +405,6 @@ DA is particularly relevant in finance because a model can sometimes produce mod
 However, DA must be interpreted **by `target_mode`** rather than as a uniform cross-task score. For signed return-style targets (for example `next_return` and `next_mean_return`), DA is meaningfully discriminative because the sign directly encodes up/down direction. For level-like or strictly non-negative targets (especially `next_volatility`, defined from rolling standard deviation), sign-based DA is not a discriminative metric and can quickly saturate near a ceiling. Therefore, on `next_volatility`, model ranking should prioritise **MSE/MAE** and treat DA only as a weak supplementary indicator.
 
 ---
-
-\newpage
 
 ### Chapter 6. Experimental Design and Hyperparameter Tuning
 
@@ -490,8 +453,6 @@ This confirms that tuning outcomes are task-dependent and should be interpreted 
 Sequential tuning is efficient, but it does not exhaustively search hyperparameter interactions. A later parameter sweep can make an earlier frozen choice suboptimal. Therefore, the chosen winners should be interpreted as strong practical settings found under a constrained tuning budget rather than globally optimal architectures.
 
 ---
-
-\newpage
 
 ### Chapter 7. Results
 
@@ -805,8 +766,6 @@ _Figure 4D-6. GRU prediction slice for `next_mean_return` tuned comparison._
 
 ---
 
-\newpage
-
 ### Chapter 8. Discussion
 
 ### 8.1 Interpretation of the winning model
@@ -833,8 +792,6 @@ From a practical perspective, model selection should be conditioned on task defi
 
 ---
 
-\newpage
-
 ### Chapter 9. Limitations
 
 ### 9.1 Dataset limitations
@@ -858,8 +815,6 @@ The repository downloads data dynamically from Yahoo Finance. Because market his
 The report evaluates prediction quality, not trading profitability. It does not include transaction costs, slippage, portfolio construction, or risk-adjusted returns. Therefore, the results should not be interpreted as direct evidence of a profitable trading strategy.
 
 ---
-
-\newpage
 
 ### Chapter 10. Conclusion and Future Work
 
@@ -890,8 +845,6 @@ Overall, the most defensible conclusion is not that one neural architecture univ
 
 ---
 
-\newpage
-
 ## 6. References/Bibliography
 
 [1] T. Fischer and C. Krauss, “Deep learning with long short-term memory networks for financial market predictions,” _European Journal of Operational Research_, vol. 270, no. 2, pp. 654–669, Oct. 2018.
@@ -920,8 +873,6 @@ Overall, the most defensible conclusion is not that one neural architecture univ
 
 ---
 
-\newpage
-
 ### Chapter 11. Project Contributions / What Has Been Achieved
 
 This project has achieved the following outcomes in the final consolidated report and codebase:
@@ -931,7 +882,7 @@ This project has achieved the following outcomes in the final consolidated repor
 3. Produced a reproducible final-report artifact bundle (`reports/final_report_tasks/20260331T192814Z`) with per-task diagnostics and cross-task synthesis.
 4. Consolidated proposal/interim/final reporting into one standalone final structure with clear front matter, numbered chapters, references, and appendices.
 
-\newpage
+---
 
 ## 7. Appendices
 
