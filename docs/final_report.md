@@ -1,3 +1,5 @@
+## 1. Cover page (Appendix A format)
+
 The Hong Kong Polytechnic University
 Department of Computing
 
@@ -26,7 +28,7 @@ Submission Date:
 
 
 
-## Abstract
+## 2. Abstract
 
 This project benchmarks sequence models for short-horizon forecasting under a unified and reproducible pipeline that now supports **multiple target definitions** and both **real (SPY)** and **synthetic (sine)** data sources. The latest archived final-report bundle (generated at `2026-03-31T14:00:27Z`) evaluates four tasks: `sine_next_day`, `next_return`, `next_volatility`, and `next_mean_return`. Across these tasks, RNN, LSTM, GRU, Transformer, and a flattened-sequence linear-regression baseline are compared on aligned splits using MSE/MAE and directional accuracy (DA).
 
@@ -34,7 +36,45 @@ The cross-task summary shows that **Baseline-LR** is best on `sine_next_day` and
 
 ---
 
-## 1. Introduction
+
+
+## 3. Table of Contents
+
+- 1. Cover page (Appendix A format)
+- 2. Abstract
+- 3. Table of contents
+- 4. List of tables and figures
+- 5. Main body
+  - Chapter 1. Introduction
+  - Chapter 2. Background and Literature Context
+  - Chapter 3. Problem Statement and Objectives
+  - Chapter 4. Data and Pre-processing
+  - Chapter 5. Methodology
+  - Chapter 6. Experimental Design and Hyperparameter Tuning
+  - Chapter 7. Results
+  - Chapter 8. Discussion
+  - Chapter 9. Limitations
+  - Chapter 10. Conclusion and Future Work
+  - Chapter 11. Project Contributions / What Has Been Achieved
+- 6. References/Bibliography
+- 7. Appendices
+
+## 4. List of Tables and Figures
+
+### Tables
+- Table 1. Cross-task consolidated summary.
+- Table 2. Updated report artifact map.
+- Table A-1. Final tuned configurations (latest bundle highlights).
+
+### Figures
+- Figure 1. Training-loss comparison for the best tuned models and baseline.
+- Figure 4A-1 to Figure 4D-6. Per-task training/validation/testing, hyperparameter impact, scatter, and prediction-slice visuals.
+
+## 5. Main Body
+
+\newpage
+
+### Chapter 1. Introduction
 
 ### 1.1 Project background
 
@@ -70,7 +110,9 @@ The remainder of this report covers background literature, formal task definitio
 
 ---
 
-## 2. Background and Literature Context
+\newpage
+
+### Chapter 2. Background and Literature Context
 
 ### 2.1 Financial time-series forecasting
 
@@ -100,7 +142,9 @@ This project is positioned as a controlled benchmark rather than a claim of trad
 
 ---
 
-## 3. Problem Definition and Objectives
+\newpage
+
+### Chapter 3. Problem Statement and Objectives
 
 ### 3.1 Forecasting task definition
 
@@ -144,7 +188,9 @@ A model is considered successful if it demonstrates lower validation and test er
 
 ---
 
-## 4. Data and Pre-processing
+\newpage
+
+### Chapter 4. Data and Pre-processing
 
 ### 4.1 Data source and asset selection
 
@@ -196,7 +242,9 @@ The input sequences are standardised with `StandardScaler`, fitted only on the t
 
 ---
 
-## 5. Methodology
+\newpage
+
+### Chapter 5. Methodology
 
 ### 5.1 Overall pipeline
 
@@ -258,7 +306,9 @@ However, DA must be interpreted **by `target_mode`** rather than as a uniform cr
 
 ---
 
-## 6. Experimental Design and Hyperparameter Tuning
+\newpage
+
+### Chapter 6. Experimental Design and Hyperparameter Tuning
 
 ### 6.1 Purpose of tuning
 
@@ -306,7 +356,9 @@ Sequential tuning is efficient, but it does not exhaustively search hyperparamet
 
 ---
 
-## 7. Results
+\newpage
+
+### Chapter 7. Results
 
 This chapter reports outcomes by **task**, where each task is identified by `task_id` and defined by `target_mode` + `horizon` (+ `target_smooth_window` where applicable).
 
@@ -506,7 +558,9 @@ This quick-reference block surfaces a compact set of high-signal visuals before 
 
 ---
 
-## 8. Discussion
+\newpage
+
+### Chapter 8. Discussion
 
 ### 8.1 Interpretation of the winning model
 
@@ -532,7 +586,9 @@ From a practical perspective, model selection should be conditioned on task defi
 
 ---
 
-## 9. Limitations
+\newpage
+
+### Chapter 9. Limitations
 
 ### 9.1 Dataset limitations
 
@@ -556,7 +612,9 @@ The report evaluates prediction quality, not trading profitability. It does not 
 
 ---
 
-## 10. Conclusion and Future Work
+\newpage
+
+### Chapter 10. Conclusion and Future Work
 
 ### 10.1 Conclusion
 
@@ -585,7 +643,10 @@ Overall, the most defensible conclusion is not that one neural architecture univ
 
 ---
 
-## References
+
+\newpage
+
+## 6. References/Bibliography
 
 [1] T. Fischer and C. Krauss, “Deep learning with long short-term memory networks for financial market predictions,” *European Journal of Operational Research*, vol. 270, no. 2, pp. 654–669, Oct. 2018.
 
@@ -613,7 +674,23 @@ Overall, the most defensible conclusion is not that one neural architecture univ
 
 ---
 
-## Appendix A. Final tuned configurations (latest bundle highlights)
+
+\newpage
+
+### Chapter 11. Project Contributions / What Has Been Achieved
+
+This project has achieved the following outcomes in the final consolidated report and codebase:
+
+1. Built a coherent multi-task benchmarking workflow that supports `sine_next_day`, `next_return`, `next_volatility`, and `next_mean_return`.
+2. Standardised model comparison across Baseline-LR, RNN, LSTM, GRU, and Transformer under aligned splits and metrics.
+3. Produced a reproducible final-report artifact bundle (`reports/final_report_tasks/20260331T125121Z`) with per-task diagnostics and cross-task synthesis.
+4. Consolidated proposal/interim/final reporting into one standalone final structure with clear front matter, numbered chapters, references, and appendices.
+
+\newpage
+
+## 7. Appendices
+
+### Appendix A. Final tuned configurations (latest bundle highlights)
 
 | Task | Winner | Tuned hyperparameters | Archived run ID |
 | --- | --- | --- | --- |
