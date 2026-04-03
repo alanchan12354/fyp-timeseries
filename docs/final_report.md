@@ -18,27 +18,20 @@ Supervisor:
 Dr Yujie Wu
 Co-Examiner:
 
-
 2nd Assessor:
-
 
 Submission Date:
 31 March 2026
 
 **Document Status:** Draft for supervisor review
 
-
-
-
 ## 2. Abstract
 
-This project benchmarks sequence models for short-horizon forecasting under a unified and reproducible pipeline that now supports **multiple target definitions** and both **real (SPY)** and **synthetic (sine)** data sources. The latest archived final-report bundle (generated at `2026-03-31T14:00:27Z`) evaluates four tasks: `sine_next_day`, `next_return`, `next_volatility`, and `next_mean_return`. Across these tasks, RNN, LSTM, GRU, Transformer, and a flattened-sequence linear-regression baseline are compared on aligned splits using MSE/MAE and directional accuracy (DA).
+This project benchmarks sequence models for short-horizon forecasting under a unified and reproducible pipeline that now supports **multiple target definitions** and both **real (SPY)** and **synthetic (sine)** data sources. The latest archived final-report bundle (generated at `2026-03-31T20:31:21Z`) evaluates four tasks: `sine_next_day`, `next_return`, `next_volatility`, and `next_mean_return`. Across these tasks, RNN, LSTM, GRU, Transformer, and a flattened-sequence linear-regression baseline are compared on aligned splits using MSE/MAE and directional accuracy (DA).
 
 The cross-task summary shows that **Baseline-LR** is best on `sine_next_day` and `next_volatility`, **LSTM** is best on `next_return`, and **GRU** is best on `next_mean_return`. The best test MSE values are `4.8070e-08` (sine), `9.1979e-05` (next_return), `1.7733e-05` (next_volatility), and `1.5519e-05` (next_mean_return). These outcomes reinforce two conclusions: (1) no single neural architecture dominates all task definitions, and (2) strong linear baselines remain essential in financial-style forecasting benchmarks.
 
 ---
-
-
 
 ## 3. Table of Contents
 
@@ -65,12 +58,14 @@ The cross-task summary shows that **Baseline-LR** is best on `sine_next_day` and
 ## 4. List of Tables and Figures
 
 ### Tables
+
 - Table 1. Cross-task consolidated summary.
 - Table 2. Updated report artifact map.
 - Table A-1. Final tuned configurations (latest bundle highlights).
 - Table C-1. Pre-submission checklist.
 
 ### Figures
+
 - Figure 1. Training-loss comparison for the best tuned models and baseline.
 - Figure 4A-1 to Figure 4D-6. Per-task training/validation/testing, hyperparameter impact, scatter, and prediction-slice visuals.
 
@@ -78,14 +73,14 @@ The cross-task summary shows that **Baseline-LR** is best on `sine_next_day` and
 
 Use this one-page checklist immediately before producing the final PDF.
 
-| Item | Check |
-| --- | --- |
-| Required sections present (**10.2.1** structure and front/main/back matter) | ☐ |
-| Table of contents, list of figures, and list of tables are updated | ☐ |
-| All figures are cited in text and interpreted | ☐ |
-| Core formulas are included and correctly formatted | ☐ |
-| Contributions section is present and complete | ☐ |
-| References and appendices are complete and consistent | ☐ |
+| Item                                                                        | Check |
+| --------------------------------------------------------------------------- | ----- |
+| Required sections present (**10.2.1** structure and front/main/back matter) | ☐     |
+| Table of contents, list of figures, and list of tables are updated          | ☐     |
+| All figures are cited in text and interpreted                               | ☐     |
+| Core formulas are included and correctly formatted                          | ☐     |
+| Contributions section is present and complete                               | ☐     |
+| References and appendices are complete and consistent                       | ☐     |
 
 **Pre-submission run record**
 
@@ -171,10 +166,10 @@ This project is positioned as a controlled benchmark rather than a claim of trad
 
 ### 3.1 Forecasting task definition
 
-The forecasting system is formulated as supervised learning on multifeature sequences. Let \(\mathbf{f}_t \in \mathbb{R}^8\) denote the engineered feature vector at day \(t\), and let each sample be a rolling lookback window:
+The forecasting system is formulated as supervised learning on multifeature sequences. Let \(\mathbf{f}\_t \in \mathbb{R}^8\) denote the engineered feature vector at day \(t\), and let each sample be a rolling lookback window:
 
 \[
-X_t = [\mathbf{f}_{t-L+1}, \ldots, \mathbf{f}_t]
+X*t = [\mathbf{f}*{t-L+1}, \ldots, \mathbf{f}\_t]
 \]
 
 where \(L\) is the sequence length (`seq_len`, tuned per task/model). The repository supports multiple targets via `target_mode`:
@@ -224,14 +219,14 @@ The latest report bundle evaluates both **synthetic** and **market** tasks. For 
 The raw downloaded close series is converted to **daily log returns**:
 
 \[
-r_t = \log\left(\frac{P_t}{P_{t-1}}\right)
+r*t = \log\left(\frac{P_t}{P*{t-1}}\right)
 \]
 
 Using returns instead of prices reduces scale effects and makes the target more appropriate for short-horizon statistical learning. [5]
 
 ### 4.3 Sequence construction
 
-For neural models, the repository builds three-dimensional input tensors of shape \((N, \texttt{seq\_len}, 8)\), where each sample contains `seq_len` consecutive days of 8 engineered features and one scalar target. The tuned search space includes `seq_len ∈ {20, 30, 60}` in `src/tuning/main.py`.
+For neural models, the repository builds three-dimensional input tensors of shape \((N, \texttt{seq_len}, 8)\), where each sample contains `seq_len` consecutive days of 8 engineered features and one scalar target. The tuned search space includes `seq_len ∈ {20, 30, 60}` in `src/tuning/main.py`.
 
 The 8 engineered features produced by `build_spy_feature_frame` are:
 
@@ -248,16 +243,16 @@ Target construction is controlled by `target_mode`, `horizon`, and `target_smoot
 
 For transparency, the archived best-tuned comparisons use the following winning `seq_len` values by task (best test-MSE run per task):
 
-| Task | Best test-MSE winner | Winning `seq_len` |
-| --- | --- | ---: |
-| `sine_next_day` | Baseline-LR | 30 |
-| `next_return` | LSTM | 30 |
-| `next_volatility` | Baseline-LR | 20 |
-| `next_mean_return` | GRU | 30 |
+| Task               | Best test-MSE winner | Winning `seq_len` |
+| ------------------ | -------------------- | ----------------: |
+| `sine_next_day`    | Baseline-LR          |                30 |
+| `next_return`      | LSTM                 |                30 |
+| `next_volatility`  | Baseline-LR          |                20 |
+| `next_mean_return` | GRU                  |                30 |
 
 ### 4.4 Train/validation/test split
 
-Splitting is chronological rather than random for all tasks, preventing future information leakage into training. The same train/validation/test protocol is applied consistently across the four archived tasks in `reports/final_report_tasks/20260331T125121Z`.
+Splitting is chronological rather than random for all tasks, preventing future information leakage into training. The same train/validation/test protocol is applied consistently across the four archived tasks in `reports/final_report_tasks/20260331T192814Z`.
 
 ### 4.5 Normalisation and leakage prevention
 
@@ -283,7 +278,7 @@ All models share the same high-level pipeline:
 
 ### 5.2 Baseline model
 
-The baseline is a flattened-sequence **linear regression** model. It uses the same multifeature `seq_len` window as the neural models, but reshapes each \((\texttt{seq\_len}, 8)\) sequence into a tabular vector (`seq_len × 8` features) so the target alignment remains identical. This baseline tests whether nonlinear sequence modelling provides gains beyond a strong linear model on the same information set. [5], [10]
+The baseline is a flattened-sequence **linear regression** model. It uses the same multifeature `seq_len` window as the neural models, but reshapes each \((\texttt{seq_len}, 8)\) sequence into a tabular vector (`seq_len × 8` features) so the target alignment remains identical. This baseline tests whether nonlinear sequence modelling provides gains beyond a strong linear model on the same information set. [5], [10]
 
 ### 5.3 RNN model
 
@@ -314,7 +309,7 @@ Backshift form:
 \Theta(B^s)\,\theta(B)\,\varepsilon_t.
 \]
 
-- \(B\): backshift operator (\(B y_t = y_{t-1}\)); \(s\): seasonal period.
+- \(B\): backshift operator (\(B y*t = y*{t-1}\)); \(s\): seasonal period.
 - \(d, D\): non-seasonal/seasonal differencing orders.
 - \(\phi,\theta,\Phi,\Theta\): non-seasonal and seasonal AR/MA polynomials.
 - \(\varepsilon_t\): white-noise innovation.
@@ -325,17 +320,17 @@ Backshift form:
 
 Example additive Holt-Winters updates:
 \[
-\ell_t=\alpha(y_t-s_{t-m})+(1-\alpha)(\ell_{t-1}+b_{t-1}),\quad
-b_t=\beta(\ell_t-\ell_{t-1})+(1-\beta)b_{t-1},
+\ell*t=\alpha(y_t-s*{t-m})+(1-\alpha)(\ell*{t-1}+b*{t-1}),\quad
+b*t=\beta(\ell_t-\ell*{t-1})+(1-\beta)b*{t-1},
 \]
 \[
-s_t=\gamma(y_t-\ell_t)+(1-\gamma)s_{t-m},\quad
+s_t=\gamma(y_t-\ell_t)+(1-\gamma)s*{t-m},\quad
 \hat{y}_{t+h|t}=\ell_t+h\,b_t+s_{t-m+h_m}.
 \]
 
 - \(\ell_t\): level, \(b_t\): trend, \(s_t\): seasonal state, \(m\): season length.
 - \(\alpha,\beta,\gamma\in(0,1)\): smoothing parameters.
-- \(\hat{y}_{t+h|t}\): \(h\)-step forecast.
+- \(\hat{y}\_{t+h|t}\): \(h\)-step forecast.
 - **Time dependence:** recursive state updates propagate recent observations with exponential forgetting.
 - **Training objective:** minimise in-sample squared forecast error or maximise likelihood over smoothing parameters.
 
@@ -345,50 +340,50 @@ Flattened-sequence linear regression:
 \[
 \hat{y}_t = w^\top \mathrm{vec}(X_{t-L+1:t}) + b,
 \]
-where \(X_{t-L+1:t}\in\mathbb{R}^{L\times F}\), \(L=\texttt{seq\_len}\), \(F=8\), and \(\mathrm{vec}(\cdot)\in\mathbb{R}^{LF}\).
+where \(X\_{t-L+1:t}\in\mathbb{R}^{L\times F}\), \(L=\texttt{seq_len}\), \(F=8\), and \(\mathrm{vec}(\cdot)\in\mathbb{R}^{LF}\).
 
 - \(w\in\mathbb{R}^{LF}\), \(b\in\mathbb{R}\): regression parameters.
-- \(\hat{y}_t\): one-step-ahead target forecast.
+- \(\hat{y}\_t\): one-step-ahead target forecast.
 - **Time dependence:** encoded explicitly via lagged features in the flattened lookback window.
-- **Training objective:** least squares \(\min_{w,b}\sum_t (y_t-\hat{y}_t)^2\) (MSE).
+- **Training objective:** least squares \(\min\_{w,b}\sum_t (y_t-\hat{y}\_t)^2\) (MSE).
 
 #### 5.7.4 RNN/LSTM/GRU models used
 
 **Vanilla RNN**
 \[
-h_t=\tanh(W_x x_t + W_h h_{t-1}+b_h),\qquad
-\hat{y}_t = W_o h_t + b_o.
+h*t=\tanh(W_x x_t + W_h h*{t-1}+b_h),\qquad
+\hat{y}\_t = W_o h_t + b_o.
 \]
 
 - \(x_t\in\mathbb{R}^F\): feature vector at time \(t\); \(h_t\): hidden state.
-- **Time dependence:** recurrent transition carries history through \(h_{t-1}\to h_t\).
-- **Training objective:** minimise sequence-level MSE, \(\min_\Theta \sum_t (y_t-\hat{y}_t)^2\), via backpropagation through time.
+- **Time dependence:** recurrent transition carries history through \(h\_{t-1}\to h_t\).
+- **Training objective:** minimise sequence-level MSE, \(\min\_\Theta \sum_t (y_t-\hat{y}\_t)^2\), via backpropagation through time.
 
 **LSTM (compact gates)**
 \[
 \begin{aligned}
-i_t&=\sigma(W_i[x_t;h_{t-1}]+b_i),\quad
-f_t=\sigma(W_f[x_t;h_{t-1}]+b_f),\\
-\tilde{c}_t&=\tanh(W_c[x_t;h_{t-1}]+b_c),\quad
-o_t=\sigma(W_o[x_t;h_{t-1}]+b_o),\\
-c_t&=f_t\odot c_{t-1}+i_t\odot \tilde{c}_t,\quad
+i*t&=\sigma(W_i[x_t;h*{t-1}]+b*i),\quad
+f_t=\sigma(W_f[x_t;h*{t-1}]+b*f),\\
+\tilde{c}\_t&=\tanh(W_c[x_t;h*{t-1}]+b*c),\quad
+o_t=\sigma(W_o[x_t;h*{t-1}]+b*o),\\
+c_t&=f_t\odot c*{t-1}+i_t\odot \tilde{c}\_t,\quad
 h_t=o_t\odot\tanh(c_t),\\
-\hat{y}_t&=W_y h_t+b_y.
+\hat{y}\_t&=W_y h_t+b_y.
 \end{aligned}
 \]
 
 - \(i_t,f_t,o_t\): input/forget/output gates; \(c_t\): cell state.
-- **Time dependence:** controlled memory path \(c_{t-1}\to c_t\) mitigates vanishing gradients.
+- **Time dependence:** controlled memory path \(c\_{t-1}\to c_t\) mitigates vanishing gradients.
 - **Training objective:** MSE minimisation with Adam over all network parameters.
 
 **GRU (compact gates)**
 \[
 \begin{aligned}
-z_t&=\sigma(W_z[x_t;h_{t-1}]+b_z),\quad
-r_t=\sigma(W_r[x_t;h_{t-1}]+b_r),\\
-\tilde{h}_t&=\tanh(W_h[x_t;r_t\odot h_{t-1}]+b_h),\\
-h_t&=(1-z_t)\odot h_{t-1}+z_t\odot \tilde{h}_t,\quad
-\hat{y}_t=W_y h_t+b_y.
+z*t&=\sigma(W_z[x_t;h*{t-1}]+b*z),\quad
+r_t=\sigma(W_r[x_t;h*{t-1}]+b*r),\\
+\tilde{h}\_t&=\tanh(W_h[x_t;r_t\odot h*{t-1}]+b*h),\\
+h_t&=(1-z_t)\odot h*{t-1}+z_t\odot \tilde{h}\_t,\quad
+\hat{y}\_t=W_y h_t+b_y.
 \end{aligned}
 \]
 
@@ -404,7 +399,7 @@ Scaled dot-product self-attention:
 \]
 with \(Q=XW_Q,\;K=XW_K,\;V=XW_V\), and forecast head
 \[
-\hat{y}_t = W_h z_t + b_h,
+\hat{y}\_t = W_h z_t + b_h,
 \]
 where \(z_t\) is the final encoder representation (last position) after positional encoding and stacked encoder blocks.
 
@@ -416,7 +411,7 @@ where \(z_t\) is the final encoder representation (last position) after position
 
 Repository-level defaults (for example `HORIZON=1`, `TARGET_MODE=horizon_return`) are defined in `src/common/config.py`. Run-specific overrides (including CLI overrides such as `--horizon` and `--target-mode`) are resolved through `src/common/runtime_config.py` and then passed into experiment preparation, so archived experiments may intentionally differ from defaults.
 
-For this report, the **archived final metrics are taken from runtime-resolved experiment configs** (effective CLI + staged-winner selections), **not** from static defaults in `src/common/config.py`. Concretely, run truth is read from `reports/final_report_tasks/20260331T125121Z/tuning_winners.csv`, per-task `reports/final_report_tasks/20260331T125121Z/*/best_tuned_comparison_*.md`, and the bundle-level synthesis `reports/final_report_tasks/20260331T125121Z/overall_task_summary.md`.
+For this report, the **archived final metrics are taken from runtime-resolved experiment configs** (effective CLI + staged-winner selections), **not** from static defaults in `src/common/config.py`. Concretely, run truth is read from `reports/final_report_tasks/20260331T192814Z/tuning_winners.csv`, per-task `reports/final_report_tasks/20260331T192814Z/*/best_tuned_comparison_*.md`, and the bundle-level synthesis `reports/final_report_tasks/20260331T192814Z/overall_task_summary.md`.
 
 ### 5.9 Training strategy
 
@@ -424,9 +419,10 @@ The training workflow uses the Adam optimiser, mean squared error loss, early st
 
 Figure 1 is included to demonstrate that the tuned pipeline produces stable convergence patterns before the report interprets task-specific winners.
 
-![Best tuned training loss comparison](../reports/final_report_tasks/20260331T125121Z/next_return/figures/best_tuned_training_loss.svg)
+![Best tuned training loss comparison](../reports/final_report_tasks/20260331T192814Z/next_return/figures/best_tuned_training_loss.svg)
 
-*Figure 1. Training-loss comparison for the best tuned models and baseline.*
+_Figure 1. Training-loss comparison for the best tuned models and baseline._
+
 - **Why this chart is included:** Tests whether model optimisation remains stable and comparable across architectures.
 - **What it shows:** All tuned models converge, but with distinct loss levels across families.
 - **Conclusion supported:** Supports the report’s model-comparison setup and motivates deeper task-level result analysis.
@@ -480,12 +476,12 @@ The recurrent models and the Transformer do not share identical search spaces be
 
 The latest archive contains task-specific tuned winners rather than one global best configuration. Cross-task winners by test MSE are:
 
-| task_id | Winner | Best test MSE |
-| --- | --- | ---: |
-| `sine_next_day` | Baseline-LR | 4.807035774110167e-08 |
-| `next_return` | LSTM | 9.197905455948785e-05 |
-| `next_volatility` | Baseline-LR | 1.7733482060336406e-05 |
-| `next_mean_return` | GRU | 1.5519119187956676e-05 |
+| task_id            | Winner      |          Best test MSE |
+| ------------------ | ----------- | ---------------------: |
+| `sine_next_day`    | Baseline-LR |  4.807035774110167e-08 |
+| `next_return`      | LSTM        |  9.197905455948785e-05 |
+| `next_volatility`  | Baseline-LR | 1.7733482060336406e-05 |
+| `next_mean_return` | GRU         | 1.5519119187956676e-05 |
 
 This confirms that tuning outcomes are task-dependent and should be interpreted per `task_id`.
 
@@ -505,43 +501,47 @@ This chapter reports outcomes by **task**, where each task is identified by `tas
 
 Table 1 summarises the best-tuned winner for each task from `overall_task_summary.md`.
 
-| Task | task_id | target_mode | horizon | target_smooth_window | Best model (test MSE) | Best test MSE |
-| --- | --- | --- | ---: | ---: | --- | ---: |
-| Task A | `sine_next_day` | `sine_next_day` | 1 | 1 | Baseline-LR | 4.807035774110167e-08 |
-| Task B | `next_return` | `next_return` | 1 | 1 | LSTM | 9.197905455948785e-05 |
-| Task C | `next_volatility` | `next_volatility` | 1 | 5 | Baseline-LR | 1.7733482060336406e-05 |
-| Task D | `next_mean_return` | `next_mean_return` | 1 | 5 | GRU | 1.5519119187956676e-05 |
+| Task   | task_id            | target_mode        | horizon | target_smooth_window | Best model (test MSE) |          Best test MSE |
+| ------ | ------------------ | ------------------ | ------: | -------------------: | --------------------- | ---------------------: |
+| Task A | `sine_next_day`    | `sine_next_day`    |       1 |                    1 | Baseline-LR           |  4.807035774110167e-08 |
+| Task B | `next_return`      | `next_return`      |       1 |                    1 | LSTM                  |  9.197905455948785e-05 |
+| Task C | `next_volatility`  | `next_volatility`  |       1 |                    5 | Baseline-LR           | 1.7733482060336406e-05 |
+| Task D | `next_mean_return` | `next_mean_return` |       1 |                    5 | GRU                   | 1.5519119187956676e-05 |
 
 ### 7.2 Per-task tuned comparison highlights
 
 #### Task A — `sine_next_day`
+
 - Best model by test MSE: **Baseline-LR** (4.8070e-08).
 - Best neural model by test MSE: **LSTM** (1.1095e-07).
 - DA remains high for both baseline and recurrent models (Baseline-LR: 0.9702, LSTM: 0.9864).
 
 #### Task B — `next_return`
+
 - Best model by test MSE: **LSTM** (9.1979e-05).
 - GRU is a close second (9.2194e-05).
 - Baseline-LR is competitive but weaker on this task (1.2176e-04).
 
 #### Task C — `next_volatility`
+
 - Best model by test MSE: **Baseline-LR** (1.7733e-05).
 - Best neural model: **GRU** (1.9411e-05).
 - Directional accuracy is near-saturated for most models because volatility targets are non-negative and trend smoother in sign.
 
 #### Task D — `next_mean_return`
+
 - Best model by test MSE: **GRU** (1.5519e-05).
 - LSTM and RNN are close behind (1.6130e-05 and 1.6560e-05).
 - Baseline-LR trails tuned recurrent winners on this task (2.1937e-05).
 
 ### 7.3 Updated report artifact map
 
-| Task | `task_id` | Comparison report | Figures directory |
-| --- | --- | --- | --- |
-| Task A | `sine_next_day` | `reports/final_report_tasks/20260331T125121Z/sine_next_day/best_tuned_comparison_sine_next_day.csv` | `reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/` |
-| Task B | `next_return` | `reports/final_report_tasks/20260331T125121Z/next_return/best_tuned_comparison_next_return.csv` | `reports/final_report_tasks/20260331T125121Z/next_return/figures/` |
-| Task C | `next_volatility` | `reports/final_report_tasks/20260331T125121Z/next_volatility/best_tuned_comparison_next_volatility.csv` | `reports/final_report_tasks/20260331T125121Z/next_volatility/figures/` |
-| Task D | `next_mean_return` | `reports/final_report_tasks/20260331T125121Z/next_mean_return/best_tuned_comparison_next_mean_return.csv` | `reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/` |
+| Task   | `task_id`          | Comparison report                                                                                         | Figures directory                                                       |
+| ------ | ------------------ | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Task A | `sine_next_day`    | `reports/final_report_tasks/20260331T192814Z/sine_next_day/best_tuned_comparison_sine_next_day.csv`       | `reports/final_report_tasks/20260331T192814Z/sine_next_day/figures/`    |
+| Task B | `next_return`      | `reports/final_report_tasks/20260331T192814Z/next_return/best_tuned_comparison_next_return.csv`           | `reports/final_report_tasks/20260331T192814Z/next_return/figures/`      |
+| Task C | `next_volatility`  | `reports/final_report_tasks/20260331T192814Z/next_volatility/best_tuned_comparison_next_volatility.csv`   | `reports/final_report_tasks/20260331T192814Z/next_volatility/figures/`  |
+| Task D | `next_mean_return` | `reports/final_report_tasks/20260331T192814Z/next_mean_return/best_tuned_comparison_next_mean_return.csv` | `reports/final_report_tasks/20260331T192814Z/next_mean_return/figures/` |
 
 ### 7.4 Prediction pattern visualisation (updated figures)
 
@@ -551,54 +551,60 @@ This section now places each figure immediately after the paragraph that states 
 
 Figure 4A-1 is included to compare optimisation behaviour across all tuned models on the easiest synthetic-style target before interpreting winner quality.
 
-![Sine next day best tuned training loss](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/best_tuned_training_loss.svg)
+![Sine next day best tuned training loss](../reports/final_report_tasks/20260331T192814Z/sine_next_day/figures/best_tuned_training_loss.svg)
 
-*Figure 4A-1. Best-tuned training-loss comparison for `sine_next_day`.*
+_Figure 4A-1. Best-tuned training-loss comparison for `sine_next_day`._
+
 - **Why this chart is included:** Tests whether training dynamics are stable and consistently low across candidate models.
 - **What it shows:** Loss trajectories converge quickly for all contenders, with small separation after early epochs.
 - **Conclusion supported:** Training-only behaviour does not by itself distinguish a dominant model; validation/testing evidence is required.
 
 Figure 4A-2 is included to identify which tuned model generalises best on validation data for `sine_next_day`.
 
-![Sine next day best tuned validation loss](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/best_tuned_validation_loss.svg)
+![Sine next day best tuned validation loss](../reports/final_report_tasks/20260331T192814Z/sine_next_day/figures/best_tuned_validation_loss.svg)
 
-*Figure 4A-2. Best-tuned validation-loss comparison for `sine_next_day`.*
+_Figure 4A-2. Best-tuned validation-loss comparison for `sine_next_day`._
+
 - **Why this chart is included:** Evaluates the main model-selection signal used during tuning.
 - **What it shows:** Validation losses are tightly grouped, with baseline and top recurrent models near the floor.
 - **Conclusion supported:** Confirms that multiple model classes can generalise well on this task, explaining close final rankings.
 
 Figure 4A-3 is included to verify out-of-sample error ranking on the held-out test split for Task A.
 
-![Sine next day best tuned testing loss](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/best_tuned_testing_loss.svg)
+![Sine next day best tuned testing loss](../reports/final_report_tasks/20260331T192814Z/sine_next_day/figures/best_tuned_testing_loss.svg)
 
-*Figure 4A-3. Best-tuned testing-loss comparison for `sine_next_day`.*
+_Figure 4A-3. Best-tuned testing-loss comparison for `sine_next_day`._
+
 - **Why this chart is included:** Tests whether validation winners remain strong on truly unseen data.
 - **What it shows:** The baseline remains extremely competitive and reaches the best test-loss region.
 - **Conclusion supported:** Supports the claim that Baseline-LR wins Task A despite strong neural alternatives.
 
 Figure 4A-4 is included to show whether stage-wise tuning changed model performance materially in `sine_next_day`.
 
-![Sine next day hyperparameter impact summary](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/hyperparameter_model_loss_summary_sine_next_day.svg)
+![Sine next day hyperparameter impact summary](../reports/final_report_tasks/20260331T192814Z/sine_next_day/figures/hyperparameter_model_loss_summary_sine_next_day.svg)
 
-*Figure 4A-4. Hyperparameter-impact model-loss summary for `sine_next_day`.*
+_Figure 4A-4. Hyperparameter-impact model-loss summary for `sine_next_day`._
+
 - **Why this chart is included:** Assesses whether tuning stages generated meaningful gains versus defaults.
 - **What it shows:** Performance shifts are present but modest, with diminishing returns after early stage improvements.
 - **Conclusion supported:** Supports using constrained staged tuning as sufficient for this task.
 
 Figure 4A-5 is included to test calibration and bias patterns of the best neural model’s predictions.
 
-![Sine next day LSTM scatter](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/lstm_best_tuned_lstm_comparison-20260331t130042z_scatter.png)
+![Sine next day LSTM scatter](../reports/final_report_tasks/20260331T192814Z/sine_next_day/figures/lstm_best_tuned_lstm_comparison-20260331t193731z_scatter.png)
 
-*Figure 4A-5. LSTM predicted-vs-actual scatter for `sine_next_day` tuned comparison.*
+_Figure 4A-5. LSTM predicted-vs-actual scatter for `sine_next_day` tuned comparison._
+
 - **Why this chart is included:** Checks linear agreement and dispersion between predictions and realised targets.
 - **What it shows:** Points cluster close to the identity trend with limited spread at this scale.
 - **Conclusion supported:** Indicates the tuned LSTM is well calibrated, even though baseline error remains slightly better.
 
 Figure 4A-6 is included to inspect local temporal fit quality and lag/overshoot behaviour in a contiguous slice.
 
-![Sine next day LSTM prediction slice](../reports/final_report_tasks/20260331T125121Z/sine_next_day/figures/lstm_best_tuned_lstm_comparison-20260331t130042z_pred_slice.png)
+![Sine next day LSTM prediction slice](../reports/final_report_tasks/20260331T192814Z/sine_next_day/figures/lstm_best_tuned_lstm_comparison-20260331t193731z_pred_slice.png)
 
-*Figure 4A-6. LSTM prediction slice for `sine_next_day` tuned comparison.*
+_Figure 4A-6. LSTM prediction slice for `sine_next_day` tuned comparison._
+
 - **Why this chart is included:** Verifies whether pointwise fit remains visually consistent over time.
 - **What it shows:** Predicted and actual series track closely with small local deviations.
 - **Conclusion supported:** Supports the claim that neural models fit Task A well, even when not the absolute winner by MSE.
@@ -607,54 +613,60 @@ Figure 4A-6 is included to inspect local temporal fit quality and lag/overshoot 
 
 Figure 4B-1 is included to compare training convergence behaviour for the harder real-market `next_return` target.
 
-![Next return best tuned training loss](../reports/final_report_tasks/20260331T125121Z/next_return/figures/best_tuned_training_loss.svg)
+![Next return best tuned training loss](../reports/final_report_tasks/20260331T192814Z/next_return/figures/best_tuned_training_loss.svg)
 
-*Figure 4B-1. Best-tuned training-loss comparison for `next_return`.*
+_Figure 4B-1. Best-tuned training-loss comparison for `next_return`._
+
 - **Why this chart is included:** Tests whether all models optimise stably under noisy return supervision.
 - **What it shows:** Convergence occurs for all models, but final training-loss gaps remain visible.
 - **Conclusion supported:** Suggests capacity/inductive-bias differences matter more here than in Task A.
 
 Figure 4B-2 is included to compare validation generalisation before final test claims are made for Task B.
 
-![Next return best tuned validation loss](../reports/final_report_tasks/20260331T125121Z/next_return/figures/best_tuned_validation_loss.svg)
+![Next return best tuned validation loss](../reports/final_report_tasks/20260331T192814Z/next_return/figures/best_tuned_validation_loss.svg)
 
-*Figure 4B-2. Best-tuned validation-loss comparison for `next_return`.*
+_Figure 4B-2. Best-tuned validation-loss comparison for `next_return`._
+
 - **Why this chart is included:** Provides the direct basis for tuned-winner selection.
 - **What it shows:** LSTM and GRU remain near the best validation-loss region, ahead of weaker candidates.
 - **Conclusion supported:** Supports the shortlist of recurrent winners for final out-of-sample comparison.
 
 Figure 4B-3 is included to validate final model ranking on held-out test data for `next_return`.
 
-![Next return best tuned testing loss](../reports/final_report_tasks/20260331T125121Z/next_return/figures/best_tuned_testing_loss.svg)
+![Next return best tuned testing loss](../reports/final_report_tasks/20260331T192814Z/next_return/figures/best_tuned_testing_loss.svg)
 
-*Figure 4B-3. Best-tuned testing-loss comparison for `next_return`.*
+_Figure 4B-3. Best-tuned testing-loss comparison for `next_return`._
+
 - **Why this chart is included:** Tests whether validation ranking transfers to test performance.
 - **What it shows:** LSTM is best, GRU is a close second, and baseline is competitive but weaker.
 - **Conclusion supported:** Directly supports the report claim that LSTM is the Task B winner.
 
 Figure 4B-4 is included to examine whether hyperparameter stages produced meaningful improvements for each architecture.
 
-![Next return hyperparameter impact summary](../reports/final_report_tasks/20260331T125121Z/next_return/figures/hyperparameter_model_loss_summary_next_return.svg)
+![Next return hyperparameter impact summary](../reports/final_report_tasks/20260331T192814Z/next_return/figures/hyperparameter_model_loss_summary_next_return.svg)
 
-*Figure 4B-4. Hyperparameter-impact model-loss summary for `next_return`.*
+_Figure 4B-4. Hyperparameter-impact model-loss summary for `next_return`._
+
 - **Why this chart is included:** Tests sensitivity of model quality to staged tuning choices.
 - **What it shows:** Certain stage choices noticeably reduce loss, with gains varying by model class.
 - **Conclusion supported:** Justifies reporting tuned results instead of defaults-only comparisons.
 
 Figure 4B-5 is included to inspect prediction calibration of the winning LSTM on noisy signed returns.
 
-![Next return LSTM scatter](../reports/final_report_tasks/20260331T125121Z/next_return/figures/lstm_best_tuned_lstm_comparison-20260331t132130z_scatter.png)
+![Next return LSTM scatter](../reports/final_report_tasks/20260331T192814Z/next_return/figures/lstm_best_tuned_lstm_comparison-20260331t195507z_scatter.png)
 
-*Figure 4B-5. LSTM predicted-vs-actual scatter for `next_return` tuned comparison.*
+_Figure 4B-5. LSTM predicted-vs-actual scatter for `next_return` tuned comparison._
+
 - **Why this chart is included:** Evaluates agreement pattern and dispersion for the selected winner.
 - **What it shows:** Scatter is wider than Task A, but still centred with usable trend alignment.
 - **Conclusion supported:** Supports a realistic performance claim: useful but imperfect predictability in daily returns.
 
 Figure 4B-6 is included to inspect sequence-level fit quality and turning-point tracking for the winner.
 
-![Next return LSTM prediction slice](../reports/final_report_tasks/20260331T125121Z/next_return/figures/lstm_best_tuned_lstm_comparison-20260331t132130z_pred_slice.png)
+![Next return LSTM prediction slice](../reports/final_report_tasks/20260331T192814Z/next_return/figures/lstm_best_tuned_lstm_comparison-20260331t195507z_pred_slice.png)
 
-*Figure 4B-6. LSTM prediction slice for `next_return` tuned comparison.*
+_Figure 4B-6. LSTM prediction slice for `next_return` tuned comparison._
+
 - **Why this chart is included:** Checks practical temporal tracking behaviour beyond aggregate metrics.
 - **What it shows:** The model captures broad movement while smoothing some sharp local swings.
 - **Conclusion supported:** Supports the limitation that fine-grained return spikes remain difficult to model.
@@ -663,54 +675,60 @@ Figure 4B-6 is included to inspect sequence-level fit quality and turning-point 
 
 Figure 4C-1 is included to compare optimisation behaviour for volatility forecasting candidates.
 
-![Next volatility best tuned training loss](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/best_tuned_training_loss.svg)
+![Next volatility best tuned training loss](../reports/final_report_tasks/20260331T192814Z/next_volatility/figures/best_tuned_training_loss.svg)
 
-*Figure 4C-1. Best-tuned training-loss comparison for `next_volatility`.*
+_Figure 4C-1. Best-tuned training-loss comparison for `next_volatility`._
+
 - **Why this chart is included:** Tests whether models can fit the smoother non-negative volatility target.
 - **What it shows:** Training losses are low and relatively stable across models.
 - **Conclusion supported:** Indicates this task is learnable by both linear and neural models under tuned settings.
 
 Figure 4C-2 is included to evaluate validation ranking for volatility generalisation quality.
 
-![Next volatility best tuned validation loss](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/best_tuned_validation_loss.svg)
+![Next volatility best tuned validation loss](../reports/final_report_tasks/20260331T192814Z/next_volatility/figures/best_tuned_validation_loss.svg)
 
-*Figure 4C-2. Best-tuned validation-loss comparison for `next_volatility`.*
+_Figure 4C-2. Best-tuned validation-loss comparison for `next_volatility`._
+
 - **Why this chart is included:** Provides the selection signal for tuned model comparison.
 - **What it shows:** Baseline and top neural candidates occupy closely spaced low-loss bands.
 - **Conclusion supported:** Supports the interpretation that simpler models can remain competitive on smoother targets.
 
 Figure 4C-3 is included to confirm final held-out ranking for `next_volatility`.
 
-![Next volatility best tuned testing loss](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/best_tuned_testing_loss.svg)
+![Next volatility best tuned testing loss](../reports/final_report_tasks/20260331T192814Z/next_volatility/figures/best_tuned_testing_loss.svg)
 
-*Figure 4C-3. Best-tuned testing-loss comparison for `next_volatility`.*
+_Figure 4C-3. Best-tuned testing-loss comparison for `next_volatility`._
+
 - **Why this chart is included:** Tests whether validation findings persist out of sample.
 - **What it shows:** Baseline-LR attains the best test loss, with GRU the strongest neural model.
 - **Conclusion supported:** Supports the claim that Baseline-LR wins Task C.
 
 Figure 4C-4 is included to assess how much staged hyperparameter tuning changed volatility results.
 
-![Next volatility hyperparameter impact summary](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/hyperparameter_model_loss_summary_next_volatility.svg)
+![Next volatility hyperparameter impact summary](../reports/final_report_tasks/20260331T192814Z/next_volatility/figures/hyperparameter_model_loss_summary_next_volatility.svg)
 
-*Figure 4C-4. Hyperparameter-impact model-loss summary for `next_volatility`.*
+_Figure 4C-4. Hyperparameter-impact model-loss summary for `next_volatility`._
+
 - **Why this chart is included:** Evaluates the marginal value of each tuning stage.
 - **What it shows:** Improvements exist but are moderate, with architecture-dependent sensitivity.
 - **Conclusion supported:** Supports constrained-tuning practicality and the strong baseline interpretation.
 
 Figure 4C-5 is included to inspect calibration of the best neural (GRU) predictions against realised volatility levels.
 
-![Next volatility GRU scatter](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/gru_best_tuned_gru_comparison-20260331t134031z_scatter.png)
+![Next volatility GRU scatter](../reports/final_report_tasks/20260331T192814Z/next_volatility/figures/gru_best_tuned_gru_comparison-20260331t201253z_scatter.png)
 
-*Figure 4C-5. GRU predicted-vs-actual scatter for `next_volatility` tuned comparison.*
+_Figure 4C-5. GRU predicted-vs-actual scatter for `next_volatility` tuned comparison._
+
 - **Why this chart is included:** Tests concentration and bias around realised non-negative targets.
 - **What it shows:** Predictions cluster along the main trend with compression at extreme values.
 - **Conclusion supported:** Supports a limitation: tail volatility magnitudes are harder to match precisely.
 
 Figure 4C-6 is included to inspect contiguous volatility tracking over time for the best neural model.
 
-![Next volatility GRU prediction slice](../reports/final_report_tasks/20260331T125121Z/next_volatility/figures/gru_best_tuned_gru_comparison-20260331t134031z_pred_slice.png)
+![Next volatility GRU prediction slice](../reports/final_report_tasks/20260331T192814Z/next_volatility/figures/gru_best_tuned_gru_comparison-20260331t201253z_pred_slice.png)
 
-*Figure 4C-6. GRU prediction slice for `next_volatility` tuned comparison.*
+_Figure 4C-6. GRU prediction slice for `next_volatility` tuned comparison._
+
 - **Why this chart is included:** Checks whether temporal smoothing still follows major regime movements.
 - **What it shows:** The prediction curve tracks broad volatility shifts with smoother peaks.
 - **Conclusion supported:** Supports the claim that MSE/MAE are more informative than DA for this target.
@@ -719,54 +737,60 @@ Figure 4C-6 is included to inspect contiguous volatility tracking over time for 
 
 Figure 4D-1 is included to compare training dynamics for moving-average return forecasting.
 
-![Next mean return best tuned training loss](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/best_tuned_training_loss.svg)
+![Next mean return best tuned training loss](../reports/final_report_tasks/20260331T192814Z/next_mean_return/figures/best_tuned_training_loss.svg)
 
-*Figure 4D-1. Best-tuned training-loss comparison for `next_mean_return`.*
+_Figure 4D-1. Best-tuned training-loss comparison for `next_mean_return`._
+
 - **Why this chart is included:** Tests convergence and optimisation stability across tuned models.
 - **What it shows:** Recurrent candidates reach low training losses with visible but modest separation.
 - **Conclusion supported:** Indicates recurrent architectures have favourable fit dynamics on this smoothed target.
 
 Figure 4D-2 is included to compare validation generalisation before reporting final test rankings.
 
-![Next mean return best tuned validation loss](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/best_tuned_validation_loss.svg)
+![Next mean return best tuned validation loss](../reports/final_report_tasks/20260331T192814Z/next_mean_return/figures/best_tuned_validation_loss.svg)
 
-*Figure 4D-2. Best-tuned validation-loss comparison for `next_mean_return`.*
+_Figure 4D-2. Best-tuned validation-loss comparison for `next_mean_return`._
+
 - **Why this chart is included:** Provides the tuned model-selection evidence.
 - **What it shows:** GRU and nearby recurrent models occupy the lowest validation-loss range.
 - **Conclusion supported:** Supports choosing GRU-family recurrent settings for final evaluation focus.
 
 Figure 4D-3 is included to confirm held-out ranking for the smoothed return task.
 
-![Next mean return best tuned testing loss](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/best_tuned_testing_loss.svg)
+![Next mean return best tuned testing loss](../reports/final_report_tasks/20260331T192814Z/next_mean_return/figures/best_tuned_testing_loss.svg)
 
-*Figure 4D-3. Best-tuned testing-loss comparison for `next_mean_return`.*
+_Figure 4D-3. Best-tuned testing-loss comparison for `next_mean_return`._
+
 - **Why this chart is included:** Tests whether selected winners maintain advantage on unseen data.
 - **What it shows:** GRU has the lowest test loss, with LSTM and RNN close behind.
 - **Conclusion supported:** Supports the claim that GRU is the Task D winner.
 
 Figure 4D-4 is included to quantify hyperparameter-stage impact on final loss outcomes.
 
-![Next mean return hyperparameter impact summary](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/hyperparameter_model_loss_summary_next_mean_return.svg)
+![Next mean return hyperparameter impact summary](../reports/final_report_tasks/20260331T192814Z/next_mean_return/figures/hyperparameter_model_loss_summary_next_mean_return.svg)
 
-*Figure 4D-4. Hyperparameter-impact model-loss summary for `next_mean_return`.*
+_Figure 4D-4. Hyperparameter-impact model-loss summary for `next_mean_return`._
+
 - **Why this chart is included:** Tests whether staged tuning materially improved each model family.
 - **What it shows:** Tuning improves results, with gains concentrated in specific stage transitions.
 - **Conclusion supported:** Supports the methodological claim that stage-wise tuning was consequential.
 
 Figure 4D-5 is included to inspect calibration quality for the GRU winner on averaged signed returns.
 
-![Next mean return GRU scatter](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/gru_best_tuned_gru_comparison-20260331t135921z_scatter.png)
+![Next mean return GRU scatter](../reports/final_report_tasks/20260331T192814Z/next_mean_return/figures/gru_best_tuned_gru_comparison-20260331t203017z_scatter.png)
 
-*Figure 4D-5. GRU predicted-vs-actual scatter for `next_mean_return` tuned comparison.*
+_Figure 4D-5. GRU predicted-vs-actual scatter for `next_mean_return` tuned comparison._
+
 - **Why this chart is included:** Evaluates correlation structure and spread for winner predictions.
 - **What it shows:** Points follow the central trend with moderate residual dispersion.
 - **Conclusion supported:** Supports the claim that GRU provides the strongest overall error balance on Task D.
 
 Figure 4D-6 is included to check time-local alignment and lag behaviour for GRU predictions.
 
-![Next mean return GRU prediction slice](../reports/final_report_tasks/20260331T125121Z/next_mean_return/figures/gru_best_tuned_gru_comparison-20260331t135921z_pred_slice.png)
+![Next mean return GRU prediction slice](../reports/final_report_tasks/20260331T192814Z/next_mean_return/figures/gru_best_tuned_gru_comparison-20260331t203017z_pred_slice.png)
 
-*Figure 4D-6. GRU prediction slice for `next_mean_return` tuned comparison.*
+_Figure 4D-6. GRU prediction slice for `next_mean_return` tuned comparison._
+
 - **Why this chart is included:** Tests whether temporal behaviour supports quantitative winner claims.
 - **What it shows:** Predicted movement follows direction changes with mild smoothing around peaks/troughs.
 - **Conclusion supported:** Supports using GRU as the preferred model for `next_mean_return`, with expected smoothing limitations.
@@ -866,37 +890,35 @@ Overall, the most defensible conclusion is not that one neural architecture univ
 
 ---
 
-
 \newpage
 
 ## 6. References/Bibliography
 
-[1] T. Fischer and C. Krauss, “Deep learning with long short-term memory networks for financial market predictions,” *European Journal of Operational Research*, vol. 270, no. 2, pp. 654–669, Oct. 2018.
+[1] T. Fischer and C. Krauss, “Deep learning with long short-term memory networks for financial market predictions,” _European Journal of Operational Research_, vol. 270, no. 2, pp. 654–669, Oct. 2018.
 
-[2] S. Hochreiter and J. Schmidhuber, “Long short-term memory,” *Neural Computation*, vol. 9, no. 8, pp. 1735–1780, 1997.
+[2] S. Hochreiter and J. Schmidhuber, “Long short-term memory,” _Neural Computation_, vol. 9, no. 8, pp. 1735–1780, 1997.
 
-[3] K. Cho *et al*., “Learning phrase representations using RNN Encoder-Decoder for statistical machine translation,” in *Proc. 2014 Conf. Empirical Methods in Natural Language Processing (EMNLP)*, Doha, Qatar, 2014, pp. 1724–1734.
+[3] K. Cho _et al_., “Learning phrase representations using RNN Encoder-Decoder for statistical machine translation,” in _Proc. 2014 Conf. Empirical Methods in Natural Language Processing (EMNLP)_, Doha, Qatar, 2014, pp. 1724–1734.
 
-[4] A. Vaswani *et al*., “Attention is all you need,” in *Advances in Neural Information Processing Systems 30 (NeurIPS 2017)*, 2017, pp. 5998–6008.
+[4] A. Vaswani _et al_., “Attention is all you need,” in _Advances in Neural Information Processing Systems 30 (NeurIPS 2017)_, 2017, pp. 5998–6008.
 
-[5] R. J. Hyndman and G. Athanasopoulos, *Forecasting: Principles and Practice*, 3rd ed. Melbourne, Australia: OTexts, 2021.
+[5] R. J. Hyndman and G. Athanasopoulos, _Forecasting: Principles and Practice_, 3rd ed. Melbourne, Australia: OTexts, 2021.
 
-[6] J. L. Elman, “Finding structure in time,” *Cognitive Science*, vol. 14, no. 2, pp. 179–211, 1990.
+[6] J. L. Elman, “Finding structure in time,” _Cognitive Science_, vol. 14, no. 2, pp. 179–211, 1990.
 
-[7] F. Chollet, *Deep Learning with Python*, 2nd ed. Shelter Island, NY, USA: Manning, 2021.
+[7] F. Chollet, _Deep Learning with Python_, 2nd ed. Shelter Island, NY, USA: Manning, 2021.
 
-[8] Z. Zhang, S. Zohren, and S. Roberts, “Deep learning for portfolio optimization,” *The Journal of Financial Data Science*, vol. 2, no. 4, pp. 8–20, 2020.
+[8] Z. Zhang, S. Zohren, and S. Roberts, “Deep learning for portfolio optimization,” _The Journal of Financial Data Science_, vol. 2, no. 4, pp. 8–20, 2020.
 
 [9] State Street Global Advisors, “SPDR S&P 500 ETF Trust (SPY),” accessed Mar. 22, 2026. [Online]. Available: https://www.ssga.com/us/en/intermediary/etfs/funds/spdr-sp-500-etf-trust-spy
 
-[10] F. Pedregosa *et al*., “Scikit-learn: Machine learning in Python,” *Journal of Machine Learning Research*, vol. 12, pp. 2825–2830, 2011.
+[10] F. Pedregosa _et al_., “Scikit-learn: Machine learning in Python,” _Journal of Machine Learning Research_, vol. 12, pp. 2825–2830, 2011.
 
 [11] R. Aroussi, “yfinance: Download market data from Yahoo! Finance’s API,” GitHub repository, accessed Mar. 22, 2026. [Online]. Available: https://github.com/ranaroussi/yfinance
 
-[12] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,” in *Proc. 3rd Int. Conf. Learning Representations (ICLR)*, San Diego, CA, USA, 2015.
+[12] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,” in _Proc. 3rd Int. Conf. Learning Representations (ICLR)_, San Diego, CA, USA, 2015.
 
 ---
-
 
 \newpage
 
@@ -906,7 +928,7 @@ This project has achieved the following outcomes in the final consolidated repor
 
 1. Built a coherent multi-task benchmarking workflow that supports `sine_next_day`, `next_return`, `next_volatility`, and `next_mean_return`.
 2. Standardised model comparison across Baseline-LR, RNN, LSTM, GRU, and Transformer under aligned splits and metrics.
-3. Produced a reproducible final-report artifact bundle (`reports/final_report_tasks/20260331T125121Z`) with per-task diagnostics and cross-task synthesis.
+3. Produced a reproducible final-report artifact bundle (`reports/final_report_tasks/20260331T192814Z`) with per-task diagnostics and cross-task synthesis.
 4. Consolidated proposal/interim/final reporting into one standalone final structure with clear front matter, numbered chapters, references, and appendices.
 
 \newpage
@@ -915,12 +937,12 @@ This project has achieved the following outcomes in the final consolidated repor
 
 ### Appendix A. Final tuned configurations (latest bundle highlights)
 
-| Task | Winner | Tuned hyperparameters | Archived run ID |
-| --- | --- | --- | --- |
-| `sine_next_day` | Baseline-LR | `{"flattened_sequence": true, "model": "LinearRegression", "seq_len": 30}` | `best_tuned_lstm_comparison-20260331T130042Z-baseline-lr` |
-| `next_return` | LSTM | `{"batch_size": 32, "hidden": 128, "layers": 3, "lr": 0.0005, "seq_len": 30}` | `best_tuned_lstm_comparison-20260331T132130Z` |
-| `next_volatility` | Baseline-LR | `{"flattened_sequence": true, "model": "LinearRegression", "seq_len": 20}` | `best_tuned_lstm_comparison-20260331T134030Z-baseline-lr` |
-| `next_mean_return` | GRU | `{"batch_size": 128, "hidden": 128, "layers": 3, "lr": 0.001, "seq_len": 30}` | `best_tuned_gru_comparison-20260331T135921Z` |
+| Task               | Winner      | Tuned hyperparameters                                                         | Archived run ID                                           |
+| ------------------ | ----------- | ----------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `sine_next_day`    | Baseline-LR | `{"flattened_sequence": true, "model": "LinearRegression", "seq_len": 30}`    | `best_tuned_lstm_comparison-20260331T130042Z-baseline-lr` |
+| `next_return`      | LSTM        | `{"batch_size": 32, "hidden": 128, "layers": 3, "lr": 0.0005, "seq_len": 30}` | `best_tuned_lstm_comparison-20260331T132130Z`             |
+| `next_volatility`  | Baseline-LR | `{"flattened_sequence": true, "model": "LinearRegression", "seq_len": 20}`    | `best_tuned_lstm_comparison-20260331T134030Z-baseline-lr` |
+| `next_mean_return` | GRU         | `{"batch_size": 128, "hidden": 128, "layers": 3, "lr": 0.001, "seq_len": 30}` | `best_tuned_gru_comparison-20260331T135921Z`              |
 
 ## Appendix B. Additional figures
 
@@ -928,7 +950,7 @@ All key figures from the archived final-report bundle are embedded in **Section 
 
 ## Appendix C. Reproducibility notes
 
-The latest archived final-report bundle used in this report is `reports/final_report_tasks/20260331T125121Z`, generated at **2026-03-31T14:00:27Z (UTC)**. It contains per-task tuning logs, winners, tuned-comparison CSV/Markdown reports, and task-specific figures for:
+The latest archived final-report bundle used in this report is `reports/final_report_tasks/20260331T192814Z`, generated at **2026-03-31T20:31:21Z (UTC)**. It contains per-task tuning logs, winners, tuned-comparison CSV/Markdown reports, and task-specific figures for:
 
 - `sine_next_day`
 - `next_return`
@@ -937,8 +959,8 @@ The latest archived final-report bundle used in this report is `reports/final_re
 
 Reproducibility source-of-truth note: final reported metrics in this document are resolved from **runtime-effective** configs (CLI overrides + staged winner promotion), not from static defaults. The concrete artifacts used as run truth are:
 
-- `reports/final_report_tasks/20260331T125121Z/tuning_winners.csv`
-- `reports/final_report_tasks/20260331T125121Z/*/best_tuned_comparison_*.md`
-- `reports/final_report_tasks/20260331T125121Z/overall_task_summary.md`
+- `reports/final_report_tasks/20260331T192814Z/tuning_winners.csv`
+- `reports/final_report_tasks/20260331T192814Z/*/best_tuned_comparison_*.md`
+- `reports/final_report_tasks/20260331T192814Z/overall_task_summary.md`
 
 The bundle root also includes `overall_task_summary.csv` for tabular export of the same cross-task synthesis.
