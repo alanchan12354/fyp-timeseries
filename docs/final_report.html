@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>final_report.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h2 id="1-cover-page-appendix-a-format">1. Cover page (Appendix A format)</h2>
+<p>The Hong Kong Polytechnic University
+Department of Computing</p>
+<p>COMP4913 Capstone Project
+Report (Final)</p>
+<p>Financial Time-Series Prediction Using Advanced Neural Network Models</p>
+<p>Student Name:
+CHAN Cheung Hong
+Student ID No.:
+22081328D
+Programme-Stream Code:
+61435-FCS
+Supervisor:
+Dr Yujie Wu
+Co-Examiner:</p>
+<p>2nd Assessor:</p>
+<p>Submission Date:
+31 March 2026</p>
+<h2 id="2-abstract">2. Abstract</h2>
+<p>This project benchmarks sequence models for short-horizon forecasting under a unified and reproducible pipeline that now supports <strong>multiple target definitions</strong> and both <strong>real (SPY)</strong> and <strong>synthetic (sine)</strong> data sources. The latest archived final-report bundle (generated at <code>2026-03-31T20:31:21Z</code>) evaluates four tasks: <code>sine_next_day</code>, <code>next_return</code>, <code>next_volatility</code>, and <code>next_mean_return</code>. Across these tasks, RNN, LSTM, GRU, Transformer, and a flattened-sequence linear-regression baseline are compared on aligned splits using MSE/MAE and directional accuracy (DA).</p>
+<p>The cross-task summary shows that <strong>Baseline-LR</strong> is best on <code>sine_next_day</code> and <code>next_volatility</code>, <strong>LSTM</strong> is best on <code>next_return</code>, and <strong>GRU</strong> is best on <code>next_mean_return</code>. The best test MSE values are <code>4.8070e-08</code> (sine), <code>9.1979e-05</code> (next_return), <code>1.7733e-05</code> (next_volatility), and <code>1.5519e-05</code> (next_mean_return). These outcomes reinforce two conclusions: (1) no single neural architecture dominates all task definitions, and (2) strong linear baselines remain essential in financial-style forecasting benchmarks.</p>
+<hr>
+<h2 id="3-table-of-contents">3. Table of Contents</h2>
+<ul>
+<li>
+<ol>
+<li>Cover page (Appendix A format)</li>
+</ol>
+</li>
+<li>
+<ol start="2">
+<li>Abstract</li>
+</ol>
+</li>
+<li>
+<ol start="3">
+<li>Table of contents</li>
+</ol>
+</li>
+<li>
+<ol start="4">
+<li>List of tables and figures</li>
+</ol>
+</li>
+<li>
+<ol start="5">
+<li>Main body</li>
+</ol>
+<ul>
+<li>Chapter 1. Introduction</li>
+<li>Chapter 2. Background and Literature Context</li>
+<li>Chapter 3. Problem Statement and Objectives</li>
+<li>Chapter 4. Data and Pre-processing</li>
+<li>Chapter 5. Methodology</li>
+<li>Chapter 6. Experimental Design and Hyperparameter Tuning</li>
+<li>Chapter 7. Results</li>
+<li>Chapter 8. Discussion</li>
+<li>Chapter 9. Limitations</li>
+<li>Chapter 10. Conclusion and Future Work</li>
+<li>Chapter 11. Project Contributions / What Has Been Achieved</li>
+</ul>
+</li>
+<li>
+<ol start="6">
+<li>References/Bibliography</li>
+</ol>
+</li>
+<li>
+<ol start="7">
+<li>Appendices</li>
+</ol>
+</li>
+</ul>
+<h2 id="4-list-of-tables-and-figures">4. List of Tables and Figures</h2>
+<h3 id="tables">Tables</h3>
+<ul>
+<li>Table 1. Cross-task consolidated summary.</li>
+<li>Table 2. Updated report artifact map.</li>
+<li>Table A-1. Final tuned configurations (latest bundle highlights).</li>
+</ul>
+<h3 id="figures">Figures</h3>
+<ul>
+<li>Figure 1. Training-loss comparison for the best tuned models and baseline.</li>
+<li>Figure 4A-1 to Figure 4D-6. Per-task training/validation/testing, hyperparameter impact, scatter, and prediction-slice visuals.</li>
+</ul>
+<h2 id="5-main-body">5. Main Body</h2>
+<hr>
+<h3 id="chapter-1-introduction">Chapter 1. Introduction</h3>
+<h3 id="11-project-background">1.1 Project background</h3>
+<p>Financial time-series forecasting remains a difficult problem because market data are noisy, non-stationary, and often only weakly predictable. Even when useful structure exists, the signal-to-noise ratio is usually small, particularly for return prediction rather than price-level prediction. This challenge has motivated extensive use of machine learning and deep learning methods for sequence modelling, especially recurrent architectures and attention-based models. [1], [5], [8]</p>
+<p>This project focuses on a <strong>configurable short-horizon forecasting system</strong> where targets are defined by <code>target_mode</code>, <code>horizon</code>, and <code>target_smooth_window</code>. The final archive includes one synthetic sanity task (<code>sine_next_day</code>) and three SPY market tasks (<code>next_return</code>, <code>next_volatility</code>, <code>next_mean_return</code>). SPY remains a reasonable proxy for broad U.S. equity-market behaviour, while the synthetic sine task provides a controlled check that the pipeline behaves sensibly under an easier signal regime. [9]</p>
+<h3 id="12-problem-statement">1.2 Problem statement</h3>
+<p>The core problem is not simply to generate forecasts, but to determine whether more expressive neural sequence models provide a measurable advantage over a simpler baseline when all methods are trained and evaluated on the same prepared dataset. In financial forecasting, complex models can easily appear promising while actually overfitting noisy data. Therefore, a fair shared-split comparison is academically more meaningful than isolated single-model demonstrations. [1], [5]</p>
+<h3 id="13-research-aim">1.3 Research aim</h3>
+<p>The aim of this project is to benchmark several neural sequence architectures across the implemented task system—covering both the synthetic sanity task and multiple SPY target definitions—and determine whether any of them outperform a flattened-sequence linear-regression baseline in prediction error and directional accuracy under matched splits and preprocessing.</p>
+<h3 id="14-objectives">1.4 Objectives</h3>
+<p>The specific objectives are:</p>
+<ol>
+<li>To construct a reproducible forecasting pipeline for SPY daily log returns.</li>
+<li>To compare RNN, LSTM, GRU, and Transformer models under shared experimental conditions.</li>
+<li>To include a linear-regression baseline built from the same lagged input window.</li>
+<li>To perform staged hyperparameter tuning using validation MSE.</li>
+<li>To analyse both magnitude-based error metrics and directional accuracy.</li>
+</ol>
+<h3 id="15-scope-of-the-project">1.5 Scope of the project</h3>
+<p>The latest archived report bundle covers four fully populated tasks: <code>sine_next_day</code>, <code>next_return</code>, <code>next_volatility</code>, and <code>next_mean_return</code>. Claims in this report are scoped to these definitions, with each task tracked by explicit <code>task_id</code>, <code>target_mode</code>, <code>horizon</code>, and (where applicable) <code>target_smooth_window</code>.</p>
+<h3 id="16-report-organisation">1.6 Report organisation</h3>
+<p>The remainder of this report covers background literature, formal task definition, data preparation, methodology, tuning design, results, discussion, limitations, conclusion, and appendices.</p>
+<hr>
+<h3 id="chapter-2-background-and-literature-context">Chapter 2. Background and Literature Context</h3>
+<h3 id="21-financial-time-series-forecasting">2.1 Financial time-series forecasting</h3>
+<p>Financial forecasting has long been studied through both statistical and machine-learning approaches. A useful distinction is between forecasting prices and forecasting returns. Prices usually contain strong trends and scale effects, whereas returns are closer to stationary and are therefore more appropriate for modelling short-term predictive relationships. However, this also makes the forecasting problem harder because much of the predictable structure has already been removed. [5], [8]</p>
+<p>Prior work has shown that deep sequence models can capture nonlinear temporal relationships in financial data, but the size of the advantage depends strongly on the market, target variable, and evaluation design. Fischer and Krauss, for example, demonstrated that LSTM networks can be effective in financial market prediction, while also highlighting the fragility of performance under realistic conditions. [1]</p>
+<h3 id="22-traditional-and-machine-learning-baselines">2.2 Traditional and machine-learning baselines</h3>
+<p>A simple linear model remains an important baseline in time-series forecasting because it offers interpretability, low variance, and a useful reference point for judging whether a more complex model actually extracts additional structure. When a neural network only marginally outperforms linear regression, the correct interpretation is usually that the forecasting signal is weak or that the task is close to the limit of what is learnable from the available features. [5], [10]</p>
+<h3 id="23-recurrent-neural-networks">2.3 Recurrent neural networks</h3>
+<p>Vanilla RNNs explicitly process ordered sequences by updating a hidden state across time steps. This makes them a natural baseline neural architecture for sequential forecasting, but standard RNNs are known to struggle with unstable gradients and limited long-range memory. [2], [6]</p>
+<h3 id="24-lstm-and-gru-improvements-over-vanilla-rnn">2.4 LSTM and GRU improvements over vanilla RNN</h3>
+<p>LSTM networks introduce gated memory cells that help preserve information over longer horizons, making them well suited to sequence tasks where delayed dependencies matter. [2] GRUs provide a related gated mechanism with a simpler parameterisation and often achieve comparable performance with lower computational overhead. [3] In financial forecasting, both architectures are widely used because they offer a better trade-off between expressiveness and trainability than a plain RNN. [1]</p>
+<h3 id="25-transformer-models-for-sequence-learning">2.5 Transformer models for sequence learning</h3>
+<p>Transformers replace recurrence with self-attention, which can model pairwise relationships across all positions in a sequence. This design has achieved outstanding results in natural language processing and many other sequence domains. [4] Nevertheless, Transformer performance depends heavily on dataset scale, architecture choices, and tuning budget. On relatively small financial datasets with limited input dimensionality, the expected advantage over recurrent models is less certain. [4], [8]</p>
+<h3 id="26-research-gap-and-project-positioning">2.6 Research gap and project positioning</h3>
+<p>This project is positioned as a controlled benchmark rather than a claim of trading-system superiority. Its contribution is to compare RNN, LSTM, GRU, Transformer, and linear regression under one aligned preprocessing/evaluation workflow across explicitly defined tasks: <code>sine_next_day</code> (synthetic sanity), plus SPY <code>next_return</code>, <code>next_volatility</code>, and <code>next_mean_return</code> (market targets). This framing avoids overgeneralising from any single return definition and keeps conclusions tied to concrete <code>target_mode</code>/<code>horizon</code>/<code>target_smooth_window</code> settings.</p>
+<hr>
+<h3 id="chapter-3-problem-statement-and-objectives">Chapter 3. Problem Statement and Objectives</h3>
+<h3 id="31-forecasting-task-definition">3.1 Forecasting task definition</h3>
+<p>The forecasting system is formulated as supervised learning on multifeature sequences. Let <code>f_t in R^8</code> denote the engineered feature vector at day <code>t</code>, and let each sample be a rolling lookback window:</p>
+<pre class="hljs"><code><div>X_t = [f_{t-L+1}, ..., f_t]
+</div></code></pre>
+<p>where <code>L</code> is the sequence length (<code>seq_len</code>, tuned per task/model). The repository supports multiple targets via <code>target_mode</code>:</p>
+<ul>
+<li><code>sine_next_day</code> (synthetic sanity task),</li>
+<li><code>next_return</code> (1-step return),</li>
+<li><code>next_volatility</code> (forward rolling volatility),</li>
+<li><code>next_mean_return</code> (forward rolling mean return),</li>
+<li>plus default/general modes such as <code>horizon_return</code>.</li>
+</ul>
+<p>The latest final-report archive evaluates these four task IDs:</p>
+<ol>
+<li><code>sine_next_day</code> (<code>data_source=sine</code>, <code>horizon=1</code>, <code>target_smooth_window=1</code>),</li>
+<li><code>next_return</code> (<code>data_source=spy</code>, <code>horizon=1</code>, <code>target_smooth_window=1</code>),</li>
+<li><code>next_volatility</code> (<code>data_source=spy</code>, <code>horizon=1</code>, <code>target_smooth_window=5</code>),</li>
+<li><code>next_mean_return</code> (<code>data_source=spy</code>, <code>horizon=1</code>, <code>target_smooth_window=5</code>).</li>
+</ol>
+<h3 id="32-research-questions">3.2 Research questions</h3>
+<p>The report addresses the following research questions:</p>
+<ol>
+<li>Which neural architecture performs best under the shared pipeline when evaluated task-by-task (<code>sine_next_day</code>, <code>next_return</code>, <code>next_volatility</code>, <code>next_mean_return</code>)?</li>
+<li>How do model rankings differ between the synthetic sanity task (<code>sine_next_day</code>) and the SPY market tasks (<code>next_return</code>, <code>next_volatility</code>, <code>next_mean_return</code>)?</li>
+<li>Does a tuned neural model outperform the linear-regression baseline within each task definition rather than only on a single return target?</li>
+<li>Is lower MSE associated with better directional accuracy across these task definitions?</li>
+</ol>
+<h3 id="33-project-objectives">3.3 Project objectives</h3>
+<p>The technical objective is to produce an apples-to-apples comparison with common data preparation, common split boundaries, common evaluation metrics, and validation-driven model selection.</p>
+<h3 id="34-success-criteria">3.4 Success criteria</h3>
+<p>A model is considered successful if it demonstrates lower validation and test error than alternatives under the shared setup. However, because financial forecasting is often used for directional decisions, directional accuracy is also reported as a complementary metric rather than relying on MSE alone.</p>
+<hr>
+<h3 id="chapter-4-data-and-pre-processing">Chapter 4. Data and Pre-processing</h3>
+<h3 id="41-data-source-and-asset-selection">4.1 Data source and asset selection</h3>
+<p>The latest report bundle evaluates both <strong>synthetic</strong> and <strong>market</strong> tasks. For market tasks, data are downloaded from Yahoo Finance through <code>yfinance</code> with SPY as the instrument and repository default <code>START=2005-01-01</code>. In parallel, the <code>sine_next_day</code> task uses the repository’s generated sine-series feature frame as a controlled sanity benchmark. [9], [11]</p>
+<h3 id="42-return-definition">4.2 Return definition</h3>
+<p>The raw downloaded close series is converted to <strong>daily log returns</strong>:</p>
+<pre class="hljs"><code><div>r_t = log(P_t / P_{t-1})
+</div></code></pre>
+<p>Using returns instead of prices reduces scale effects and makes the target more appropriate for short-horizon statistical learning. [5]</p>
+<h3 id="43-sequence-construction">4.3 Sequence construction</h3>
+<p>For neural models, the repository builds three-dimensional input tensors of shape <code>(N, seq_len, 8)</code>, where each sample contains <code>seq_len</code> consecutive days of 8 engineered features and one scalar target. The tuned search space includes <code>seq_len ∈ {20, 30, 60}</code> in <code>src/tuning/main.py</code>.</p>
+<p>The 8 engineered features produced by <code>build_spy_feature_frame</code> are:</p>
+<ol>
+<li><code>log_ret</code></li>
+<li><code>oc_ret</code></li>
+<li><code>hl_range</code></li>
+<li><code>vol_chg</code></li>
+<li><code>ma_5_gap</code></li>
+<li><code>ma_20_gap</code></li>
+<li><code>volatility_5</code></li>
+<li><code>volatility_20</code></li>
+</ol>
+<p>Target construction is controlled by <code>target_mode</code>, <code>horizon</code>, and <code>target_smooth_window</code>. In the latest archived bundle, the evaluated tasks are <code>sine_next_day</code>, <code>next_return</code>, <code>next_volatility</code> (<code>target_smooth_window=5</code>), and <code>next_mean_return</code> (<code>target_smooth_window=5</code>).</p>
+<p>For transparency, the archived best-tuned comparisons use the following winning <code>seq_len</code> values by task (best test-MSE run per task):</p>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Best test-MSE winner</th>
+<th style="text-align:right">Winning <code>seq_len</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sine_next_day</code></td>
+<td>Baseline-LR</td>
+<td style="text-align:right">30</td>
+</tr>
+<tr>
+<td><code>next_return</code></td>
+<td>LSTM</td>
+<td style="text-align:right">30</td>
+</tr>
+<tr>
+<td><code>next_volatility</code></td>
+<td>Baseline-LR</td>
+<td style="text-align:right">20</td>
+</tr>
+<tr>
+<td><code>next_mean_return</code></td>
+<td>GRU</td>
+<td style="text-align:right">30</td>
+</tr>
+</tbody>
+</table>
+<h3 id="44-trainvalidationtest-split">4.4 Train/validation/test split</h3>
+<p>Splitting is chronological rather than random for all tasks, preventing future information leakage into training. The same train/validation/test protocol is applied consistently across the four archived tasks in <code>reports/final_report_tasks/20260331T192814Z</code>.</p>
+<h3 id="45-normalisation-and-leakage-prevention">4.5 Normalisation and leakage prevention</h3>
+<p>The input sequences are standardised with <code>StandardScaler</code>, fitted only on the training inputs and then applied to validation and test sets. This avoids information leakage from future periods into the training transformation pipeline, which would otherwise bias the evaluation. [5], [10]</p>
+<hr>
+<h3 id="chapter-5-methodology">Chapter 5. Methodology</h3>
+<h3 id="51-overall-pipeline">5.1 Overall pipeline</h3>
+<p>All models share the same high-level pipeline:</p>
+<ol>
+<li>Download SPY historical data.</li>
+<li>Compute daily log returns.</li>
+<li>Build aligned input sequences with 8 features per step and a task-specific configured target (<code>sine_next_day</code>, <code>next_return</code>, <code>next_volatility</code>, or <code>next_mean_return</code>).</li>
+<li>Split the data chronologically into training, validation, and test sets.</li>
+<li>Fit the scaler on training inputs only.</li>
+<li>Train each model using validation-based checkpoint selection.</li>
+<li>Compare the final archived runs using MSE, MAE, and directional accuracy.</li>
+</ol>
+<h3 id="52-baseline-model">5.2 Baseline model</h3>
+<p>The baseline is a flattened-sequence <strong>linear regression</strong> model. It uses the same multifeature <code>seq_len</code> window as the neural models, but reshapes each <code>(seq_len, 8)</code> sequence into a tabular vector (<code>seq_len × 8</code> features) so the target alignment remains identical. This baseline tests whether nonlinear sequence modelling provides gains beyond a strong linear model on the same information set. [5], [10]</p>
+<h3 id="53-rnn-model">5.3 RNN model</h3>
+<p>The vanilla RNN model consists of a recurrent layer over the <code>seq_len</code> input sequence followed by a linear output layer that maps the last hidden state to a scalar forecast. This architecture serves as the simplest neural sequence benchmark. [6]</p>
+<h3 id="54-lstm-model">5.4 LSTM model</h3>
+<p>The LSTM model replaces the simple recurrent cell with gated memory units and again uses the last sequence output to produce a one-step scalar prediction. The expectation from literature is that LSTM should be better able to preserve useful information over the lookback window. [1], [2]</p>
+<h3 id="55-gru-model">5.5 GRU model</h3>
+<p>The GRU model is structurally similar to the LSTM model but uses update and reset gates with fewer parameters. It is included to test whether a lighter gated recurrent architecture can match or exceed LSTM on this task. [3]</p>
+<h3 id="56-transformer-model">5.6 Transformer model</h3>
+<p>The Transformer model first projects each 8-dimensional timestep feature vector into a learned embedding space, adds positional encodings, applies stacked Transformer encoder layers, and uses the final time-step representation for scalar prediction. This architecture is intended to test whether self-attention can outperform recurrence on this multifeature financial sequence problem. [4]</p>
+<h3 id="57-mathematical-formulation-of-models">5.7 Mathematical Formulation of Models</h3>
+<p>This subsection summarises compact model equations used in the benchmark. Extended derivations are deferred to the appendix.</p>
+<h4 id="571-ararimasarima-reference-only-not-used-in-final-benchmark">5.7.1 AR/ARIMA/SARIMA (reference only; not used in final benchmark)</h4>
+<p>Backshift form:</p>
+<pre class="hljs"><code><div>Phi(B^s) phi(B) (1 - B)^d (1 - B^s)^D y_t
+=
+Theta(B^s) theta(B) epsilon_t
+</div></code></pre>
+<ul>
+<li><code>B</code>: backshift operator (<code>B y_t = y_{t-1}</code>); <code>s</code>: seasonal period.</li>
+<li><code>d, D</code>: non-seasonal/seasonal differencing orders.</li>
+<li><code>phi, theta, Phi, Theta</code>: non-seasonal and seasonal AR/MA polynomials.</li>
+<li><code>epsilon_t</code>: white-noise innovation.</li>
+<li><strong>Time dependence:</strong> imposed through lag polynomials and differencing on past observations/errors.</li>
+<li><strong>Training objective:</strong> typically maximum likelihood (equivalently minimising one-step-ahead squared innovations under Gaussian errors).</li>
+</ul>
+<h4 id="572-exponential-smoothing-family-reference-only-not-used-in-final-benchmark">5.7.2 Exponential smoothing family (reference only; not used in final benchmark)</h4>
+<p>Example additive Holt-Winters updates:</p>
+<pre class="hljs"><code><div>ell_t = alpha(y_t - s_{t-m}) + (1 - alpha)(ell_{t-1} + b_{t-1})
+b_t   = beta(ell_t - ell_{t-1}) + (1 - beta)b_{t-1}
+</div></code></pre>
+<pre class="hljs"><code><div>s_t = gamma(y_t - ell_t) + (1 - gamma)s_{t-m}
+y_hat_{t+h|t} = ell_t + h b_t + s_{t-m+h_m}
+</div></code></pre>
+<ul>
+<li><code>ell_t</code>: level, <code>b_t</code>: trend, <code>s_t</code>: seasonal state, <code>m</code>: season length.</li>
+<li><code>alpha, beta, gamma in (0, 1)</code>: smoothing parameters.</li>
+<li><code>y_hat_{t+h|t}</code>: <code>h</code>-step forecast.</li>
+<li><strong>Time dependence:</strong> recursive state updates propagate recent observations with exponential forgetting.</li>
+<li><strong>Training objective:</strong> minimise in-sample squared forecast error or maximise likelihood over smoothing parameters.</li>
+</ul>
+<h4 id="573-regression-baseline-used-baseline-lr">5.7.3 Regression baseline used (Baseline-LR)</h4>
+<p>Flattened-sequence linear regression:</p>
+<pre class="hljs"><code><div>y_hat_t = w^T vec(X_{t-L+1:t}) + b
+</div></code></pre>
+<p>where <code>X_{t-L+1:t} in R^{L x F}</code>, <code>L = seq_len</code>, <code>F = 8</code>, and <code>vec(.) in R^{LF}</code>.</p>
+<ul>
+<li><code>w in R^{LF}</code>, <code>b in R</code>: regression parameters.</li>
+<li><code>y_hat_t</code>: one-step-ahead target forecast.</li>
+<li><strong>Time dependence:</strong> encoded explicitly via lagged features in the flattened lookback window.</li>
+<li><strong>Training objective:</strong> least squares <code>min_{w,b} sum_t (y_t - y_hat_t)^2</code> (MSE).</li>
+</ul>
+<h4 id="574-rnnlstmgru-models-used">5.7.4 RNN/LSTM/GRU models used</h4>
+<p><strong>Vanilla RNN</strong></p>
+<pre class="hljs"><code><div>h_t = tanh(W_x x_t + W_h h_{t-1} + b_h)
+y_hat_t = W_o h_t + b_o
+</div></code></pre>
+<ul>
+<li><code>x_t in R^F</code>: feature vector at time <code>t</code>; <code>h_t</code>: hidden state.</li>
+<li><strong>Time dependence:</strong> recurrent transition carries history through <code>h_{t-1} -&gt; h_t</code>.</li>
+<li><strong>Training objective:</strong> minimise sequence-level MSE, <code>min_Theta sum_t (y_t - y_hat_t)^2</code>, via backpropagation through time.</li>
+</ul>
+<p><strong>LSTM (compact gates)</strong></p>
+<pre class="hljs"><code><div>i_t      = sigmoid(W_i[x_t; h_{t-1}] + b_i)
+f_t      = sigmoid(W_f[x_t; h_{t-1}] + b_f)
+c_tilde_t = tanh(W_c[x_t; h_{t-1}] + b_c)
+o_t      = sigmoid(W_o[x_t; h_{t-1}] + b_o)
+c_t      = f_t * c_{t-1} + i_t * c_tilde_t
+h_t      = o_t * tanh(c_t)
+y_hat_t  = W_y h_t + b_y
+</div></code></pre>
+<ul>
+<li><code>i_t, f_t, o_t</code>: input/forget/output gates; <code>c_t</code>: cell state.</li>
+<li><strong>Time dependence:</strong> controlled memory path <code>c_{t-1} -&gt; c_t</code> mitigates vanishing gradients.</li>
+<li><strong>Training objective:</strong> MSE minimisation with Adam over all network parameters.</li>
+</ul>
+<p><strong>GRU (compact gates)</strong></p>
+<pre class="hljs"><code><div>z_t      = sigmoid(W_z[x_t; h_{t-1}] + b_z)
+r_t      = sigmoid(W_r[x_t; h_{t-1}] + b_r)
+h_tilde_t = tanh(W_h[x_t; r_t * h_{t-1}] + b_h)
+h_t      = (1 - z_t) * h_{t-1} + z_t * h_tilde_t
+y_hat_t  = W_y h_t + b_y
+</div></code></pre>
+<ul>
+<li><code>z_t, r_t</code>: update/reset gates.</li>
+<li><strong>Time dependence:</strong> gated interpolation between previous and candidate hidden states.</li>
+<li><strong>Training objective:</strong> MSE minimisation with backpropagation through time.</li>
+</ul>
+<h4 id="575-transformer-model-used">5.7.5 Transformer model used</h4>
+<p>Scaled dot-product self-attention:</p>
+<pre class="hljs"><code><div>Attention(Q, K, V) = softmax(QK^T / sqrt(d_k)) V
+</div></code></pre>
+<p>with <code>Q = XW_Q, K = XW_K, V = XW_V</code>, and forecast head</p>
+<pre class="hljs"><code><div>y_hat_t = W_h z_t + b_h
+</div></code></pre>
+<p>where <code>z_t</code> is the final encoder representation (last position) after positional encoding and stacked encoder blocks.</p>
+<ul>
+<li><code>d_k</code>: key/query dimension; <code>W_Q, W_K, W_V, W_h</code>: trainable projections.</li>
+<li><strong>Time dependence:</strong> attention directly mixes information across all sequence positions using content + positional encoding.</li>
+<li><strong>Training objective:</strong> MSE minimisation on one-step forecasts, optimised with Adam.</li>
+</ul>
+<h3 id="58-configuration-source-of-truth">5.8 Configuration source of truth</h3>
+<p>Repository-level defaults (for example <code>HORIZON=1</code>, <code>TARGET_MODE=horizon_return</code>) are defined in <code>src/common/config.py</code>. Run-specific overrides (including CLI overrides such as <code>--horizon</code> and <code>--target-mode</code>) are resolved through <code>src/common/runtime_config.py</code> and then passed into experiment preparation, so archived experiments may intentionally differ from defaults.</p>
+<p>For this report, the <strong>archived final metrics are taken from runtime-resolved experiment configs</strong> (effective CLI + staged-winner selections), <strong>not</strong> from static defaults in <code>src/common/config.py</code>. Concretely, run truth is read from <code>reports/final_report_tasks/20260331T192814Z/tuning_winners.csv</code>, per-task <code>reports/final_report_tasks/20260331T192814Z/*/best_tuned_comparison_*.md</code>, and the bundle-level synthesis <code>reports/final_report_tasks/20260331T192814Z/overall_task_summary.md</code>.</p>
+<h3 id="59-training-strategy">5.9 Training strategy</h3>
+<p>The training workflow uses the Adam optimiser, mean squared error loss, early stopping with validation-loss smoothing, checkpointing of the best validation state, and scheduler-based learning-rate reduction. Hyperparameter selection is validation-driven, and the final archived best-tuned comparison was generated from the frozen winners stored in <code>tuning_winners.csv</code>. [12]</p>
+<p>Figure 1 is included to demonstrate that the tuned pipeline produces stable convergence patterns before the report interprets task-specific winners.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_return/figures/best_tuned_training_loss.svg" alt="Best tuned training loss comparison"></p>
+<p><em>Figure 1. Training-loss comparison for the best tuned models and baseline.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Tests whether model optimisation remains stable and comparable across architectures.</li>
+<li><strong>What it shows:</strong> All tuned models converge, but with distinct loss levels across families.</li>
+<li><strong>Conclusion supported:</strong> Supports the report’s model-comparison setup and motivates deeper task-level result analysis.</li>
+</ul>
+<h3 id="510-evaluation-metrics">5.10 Evaluation metrics</h3>
+<p>Three metrics are reported:</p>
+<ul>
+<li><strong>MSE:</strong> penalises large forecast errors and is the main optimisation/evaluation criterion.</li>
+<li><strong>MAE:</strong> provides a scale-consistent average absolute error.</li>
+<li><strong>Directional Accuracy (DA):</strong> measures the fraction of predictions whose sign matches the realised return.</li>
+</ul>
+<p>DA is particularly relevant in finance because a model can sometimes produce modestly inaccurate magnitudes while still being useful for direction-of-move classification.</p>
+<p>However, DA must be interpreted <strong>by <code>target_mode</code></strong> rather than as a uniform cross-task score. For signed return-style targets (for example <code>next_return</code> and <code>next_mean_return</code>), DA is meaningfully discriminative because the sign directly encodes up/down direction. For level-like or strictly non-negative targets (especially <code>next_volatility</code>, defined from rolling standard deviation), sign-based DA is not a discriminative metric and can quickly saturate near a ceiling. Therefore, on <code>next_volatility</code>, model ranking should prioritise <strong>MSE/MAE</strong> and treat DA only as a weak supplementary indicator.</p>
+<hr>
+<h3 id="chapter-6-experimental-design-and-hyperparameter-tuning">Chapter 6. Experimental Design and Hyperparameter Tuning</h3>
+<h3 id="61-purpose-of-tuning">6.1 Purpose of tuning</h3>
+<p>Hyperparameter tuning is necessary because model comparisons are not meaningful when architectures are evaluated only at arbitrary default settings. This project uses a staged tuning workflow to search for better-performing configurations using validation MSE as the selection criterion.</p>
+<h3 id="62-tuning-procedure">6.2 Tuning procedure</h3>
+<p>The tuning process is sequential. For recurrent models, the stages are:</p>
+<ol>
+<li>learning rate,</li>
+<li>hidden size,</li>
+<li>number of layers,</li>
+<li>batch size.</li>
+</ol>
+<p>For the Transformer, the stages are:</p>
+<ol>
+<li>learning rate,</li>
+<li>model dimension,</li>
+<li>number of encoder layers,</li>
+<li>number of attention heads,</li>
+<li>batch size.</li>
+</ol>
+<p>At each stage, the winning value is frozen before the next parameter group is explored.</p>
+<h3 id="63-search-dimensions-by-model">6.3 Search dimensions by model</h3>
+<p>The recurrent models and the Transformer do not share identical search spaces because their architectures differ. This is reasonable, but the same validation-based winner-selection rule is applied consistently across all model families.</p>
+<h3 id="64-best-configurations-obtained">6.4 Best configurations obtained</h3>
+<p>The latest archive contains task-specific tuned winners rather than one global best configuration. Cross-task winners by test MSE are:</p>
+<table>
+<thead>
+<tr>
+<th>task_id</th>
+<th>Winner</th>
+<th style="text-align:right">Best test MSE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sine_next_day</code></td>
+<td>Baseline-LR</td>
+<td style="text-align:right">4.807035774110167e-08</td>
+</tr>
+<tr>
+<td><code>next_return</code></td>
+<td>LSTM</td>
+<td style="text-align:right">9.197905455948785e-05</td>
+</tr>
+<tr>
+<td><code>next_volatility</code></td>
+<td>Baseline-LR</td>
+<td style="text-align:right">1.7733482060336406e-05</td>
+</tr>
+<tr>
+<td><code>next_mean_return</code></td>
+<td>GRU</td>
+<td style="text-align:right">1.5519119187956676e-05</td>
+</tr>
+</tbody>
+</table>
+<p>This confirms that tuning outcomes are task-dependent and should be interpreted per <code>task_id</code>.</p>
+<h3 id="65-threats-to-validity-in-tuning">6.5 Threats to validity in tuning</h3>
+<p>Sequential tuning is efficient, but it does not exhaustively search hyperparameter interactions. A later parameter sweep can make an earlier frozen choice suboptimal. Therefore, the chosen winners should be interpreted as strong practical settings found under a constrained tuning budget rather than globally optimal architectures.</p>
+<hr>
+<h3 id="chapter-7-results">Chapter 7. Results</h3>
+<p>This chapter reports outcomes by <strong>task</strong>, where each task is identified by <code>task_id</code> and defined by <code>target_mode</code> + <code>horizon</code> (+ <code>target_smooth_window</code> where applicable).</p>
+<h3 id="71-cross-task-consolidated-summary">7.1 Cross-task consolidated summary</h3>
+<p>Table 1 summarises the best-tuned winner for each task from <code>overall_task_summary.md</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>task_id</th>
+<th>target_mode</th>
+<th style="text-align:right">horizon</th>
+<th style="text-align:right">target_smooth_window</th>
+<th>Best model (test MSE)</th>
+<th style="text-align:right">Best test MSE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Task A</td>
+<td><code>sine_next_day</code></td>
+<td><code>sine_next_day</code></td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">1</td>
+<td>Baseline-LR</td>
+<td style="text-align:right">4.807035774110167e-08</td>
+</tr>
+<tr>
+<td>Task B</td>
+<td><code>next_return</code></td>
+<td><code>next_return</code></td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">1</td>
+<td>LSTM</td>
+<td style="text-align:right">9.197905455948785e-05</td>
+</tr>
+<tr>
+<td>Task C</td>
+<td><code>next_volatility</code></td>
+<td><code>next_volatility</code></td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">5</td>
+<td>Baseline-LR</td>
+<td style="text-align:right">1.7733482060336406e-05</td>
+</tr>
+<tr>
+<td>Task D</td>
+<td><code>next_mean_return</code></td>
+<td><code>next_mean_return</code></td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">5</td>
+<td>GRU</td>
+<td style="text-align:right">1.5519119187956676e-05</td>
+</tr>
+</tbody>
+</table>
+<h3 id="72-per-task-tuned-comparison-highlights">7.2 Per-task tuned comparison highlights</h3>
+<h4 id="task-a--sinenextday">Task A — <code>sine_next_day</code></h4>
+<ul>
+<li>Best model by test MSE: <strong>Baseline-LR</strong> (4.8070e-08).</li>
+<li>Best neural model by test MSE: <strong>LSTM</strong> (1.1095e-07).</li>
+<li>DA remains high for both baseline and recurrent models (Baseline-LR: 0.9702, LSTM: 0.9864).</li>
+</ul>
+<h4 id="task-b--nextreturn">Task B — <code>next_return</code></h4>
+<ul>
+<li>Best model by test MSE: <strong>LSTM</strong> (9.1979e-05).</li>
+<li>GRU is a close second (9.2194e-05).</li>
+<li>Baseline-LR is competitive but weaker on this task (1.2176e-04).</li>
+</ul>
+<h4 id="task-c--nextvolatility">Task C — <code>next_volatility</code></h4>
+<ul>
+<li>Best model by test MSE: <strong>Baseline-LR</strong> (1.7733e-05).</li>
+<li>Best neural model: <strong>GRU</strong> (1.9411e-05).</li>
+<li>Directional accuracy is near-saturated for most models because volatility targets are non-negative and trend smoother in sign.</li>
+</ul>
+<h4 id="task-d--nextmeanreturn">Task D — <code>next_mean_return</code></h4>
+<ul>
+<li>Best model by test MSE: <strong>GRU</strong> (1.5519e-05).</li>
+<li>LSTM and RNN are close behind (1.6130e-05 and 1.6560e-05).</li>
+<li>Baseline-LR trails tuned recurrent winners on this task (2.1937e-05).</li>
+</ul>
+<h3 id="73-updated-report-artifact-map">7.3 Updated report artifact map</h3>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th><code>task_id</code></th>
+<th>Comparison report</th>
+<th>Figures directory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Task A</td>
+<td><code>sine_next_day</code></td>
+<td><code>reports/final_report_tasks/20260331T192814Z/sine_next_day/best_tuned_comparison_sine_next_day.csv</code></td>
+<td><code>reports/final_report_tasks/20260331T192814Z/sine_next_day/figures/</code></td>
+</tr>
+<tr>
+<td>Task B</td>
+<td><code>next_return</code></td>
+<td><code>reports/final_report_tasks/20260331T192814Z/next_return/best_tuned_comparison_next_return.csv</code></td>
+<td><code>reports/final_report_tasks/20260331T192814Z/next_return/figures/</code></td>
+</tr>
+<tr>
+<td>Task C</td>
+<td><code>next_volatility</code></td>
+<td><code>reports/final_report_tasks/20260331T192814Z/next_volatility/best_tuned_comparison_next_volatility.csv</code></td>
+<td><code>reports/final_report_tasks/20260331T192814Z/next_volatility/figures/</code></td>
+</tr>
+<tr>
+<td>Task D</td>
+<td><code>next_mean_return</code></td>
+<td><code>reports/final_report_tasks/20260331T192814Z/next_mean_return/best_tuned_comparison_next_mean_return.csv</code></td>
+<td><code>reports/final_report_tasks/20260331T192814Z/next_mean_return/figures/</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="74-prediction-pattern-visualisation-updated-figures">7.4 Prediction pattern visualisation (updated figures)</h3>
+<p>This section now places each figure immediately after the paragraph that states why it is needed, and each figure includes a fixed interpretation template.</p>
+<h4 id="task-a--sinenextday">Task A — <code>sine_next_day</code></h4>
+<p>Figure 4A-1 is included to compare optimisation behaviour across all tuned models on the easiest synthetic-style target before interpreting winner quality.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/sine_next_day/figures/best_tuned_training_loss.svg" alt="Sine next day best tuned training loss"></p>
+<p><em>Figure 4A-1. Best-tuned training-loss comparison for <code>sine_next_day</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Tests whether training dynamics are stable and consistently low across candidate models.</li>
+<li><strong>What it shows:</strong> Loss trajectories converge quickly for all contenders, with small separation after early epochs.</li>
+<li><strong>Conclusion supported:</strong> Training-only behaviour does not by itself distinguish a dominant model; validation/testing evidence is required.</li>
+</ul>
+<p>Figure 4A-2 is included to identify which tuned model generalises best on validation data for <code>sine_next_day</code>.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/sine_next_day/figures/best_tuned_validation_loss.svg" alt="Sine next day best tuned validation loss"></p>
+<p><em>Figure 4A-2. Best-tuned validation-loss comparison for <code>sine_next_day</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Evaluates the main model-selection signal used during tuning.</li>
+<li><strong>What it shows:</strong> Validation losses are tightly grouped, with baseline and top recurrent models near the floor.</li>
+<li><strong>Conclusion supported:</strong> Confirms that multiple model classes can generalise well on this task, explaining close final rankings.</li>
+</ul>
+<p>Figure 4A-3 is included to verify out-of-sample error ranking on the held-out test split for Task A.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/sine_next_day/figures/best_tuned_testing_loss.svg" alt="Sine next day best tuned testing loss"></p>
+<p><em>Figure 4A-3. Best-tuned testing-loss comparison for <code>sine_next_day</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Tests whether validation winners remain strong on truly unseen data.</li>
+<li><strong>What it shows:</strong> The baseline remains extremely competitive and reaches the best test-loss region.</li>
+<li><strong>Conclusion supported:</strong> Supports the claim that Baseline-LR wins Task A despite strong neural alternatives.</li>
+</ul>
+<p>Figure 4A-4 is included to show whether stage-wise tuning changed model performance materially in <code>sine_next_day</code>.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/sine_next_day/figures/hyperparameter_model_loss_summary_sine_next_day.svg" alt="Sine next day hyperparameter impact summary"></p>
+<p><em>Figure 4A-4. Hyperparameter-impact model-loss summary for <code>sine_next_day</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Assesses whether tuning stages generated meaningful gains versus defaults.</li>
+<li><strong>What it shows:</strong> Performance shifts are present but modest, with diminishing returns after early stage improvements.</li>
+<li><strong>Conclusion supported:</strong> Supports using constrained staged tuning as sufficient for this task.</li>
+</ul>
+<p>Figure 4A-5 is included to test calibration and bias patterns of the best neural model’s predictions.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/sine_next_day/figures/lstm_best_tuned_lstm_comparison-20260331t193731z_scatter.png" alt="Sine next day LSTM scatter"></p>
+<p><em>Figure 4A-5. LSTM predicted-vs-actual scatter for <code>sine_next_day</code> tuned comparison.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Checks linear agreement and dispersion between predictions and realised targets.</li>
+<li><strong>What it shows:</strong> Points cluster close to the identity trend with limited spread at this scale.</li>
+<li><strong>Conclusion supported:</strong> Indicates the tuned LSTM is well calibrated, even though baseline error remains slightly better.</li>
+</ul>
+<p>Figure 4A-6 is included to inspect local temporal fit quality and lag/overshoot behaviour in a contiguous slice.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/sine_next_day/figures/lstm_best_tuned_lstm_comparison-20260331t193731z_pred_slice.png" alt="Sine next day LSTM prediction slice"></p>
+<p><em>Figure 4A-6. LSTM prediction slice for <code>sine_next_day</code> tuned comparison.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Verifies whether pointwise fit remains visually consistent over time.</li>
+<li><strong>What it shows:</strong> Predicted and actual series track closely with small local deviations.</li>
+<li><strong>Conclusion supported:</strong> Supports the claim that neural models fit Task A well, even when not the absolute winner by MSE.</li>
+</ul>
+<h4 id="task-b--nextreturn">Task B — <code>next_return</code></h4>
+<p>Figure 4B-1 is included to compare training convergence behaviour for the harder real-market <code>next_return</code> target.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_return/figures/best_tuned_training_loss.svg" alt="Next return best tuned training loss"></p>
+<p><em>Figure 4B-1. Best-tuned training-loss comparison for <code>next_return</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Tests whether all models optimise stably under noisy return supervision.</li>
+<li><strong>What it shows:</strong> Convergence occurs for all models, but final training-loss gaps remain visible.</li>
+<li><strong>Conclusion supported:</strong> Suggests capacity/inductive-bias differences matter more here than in Task A.</li>
+</ul>
+<p>Figure 4B-2 is included to compare validation generalisation before final test claims are made for Task B.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_return/figures/best_tuned_validation_loss.svg" alt="Next return best tuned validation loss"></p>
+<p><em>Figure 4B-2. Best-tuned validation-loss comparison for <code>next_return</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Provides the direct basis for tuned-winner selection.</li>
+<li><strong>What it shows:</strong> LSTM and GRU remain near the best validation-loss region, ahead of weaker candidates.</li>
+<li><strong>Conclusion supported:</strong> Supports the shortlist of recurrent winners for final out-of-sample comparison.</li>
+</ul>
+<p>Figure 4B-3 is included to validate final model ranking on held-out test data for <code>next_return</code>.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_return/figures/best_tuned_testing_loss.svg" alt="Next return best tuned testing loss"></p>
+<p><em>Figure 4B-3. Best-tuned testing-loss comparison for <code>next_return</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Tests whether validation ranking transfers to test performance.</li>
+<li><strong>What it shows:</strong> LSTM is best, GRU is a close second, and baseline is competitive but weaker.</li>
+<li><strong>Conclusion supported:</strong> Directly supports the report claim that LSTM is the Task B winner.</li>
+</ul>
+<p>Figure 4B-4 is included to examine whether hyperparameter stages produced meaningful improvements for each architecture.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_return/figures/hyperparameter_model_loss_summary_next_return.svg" alt="Next return hyperparameter impact summary"></p>
+<p><em>Figure 4B-4. Hyperparameter-impact model-loss summary for <code>next_return</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Tests sensitivity of model quality to staged tuning choices.</li>
+<li><strong>What it shows:</strong> Certain stage choices noticeably reduce loss, with gains varying by model class.</li>
+<li><strong>Conclusion supported:</strong> Justifies reporting tuned results instead of defaults-only comparisons.</li>
+</ul>
+<p>Figure 4B-5 is included to inspect prediction calibration of the winning LSTM on noisy signed returns.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_return/figures/lstm_best_tuned_lstm_comparison-20260331t195507z_scatter.png" alt="Next return LSTM scatter"></p>
+<p><em>Figure 4B-5. LSTM predicted-vs-actual scatter for <code>next_return</code> tuned comparison.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Evaluates agreement pattern and dispersion for the selected winner.</li>
+<li><strong>What it shows:</strong> Scatter is wider than Task A, but still centred with usable trend alignment.</li>
+<li><strong>Conclusion supported:</strong> Supports a realistic performance claim: useful but imperfect predictability in daily returns.</li>
+</ul>
+<p>Figure 4B-6 is included to inspect sequence-level fit quality and turning-point tracking for the winner.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_return/figures/lstm_best_tuned_lstm_comparison-20260331t195507z_pred_slice.png" alt="Next return LSTM prediction slice"></p>
+<p><em>Figure 4B-6. LSTM prediction slice for <code>next_return</code> tuned comparison.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Checks practical temporal tracking behaviour beyond aggregate metrics.</li>
+<li><strong>What it shows:</strong> The model captures broad movement while smoothing some sharp local swings.</li>
+<li><strong>Conclusion supported:</strong> Supports the limitation that fine-grained return spikes remain difficult to model.</li>
+</ul>
+<h4 id="task-c--nextvolatility">Task C — <code>next_volatility</code></h4>
+<p>Figure 4C-1 is included to compare optimisation behaviour for volatility forecasting candidates.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_volatility/figures/best_tuned_training_loss.svg" alt="Next volatility best tuned training loss"></p>
+<p><em>Figure 4C-1. Best-tuned training-loss comparison for <code>next_volatility</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Tests whether models can fit the smoother non-negative volatility target.</li>
+<li><strong>What it shows:</strong> Training losses are low and relatively stable across models.</li>
+<li><strong>Conclusion supported:</strong> Indicates this task is learnable by both linear and neural models under tuned settings.</li>
+</ul>
+<p>Figure 4C-2 is included to evaluate validation ranking for volatility generalisation quality.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_volatility/figures/best_tuned_validation_loss.svg" alt="Next volatility best tuned validation loss"></p>
+<p><em>Figure 4C-2. Best-tuned validation-loss comparison for <code>next_volatility</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Provides the selection signal for tuned model comparison.</li>
+<li><strong>What it shows:</strong> Baseline and top neural candidates occupy closely spaced low-loss bands.</li>
+<li><strong>Conclusion supported:</strong> Supports the interpretation that simpler models can remain competitive on smoother targets.</li>
+</ul>
+<p>Figure 4C-3 is included to confirm final held-out ranking for <code>next_volatility</code>.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_volatility/figures/best_tuned_testing_loss.svg" alt="Next volatility best tuned testing loss"></p>
+<p><em>Figure 4C-3. Best-tuned testing-loss comparison for <code>next_volatility</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Tests whether validation findings persist out of sample.</li>
+<li><strong>What it shows:</strong> Baseline-LR attains the best test loss, with GRU the strongest neural model.</li>
+<li><strong>Conclusion supported:</strong> Supports the claim that Baseline-LR wins Task C.</li>
+</ul>
+<p>Figure 4C-4 is included to assess how much staged hyperparameter tuning changed volatility results.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_volatility/figures/hyperparameter_model_loss_summary_next_volatility.svg" alt="Next volatility hyperparameter impact summary"></p>
+<p><em>Figure 4C-4. Hyperparameter-impact model-loss summary for <code>next_volatility</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Evaluates the marginal value of each tuning stage.</li>
+<li><strong>What it shows:</strong> Improvements exist but are moderate, with architecture-dependent sensitivity.</li>
+<li><strong>Conclusion supported:</strong> Supports constrained-tuning practicality and the strong baseline interpretation.</li>
+</ul>
+<p>Figure 4C-5 is included to inspect calibration of the best neural (GRU) predictions against realised volatility levels.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_volatility/figures/gru_best_tuned_gru_comparison-20260331t201253z_scatter.png" alt="Next volatility GRU scatter"></p>
+<p><em>Figure 4C-5. GRU predicted-vs-actual scatter for <code>next_volatility</code> tuned comparison.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Tests concentration and bias around realised non-negative targets.</li>
+<li><strong>What it shows:</strong> Predictions cluster along the main trend with compression at extreme values.</li>
+<li><strong>Conclusion supported:</strong> Supports a limitation: tail volatility magnitudes are harder to match precisely.</li>
+</ul>
+<p>Figure 4C-6 is included to inspect contiguous volatility tracking over time for the best neural model.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_volatility/figures/gru_best_tuned_gru_comparison-20260331t201253z_pred_slice.png" alt="Next volatility GRU prediction slice"></p>
+<p><em>Figure 4C-6. GRU prediction slice for <code>next_volatility</code> tuned comparison.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Checks whether temporal smoothing still follows major regime movements.</li>
+<li><strong>What it shows:</strong> The prediction curve tracks broad volatility shifts with smoother peaks.</li>
+<li><strong>Conclusion supported:</strong> Supports the claim that MSE/MAE are more informative than DA for this target.</li>
+</ul>
+<h4 id="task-d--nextmeanreturn">Task D — <code>next_mean_return</code></h4>
+<p>Figure 4D-1 is included to compare training dynamics for moving-average return forecasting.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_mean_return/figures/best_tuned_training_loss.svg" alt="Next mean return best tuned training loss"></p>
+<p><em>Figure 4D-1. Best-tuned training-loss comparison for <code>next_mean_return</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Tests convergence and optimisation stability across tuned models.</li>
+<li><strong>What it shows:</strong> Recurrent candidates reach low training losses with visible but modest separation.</li>
+<li><strong>Conclusion supported:</strong> Indicates recurrent architectures have favourable fit dynamics on this smoothed target.</li>
+</ul>
+<p>Figure 4D-2 is included to compare validation generalisation before reporting final test rankings.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_mean_return/figures/best_tuned_validation_loss.svg" alt="Next mean return best tuned validation loss"></p>
+<p><em>Figure 4D-2. Best-tuned validation-loss comparison for <code>next_mean_return</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Provides the tuned model-selection evidence.</li>
+<li><strong>What it shows:</strong> GRU and nearby recurrent models occupy the lowest validation-loss range.</li>
+<li><strong>Conclusion supported:</strong> Supports choosing GRU-family recurrent settings for final evaluation focus.</li>
+</ul>
+<p>Figure 4D-3 is included to confirm held-out ranking for the smoothed return task.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_mean_return/figures/best_tuned_testing_loss.svg" alt="Next mean return best tuned testing loss"></p>
+<p><em>Figure 4D-3. Best-tuned testing-loss comparison for <code>next_mean_return</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Tests whether selected winners maintain advantage on unseen data.</li>
+<li><strong>What it shows:</strong> GRU has the lowest test loss, with LSTM and RNN close behind.</li>
+<li><strong>Conclusion supported:</strong> Supports the claim that GRU is the Task D winner.</li>
+</ul>
+<p>Figure 4D-4 is included to quantify hyperparameter-stage impact on final loss outcomes.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_mean_return/figures/hyperparameter_model_loss_summary_next_mean_return.svg" alt="Next mean return hyperparameter impact summary"></p>
+<p><em>Figure 4D-4. Hyperparameter-impact model-loss summary for <code>next_mean_return</code>.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Tests whether staged tuning materially improved each model family.</li>
+<li><strong>What it shows:</strong> Tuning improves results, with gains concentrated in specific stage transitions.</li>
+<li><strong>Conclusion supported:</strong> Supports the methodological claim that stage-wise tuning was consequential.</li>
+</ul>
+<p>Figure 4D-5 is included to inspect calibration quality for the GRU winner on averaged signed returns.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_mean_return/figures/gru_best_tuned_gru_comparison-20260331t203017z_scatter.png" alt="Next mean return GRU scatter"></p>
+<p><em>Figure 4D-5. GRU predicted-vs-actual scatter for <code>next_mean_return</code> tuned comparison.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Evaluates correlation structure and spread for winner predictions.</li>
+<li><strong>What it shows:</strong> Points follow the central trend with moderate residual dispersion.</li>
+<li><strong>Conclusion supported:</strong> Supports the claim that GRU provides the strongest overall error balance on Task D.</li>
+</ul>
+<p>Figure 4D-6 is included to check time-local alignment and lag behaviour for GRU predictions.</p>
+<p><img src="../reports/final_report_tasks/20260331T192814Z/next_mean_return/figures/gru_best_tuned_gru_comparison-20260331t203017z_pred_slice.png" alt="Next mean return GRU prediction slice"></p>
+<p><em>Figure 4D-6. GRU prediction slice for <code>next_mean_return</code> tuned comparison.</em></p>
+<ul>
+<li><strong>Why this chart is included:</strong> Tests whether temporal behaviour supports quantitative winner claims.</li>
+<li><strong>What it shows:</strong> Predicted movement follows direction changes with mild smoothing around peaks/troughs.</li>
+<li><strong>Conclusion supported:</strong> Supports using GRU as the preferred model for <code>next_mean_return</code>, with expected smoothing limitations.</li>
+</ul>
+<h3 id="75-summary-of-key-findings">7.5 Summary of key findings</h3>
+<ul>
+<li>No single architecture dominates all tasks.</li>
+<li><strong>Baseline-LR</strong> remains a strong benchmark and wins 2/4 tasks.</li>
+<li><strong>LSTM</strong> is strongest on <code>next_return</code>.</li>
+<li><strong>GRU</strong> is strongest on <code>next_mean_return</code>.</li>
+<li>The latest report should be interpreted as a <strong>task-conditioned benchmark</strong> rather than a universal ranking of model families.</li>
+</ul>
+<hr>
+<h3 id="chapter-8-discussion">Chapter 8. Discussion</h3>
+<h3 id="81-interpretation-of-the-winning-model">8.1 Interpretation of the winning model</h3>
+<p>The latest bundle shows no universal single winner; instead, winners vary by task definition. This is still consistent with literature: gated recurrent models remain strong on noisy sequence forecasting, while simpler baselines can dominate when the target is smoother or effectively linear. [1], [2], [5]</p>
+<h3 id="82-why-the-baseline-remained-competitive">8.2 Why the baseline remained competitive</h3>
+<p>The strong baseline result may be the most informative outcome in the report. If a linear model nearly matches the best neural model, the appropriate interpretation is not that neural methods failed, but that the task itself contains limited predictable structure under the chosen feature set. This is entirely plausible for daily equity-index returns, where much of the variation may be close to noise at this horizon. [1], [5], [8]</p>
+<h3 id="83-error-metrics-versus-directional-accuracy">8.3 Error metrics versus directional accuracy</h3>
+<p>The GRU’s superior directional accuracy but weaker MSE illustrates a meaningful metric trade-off. A model can make slightly larger magnitude errors while still predicting the correct sign more often. For decision-making tasks where direction matters more than calibrated return size, that distinction could be important.</p>
+<p>At the same time, this interpretation boundary is <strong>target-dependent</strong>. DA comparisons are most informative for targets whose realised values are naturally signed (such as <code>next_return</code> and <code>next_mean_return</code>). For <code>next_volatility</code> (forward rolling standard deviation), the target is non-negative by construction, so sign-based DA can become near-constant and non-discriminative across models. In that case, lower MSE/MAE should be treated as the primary evidence of better forecasting quality, and DA should not be over-interpreted when comparing heterogeneous targets in a single table.</p>
+<h3 id="84-comparison-with-expectations-from-literature">8.4 Comparison with expectations from literature</h3>
+<p>The archived results broadly agree with prior expectations in two ways. First, gated recurrent models outperform a plain RNN, which is consistent with their design motivation. [2], [3] Second, Transformer superiority is not guaranteed on small, noisy, low-dimensional financial datasets. [4], [8] The project therefore supports a cautious reading of recent deep-learning enthusiasm: architecture choice must match the data regime.</p>
+<h3 id="85-practical-meaning-of-the-results">8.5 Practical meaning of the results</h3>
+<p>From a practical perspective, model selection should be conditioned on task definition. For the latest bundle, Baseline-LR wins two tasks, while LSTM and GRU each win one. A practitioner with limited compute or strong interpretability requirements can justifiably prioritize the baseline unless a target-specific tuned neural model demonstrates clear gains.</p>
+<hr>
+<h3 id="chapter-9-limitations">Chapter 9. Limitations</h3>
+<h3 id="91-dataset-limitations">9.1 Dataset limitations</h3>
+<p>Only one real market asset (SPY) plus one synthetic data source are evaluated. Findings should not be assumed to generalise to single stocks, other asset classes, or international markets.</p>
+<h3 id="92-experimental-limitations">9.2 Experimental limitations</h3>
+<p>The archived report is based on a limited set of recorded runs rather than repeated experiments with mean ± standard deviation. As a result, some observed ranking differences may be sensitive to run-to-run randomness.</p>
+<h3 id="93-model-comparison-limitations">9.3 Model-comparison limitations</h3>
+<p>The project now includes four archived tasks, but ranking still changes across <code>target_mode</code> definitions. Additional assets, broader horizons, and multivariate external signals could materially change the observed winner ordering.</p>
+<h3 id="94-external-validity-limitations">9.4 External validity limitations</h3>
+<p>The repository downloads data dynamically from Yahoo Finance. Because market history grows over time and occasional adjustments can occur, future reruns may not reproduce exactly the same sample count or metric values unless the final dataset snapshot is frozen. [11]</p>
+<h3 id="95-economic-limitations">9.5 Economic limitations</h3>
+<p>The report evaluates prediction quality, not trading profitability. It does not include transaction costs, slippage, portfolio construction, or risk-adjusted returns. Therefore, the results should not be interpreted as direct evidence of a profitable trading strategy.</p>
+<hr>
+<h3 id="chapter-10-conclusion-and-future-work">Chapter 10. Conclusion and Future Work</h3>
+<h3 id="101-conclusion">10.1 Conclusion</h3>
+<p>This project investigated whether neural sequence models improve forecasting quality under a shared, reproducible benchmark spanning both synthetic and market data tasks with explicit <code>task_id</code>, <code>target_mode</code>, <code>horizon</code>, and <code>target_smooth_window</code> definitions. The latest archived bundle shows <strong>task-dependent winners</strong>: Baseline-LR (<code>sine_next_day</code>, <code>next_volatility</code>), LSTM (<code>next_return</code>), and GRU (<code>next_mean_return</code>). This supports a practical conclusion that architecture superiority depends on target construction and data regime, and that linear baselines remain essential comparators.</p>
+<h3 id="102-contributions-of-the-project">10.2 Contributions of the project</h3>
+<p>The project makes three main contributions:</p>
+<ol>
+<li>It defines a clear multi-task forecasting benchmark spanning synthetic and SPY-based targets.</li>
+<li>It implements a reproducible comparison pipeline across multiple neural architectures and a linear baseline.</li>
+<li>It provides a staged tuning and reporting workflow with per-task artifacts and cross-task summary outputs.</li>
+</ol>
+<h3 id="103-future-work">10.3 Future work</h3>
+<p>Several extensions would strengthen the study:</p>
+<ul>
+<li>repeated runs with summary statistics,</li>
+<li>walk-forward or rolling-window evaluation,</li>
+<li>additional assets and cross-market tests,</li>
+<li>richer feature sets such as volume, volatility, or macro variables,</li>
+<li>trading simulation with transaction costs,</li>
+<li>more extensive Transformer tuning or financial-specific attention architectures.</li>
+</ul>
+<p>Overall, the most defensible conclusion is not that one neural architecture universally dominates, but that <strong>model preference is task-dependent and simple baselines remain difficult to beat by a large margin</strong>.</p>
+<hr>
+<h2 id="6-referencesbibliography">6. References/Bibliography</h2>
+<p>[1] T. Fischer and C. Krauss, “Deep learning with long short-term memory networks for financial market predictions,” <em>European Journal of Operational Research</em>, vol. 270, no. 2, pp. 654–669, Oct. 2018.</p>
+<p>[2] S. Hochreiter and J. Schmidhuber, “Long short-term memory,” <em>Neural Computation</em>, vol. 9, no. 8, pp. 1735–1780, 1997.</p>
+<p>[3] K. Cho <em>et al</em>., “Learning phrase representations using RNN Encoder-Decoder for statistical machine translation,” in <em>Proc. 2014 Conf. Empirical Methods in Natural Language Processing (EMNLP)</em>, Doha, Qatar, 2014, pp. 1724–1734.</p>
+<p>[4] A. Vaswani <em>et al</em>., “Attention is all you need,” in <em>Advances in Neural Information Processing Systems 30 (NeurIPS 2017)</em>, 2017, pp. 5998–6008.</p>
+<p>[5] R. J. Hyndman and G. Athanasopoulos, <em>Forecasting: Principles and Practice</em>, 3rd ed. Melbourne, Australia: OTexts, 2021.</p>
+<p>[6] J. L. Elman, “Finding structure in time,” <em>Cognitive Science</em>, vol. 14, no. 2, pp. 179–211, 1990.</p>
+<p>[7] F. Chollet, <em>Deep Learning with Python</em>, 2nd ed. Shelter Island, NY, USA: Manning, 2021.</p>
+<p>[8] Z. Zhang, S. Zohren, and S. Roberts, “Deep learning for portfolio optimization,” <em>The Journal of Financial Data Science</em>, vol. 2, no. 4, pp. 8–20, 2020.</p>
+<p>[9] State Street Global Advisors, “SPDR S&amp;P 500 ETF Trust (SPY),” accessed Mar. 22, 2026. [Online]. Available: https://www.ssga.com/us/en/intermediary/etfs/funds/spdr-sp-500-etf-trust-spy</p>
+<p>[10] F. Pedregosa <em>et al</em>., “Scikit-learn: Machine learning in Python,” <em>Journal of Machine Learning Research</em>, vol. 12, pp. 2825–2830, 2011.</p>
+<p>[11] R. Aroussi, “yfinance: Download market data from Yahoo! Finance’s API,” GitHub repository, accessed Mar. 22, 2026. [Online]. Available: https://github.com/ranaroussi/yfinance</p>
+<p>[12] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,” in <em>Proc. 3rd Int. Conf. Learning Representations (ICLR)</em>, San Diego, CA, USA, 2015.</p>
+<hr>
+<h3 id="chapter-11-project-contributions--what-has-been-achieved">Chapter 11. Project Contributions / What Has Been Achieved</h3>
+<p>This project has achieved the following outcomes in the final consolidated report and codebase:</p>
+<ol>
+<li>Built a coherent multi-task benchmarking workflow that supports <code>sine_next_day</code>, <code>next_return</code>, <code>next_volatility</code>, and <code>next_mean_return</code>.</li>
+<li>Standardised model comparison across Baseline-LR, RNN, LSTM, GRU, and Transformer under aligned splits and metrics.</li>
+<li>Produced a reproducible final-report artifact bundle (<code>reports/final_report_tasks/20260331T192814Z</code>) with per-task diagnostics and cross-task synthesis.</li>
+<li>Consolidated proposal/interim/final reporting into one standalone final structure with clear front matter, numbered chapters, references, and appendices.</li>
+</ol>
+<hr>
+<h2 id="7-appendices">7. Appendices</h2>
+<h3 id="appendix-a-final-tuned-configurations-latest-bundle-highlights">Appendix A. Final tuned configurations (latest bundle highlights)</h3>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Winner</th>
+<th>Tuned hyperparameters</th>
+<th>Archived run ID</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sine_next_day</code></td>
+<td>Baseline-LR</td>
+<td><code>{&quot;flattened_sequence&quot;: true, &quot;model&quot;: &quot;LinearRegression&quot;, &quot;seq_len&quot;: 30}</code></td>
+<td><code>best_tuned_lstm_comparison-20260331T130042Z-baseline-lr</code></td>
+</tr>
+<tr>
+<td><code>next_return</code></td>
+<td>LSTM</td>
+<td><code>{&quot;batch_size&quot;: 32, &quot;hidden&quot;: 128, &quot;layers&quot;: 3, &quot;lr&quot;: 0.0005, &quot;seq_len&quot;: 30}</code></td>
+<td><code>best_tuned_lstm_comparison-20260331T132130Z</code></td>
+</tr>
+<tr>
+<td><code>next_volatility</code></td>
+<td>Baseline-LR</td>
+<td><code>{&quot;flattened_sequence&quot;: true, &quot;model&quot;: &quot;LinearRegression&quot;, &quot;seq_len&quot;: 20}</code></td>
+<td><code>best_tuned_lstm_comparison-20260331T134030Z-baseline-lr</code></td>
+</tr>
+<tr>
+<td><code>next_mean_return</code></td>
+<td>GRU</td>
+<td><code>{&quot;batch_size&quot;: 128, &quot;hidden&quot;: 128, &quot;layers&quot;: 3, &quot;lr&quot;: 0.001, &quot;seq_len&quot;: 30}</code></td>
+<td><code>best_tuned_gru_comparison-20260331T135921Z</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-b-additional-figures">Appendix B. Additional figures</h2>
+<p>All key figures from the archived final-report bundle are embedded in <strong>Section 7.4</strong> as Markdown images, grouped by task (<code>sine_next_day</code>, <code>next_return</code>, <code>next_volatility</code>, <code>next_mean_return</code>) and figure type (training/validation/testing loss, hyperparameter summary, scatter, prediction slice).</p>
+<h2 id="appendix-c-reproducibility-notes">Appendix C. Reproducibility notes</h2>
+<p>The latest archived final-report bundle used in this report is <code>reports/final_report_tasks/20260331T192814Z</code>, generated at <strong>2026-03-31T20:31:21Z (UTC)</strong>. It contains per-task tuning logs, winners, tuned-comparison CSV/Markdown reports, and task-specific figures for:</p>
+<ul>
+<li><code>sine_next_day</code></li>
+<li><code>next_return</code></li>
+<li><code>next_volatility</code></li>
+<li><code>next_mean_return</code></li>
+</ul>
+<p>Reproducibility source-of-truth note: final reported metrics in this document are resolved from <strong>runtime-effective</strong> configs (CLI overrides + staged winner promotion), not from static defaults. The concrete artifacts used as run truth are:</p>
+<ul>
+<li><code>reports/final_report_tasks/20260331T192814Z/tuning_winners.csv</code></li>
+<li><code>reports/final_report_tasks/20260331T192814Z/*/best_tuned_comparison_*.md</code></li>
+<li><code>reports/final_report_tasks/20260331T192814Z/overall_task_summary.md</code></li>
+</ul>
+<p>The bundle root also includes <code>overall_task_summary.csv</code> for tabular export of the same cross-task synthesis.</p>
+
+</body>
+</html>
