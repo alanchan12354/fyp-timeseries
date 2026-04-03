@@ -25,6 +25,8 @@ Co-Examiner:
 Submission Date:
 31 March 2026
 
+**Document Status:** Draft for supervisor review
+
 
 
 
@@ -44,7 +46,8 @@ The cross-task summary shows that **Baseline-LR** is best on `sine_next_day` and
 - 2. Abstract
 - 3. Table of contents
 - 4. List of tables and figures
-- 5. Main body
+- 5. Pre-submission checklist (run before final PDF generation)
+- 6. Main body
   - Chapter 1. Introduction
   - Chapter 2. Background and Literature Context
   - Chapter 3. Problem Statement and Objectives
@@ -65,12 +68,32 @@ The cross-task summary shows that **Baseline-LR** is best on `sine_next_day` and
 - Table 1. Cross-task consolidated summary.
 - Table 2. Updated report artifact map.
 - Table A-1. Final tuned configurations (latest bundle highlights).
+- Table C-1. Pre-submission checklist.
 
 ### Figures
 - Figure 1. Training-loss comparison for the best tuned models and baseline.
 - Figure 4A-1 to Figure 4D-6. Per-task training/validation/testing, hyperparameter impact, scatter, and prediction-slice visuals.
 
-## 5. Main Body
+## 5. Pre-submission Checklist (Run Before Final PDF Generation)
+
+Use this one-page checklist immediately before producing the final PDF.
+
+| Item | Check |
+| --- | --- |
+| Required sections present (**10.2.1** structure and front/main/back matter) | ☐ |
+| Table of contents, list of figures, and list of tables are updated | ☐ |
+| All figures are cited in text and interpreted | ☐ |
+| Core formulas are included and correctly formatted | ☐ |
+| Contributions section is present and complete | ☐ |
+| References and appendices are complete and consistent | ☐ |
+
+**Pre-submission run record**
+
+- Date: __________
+- Checked by: __________
+- Notes/actions before PDF export: ______________________________________
+
+## 6. Main Body
 
 \newpage
 
