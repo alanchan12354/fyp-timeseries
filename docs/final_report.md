@@ -48,6 +48,7 @@ The cross-task summary shows that **Baseline-LR** is best on `sine_next_day` and
   - Chapter 8. Discussion
   - Chapter 9. Limitations
   - Chapter 10. Conclusion and Future Work
+  - Chapter 11. Project Contributions / What Has Been Achieved
 - 6. References/Bibliography
 - 7. Appendices
 
@@ -761,6 +762,19 @@ The work also contributes a practical training-and-reporting workflow: aligned p
 
 Future work should now focus on strengthening external validity and decision relevance: repeated-seed evaluation with uncertainty intervals, walk-forward/rolling validation, broader asset coverage, richer exogenous features, and dedicated trading simulation with realistic costs and risk controls. Transformer-focused extensions are still worthwhile, but should be paired with the data scale and tuning budget needed for attention models to show their intended strengths.
 
+---
+
+### Chapter 11. Project Contributions / What Has Been Achieved
+
+This project has achieved the following outcomes in the final consolidated report and codebase:
+
+1. Built a coherent multi-task benchmarking workflow that supports `sine_next_day`, `next_return`, `next_volatility`, and `next_mean_return`.
+2. Standardised model comparison across Baseline-LR, RNN, LSTM, GRU, and Transformer under aligned splits and metrics.
+3. Produced a reproducible final-report artifact bundle (`reports/final_report_tasks/20260331T192814Z`) with per-task diagnostics and cross-task synthesis.
+4. Consolidated proposal/interim/final reporting into one standalone final structure with clear front matter, numbered chapters, references, and appendices.
+
+
+
 ## 6. References/Bibliography
 
 [1] T. Fischer and C. Krauss, “Deep learning with long short-term memory networks for financial market predictions,” _European Journal of Operational Research_, vol. 270, no. 2, pp. 654–669, Oct. 2018.
@@ -786,17 +800,6 @@ Future work should now focus on strengthening external validity and decision rel
 [11] R. Aroussi, “yfinance: Download market data from Yahoo! Finance’s API,” GitHub repository, accessed Mar. 22, 2026. [Online]. Available: https://github.com/ranaroussi/yfinance
 
 [12] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,” in _Proc. 3rd Int. Conf. Learning Representations (ICLR)_, San Diego, CA, USA, 2015.
-
----
-
-### Chapter 11. Project Contributions / What Has Been Achieved
-
-This project has achieved the following outcomes in the final consolidated report and codebase:
-
-1. Built a coherent multi-task benchmarking workflow that supports `sine_next_day`, `next_return`, `next_volatility`, and `next_mean_return`.
-2. Standardised model comparison across Baseline-LR, RNN, LSTM, GRU, and Transformer under aligned splits and metrics.
-3. Produced a reproducible final-report artifact bundle (`reports/final_report_tasks/20260331T192814Z`) with per-task diagnostics and cross-task synthesis.
-4. Consolidated proposal/interim/final reporting into one standalone final structure with clear front matter, numbered chapters, references, and appendices.
 
 ---
 
