@@ -267,110 +267,91 @@ The Transformer model first projects each 8-dimensional timestep feature vector 
 
 ### 5.7 Mathematical Formulation of Models
 
-This subsection summarises compact model equations used in the benchmark. Extended derivations are deferred to the appendix.
+To make the notation easier to read, this section focuses on the **core equations that are directly used in the project**, and explains each formula in plain language.
 
-#### 5.7.1 AR/ARIMA/SARIMA (reference only; not used in final benchmark)
+For every sample, the input is a lookback window with `L = seq_len` days and `F = 8` features per day:
 
-Backshift form:
 ```text
-Phi(B^s) phi(B) (1 - B)^d (1 - B^s)^D y_t
-=
-Theta(B^s) theta(B) epsilon_t
+X_t = [x_{t-L+1}, ..., x_t],    x_tau in R^F
 ```
 
-- `B`: backshift operator (`B y_t = y_{t-1}`); `s`: seasonal period.
-- `d, D`: non-seasonal/seasonal differencing orders.
-- `phi, theta, Phi, Theta`: non-seasonal and seasonal AR/MA polynomials.
-- `epsilon_t`: white-noise innovation.
-- **Time dependence:** imposed through lag polynomials and differencing on past observations/errors.
-- **Training objective:** typically maximum likelihood (equivalently minimising one-step-ahead squared innovations under Gaussian errors).
+The model outputs a scalar forecast `y_hat_t`, and training minimises mean squared error over the training set:
 
-#### 5.7.2 Exponential smoothing family (reference only; not used in final benchmark)
-
-Example additive Holt-Winters updates:
 ```text
-ell_t = alpha(y_t - s_{t-m}) + (1 - alpha)(ell_{t-1} + b_{t-1})
-b_t   = beta(ell_t - ell_{t-1}) + (1 - beta)b_{t-1}
-```
-```text
-s_t = gamma(y_t - ell_t) + (1 - gamma)s_{t-m}
-y_hat_{t+h|t} = ell_t + h b_t + s_{t-m+h_m}
+MSE = (1/N) sum_{t=1..N} (y_t - y_hat_t)^2
 ```
 
-- `ell_t`: level, `b_t`: trend, `s_t`: seasonal state, `m`: season length.
-- `alpha, beta, gamma in (0, 1)`: smoothing parameters.
-- `y_hat_{t+h|t}`: `h`-step forecast.
-- **Time dependence:** recursive state updates propagate recent observations with exponential forgetting.
-- **Training objective:** minimise in-sample squared forecast error or maximise likelihood over smoothing parameters.
+#### 5.7.1 Baseline-LR (used in final benchmark)
 
-#### 5.7.3 Regression baseline used (Baseline-LR)
+The linear baseline first flattens the sequence window into one vector and then applies linear regression:
 
-Flattened-sequence linear regression:
 ```text
-y_hat_t = w^T vec(X_{t-L+1:t}) + b
+y_hat_t = w^T vec(X_t) + b
 ```
-where `X_{t-L+1:t} in R^{L x F}`, `L = seq_len`, `F = 8`, and `vec(.) in R^{LF}`.
 
-- `w in R^{LF}`, `b in R`: regression parameters.
-- `y_hat_t`: one-step-ahead target forecast.
-- **Time dependence:** encoded explicitly via lagged features in the flattened lookback window.
-- **Training objective:** least squares `min_{w,b} sum_t (y_t - y_hat_t)^2` (MSE).
+where `vec(X_t) in R^(L*F)`, `w in R^(L*F)`, and `b in R`.  
+In words, the baseline treats all lagged features as one tabular input and learns a single linear mapping to the target.
 
-#### 5.7.4 RNN/LSTM/GRU models used
+#### 5.7.2 Vanilla RNN (used in final benchmark)
 
-**Vanilla RNN**
+The RNN updates a hidden state step by step through the window:
+
 ```text
-h_t = tanh(W_x x_t + W_h h_{t-1} + b_h)
+h_tau = tanh(W_x x_tau + W_h h_{tau-1} + b_h)
 y_hat_t = W_o h_t + b_o
 ```
 
-- `x_t in R^F`: feature vector at time `t`; `h_t`: hidden state.
-- **Time dependence:** recurrent transition carries history through `h_{t-1} -> h_t`.
-- **Training objective:** minimise sequence-level MSE, `min_Theta sum_t (y_t - y_hat_t)^2`, via backpropagation through time.
+The hidden state `h_tau` carries historical information forward across time.
 
-**LSTM (compact gates)**
+#### 5.7.3 LSTM (used in final benchmark)
+
+LSTM extends the RNN with gates and a memory cell:
+
 ```text
-i_t      = sigmoid(W_i[x_t; h_{t-1}] + b_i)
-f_t      = sigmoid(W_f[x_t; h_{t-1}] + b_f)
-c_tilde_t = tanh(W_c[x_t; h_{t-1}] + b_c)
-o_t      = sigmoid(W_o[x_t; h_{t-1}] + b_o)
-c_t      = f_t * c_{t-1} + i_t * c_tilde_t
-h_t      = o_t * tanh(c_t)
-y_hat_t  = W_y h_t + b_y
+i_tau = sigmoid(W_i[x_tau; h_{tau-1}] + b_i)
+f_tau = sigmoid(W_f[x_tau; h_{tau-1}] + b_f)
+g_tau = tanh(W_g[x_tau; h_{tau-1}] + b_g)
+o_tau = sigmoid(W_o[x_tau; h_{tau-1}] + b_o)
+c_tau = f_tau * c_{tau-1} + i_tau * g_tau
+h_tau = o_tau * tanh(c_tau)
+y_hat_t = W_y h_t + b_y
 ```
 
-- `i_t, f_t, o_t`: input/forget/output gates; `c_t`: cell state.
-- **Time dependence:** controlled memory path `c_{t-1} -> c_t` mitigates vanishing gradients.
-- **Training objective:** MSE minimisation with Adam over all network parameters.
+`i_tau`, `f_tau`, and `o_tau` are the input/forget/output gates. The cell state `c_tau` is the long-memory path that helps LSTM remain stable on longer dependencies.
 
-**GRU (compact gates)**
+#### 5.7.4 GRU (used in final benchmark)
+
+GRU uses two gates instead of three:
+
 ```text
-z_t      = sigmoid(W_z[x_t; h_{t-1}] + b_z)
-r_t      = sigmoid(W_r[x_t; h_{t-1}] + b_r)
-h_tilde_t = tanh(W_h[x_t; r_t * h_{t-1}] + b_h)
-h_t      = (1 - z_t) * h_{t-1} + z_t * h_tilde_t
-y_hat_t  = W_y h_t + b_y
+z_tau = sigmoid(W_z[x_tau; h_{tau-1}] + b_z)
+r_tau = sigmoid(W_r[x_tau; h_{tau-1}] + b_r)
+h_tilde_tau = tanh(W_h[x_tau; r_tau * h_{tau-1}] + b_h)
+h_tau = (1 - z_tau) * h_{tau-1} + z_tau * h_tilde_tau
+y_hat_t = W_y h_t + b_y
 ```
 
-- `z_t, r_t`: update/reset gates.
-- **Time dependence:** gated interpolation between previous and candidate hidden states.
-- **Training objective:** MSE minimisation with backpropagation through time.
+The update gate `z_tau` controls how much new information is written into the hidden state, while `r_tau` controls how strongly past state is used when building the candidate state.
 
-#### 5.7.5 Transformer model used
+#### 5.7.5 Transformer (used in final benchmark)
 
-Scaled dot-product self-attention:
+Inside each encoder layer, self-attention is computed as:
+
 ```text
 Attention(Q, K, V) = softmax(QK^T / sqrt(d_k)) V
 ```
-with `Q = XW_Q, K = XW_K, V = XW_V`, and forecast head
+
+with `Q = XW_Q`, `K = XW_K`, and `V = XW_V`. After positional encoding and stacked encoder blocks, the final representation is mapped to the forecast:
+
 ```text
 y_hat_t = W_h z_t + b_h
 ```
-where `z_t` is the final encoder representation (last position) after positional encoding and stacked encoder blocks.
 
-- `d_k`: key/query dimension; `W_Q, W_K, W_V, W_h`: trainable projections.
-- **Time dependence:** attention directly mixes information across all sequence positions using content + positional encoding.
-- **Training objective:** MSE minimisation on one-step forecasts, optimised with Adam.
+where `z_t` is the final sequence representation used by the prediction head.
+
+#### 5.7.6 Classical models for context (not part of final benchmark)
+
+Earlier drafts discussed ARIMA/SARIMA and exponential smoothing as background references. They are useful conceptual baselines in time-series literature, but the final empirical comparison in this project is limited to Baseline-LR, RNN, LSTM, GRU, and Transformer under one shared pipeline.
 
 ### 5.8 Configuration source of truth
 
@@ -471,29 +452,11 @@ Table 1 summarises the best-tuned winner for each task from `overall_task_summar
 
 ### 7.2 Per-task tuned comparison highlights
 
-#### Task A — `sine_next_day`
+The consolidated table gives the headline winners, but the important point is **why** they differ by task. On the synthetic `sine_next_day` task, the signal is smooth and highly structured, so both linear and recurrent models fit very well; in this regime, Baseline-LR edges out the neural models in test MSE (`4.8070e-08`), while LSTM still achieves very high directional agreement. This indicates that model capacity is not the main bottleneck when the underlying pattern is simple.
 
-- Best model by test MSE: **Baseline-LR** (4.8070e-08).
-- Best neural model by test MSE: **LSTM** (1.1095e-07).
-- DA remains high for both baseline and recurrent models (Baseline-LR: 0.9702, LSTM: 0.9864).
+On `next_return`, which is noisier and harder, the best result shifts to LSTM (`9.1979e-05`), with GRU extremely close (`9.2194e-05`). Here, gated recurrence appears to help capture weak short-term dependencies better than both plain RNN and the flattened linear baseline (`1.2176e-04`), although the margin is still modest. The interpretation is therefore not “LSTM always wins,” but “LSTM is most effective for this specific target definition under this data regime.”
 
-#### Task B — `next_return`
-
-- Best model by test MSE: **LSTM** (9.1979e-05).
-- GRU is a close second (9.2194e-05).
-- Baseline-LR is competitive but weaker on this task (1.2176e-04).
-
-#### Task C — `next_volatility`
-
-- Best model by test MSE: **Baseline-LR** (1.7733e-05).
-- Best neural model: **GRU** (1.9411e-05).
-- Directional accuracy is near-saturated for most models because volatility targets are non-negative and trend smoother in sign.
-
-#### Task D — `next_mean_return`
-
-- Best model by test MSE: **GRU** (1.5519e-05).
-- LSTM and RNN are close behind (1.6130e-05 and 1.6560e-05).
-- Baseline-LR trails tuned recurrent winners on this task (2.1937e-05).
+The ranking changes again for `next_volatility` and `next_mean_return`, which reinforces the task-conditioned conclusion. For `next_volatility`, Baseline-LR is best (`1.7733e-05`) and GRU is the strongest neural alternative (`1.9411e-05`); because this target is non-negative and smooth, sign-based DA is less informative and error magnitude should drive interpretation. For `next_mean_return`, GRU becomes the winner (`1.5519e-05`), with LSTM and RNN close behind, suggesting that moderate recurrent gating can help on smoothed return targets while still leaving only limited room over simpler baselines.
 
 ### 7.3 Updated report artifact map
 
@@ -758,92 +721,46 @@ _Figure 4D-6. GRU prediction slice for `next_mean_return` tuned comparison._
 
 ### 7.5 Summary of key findings
 
-- No single architecture dominates all tasks.
-- **Baseline-LR** remains a strong benchmark and wins 2/4 tasks.
-- **LSTM** is strongest on `next_return`.
-- **GRU** is strongest on `next_mean_return`.
-- The latest report should be interpreted as a **task-conditioned benchmark** rather than a universal ranking of model families.
+Taken together, the results support three clear conclusions. First, there is no globally best architecture across all four tasks: winner identity changes with target definition. Second, the linear baseline is not a weak comparator; it wins two tasks and remains competitive on the others, which means any neural gain must be interpreted carefully rather than assumed. Third, recurrent gated models (LSTM/GRU) are still the most reliable neural choices in this project, but their advantage is conditional on the target construction and the amount of exploitable structure in the data.
+
 
 ---
 
 ### Chapter 8. Discussion
 
-### 8.1 Interpretation of the winning model
+### 8.1 Interpreting what the model winners really mean
 
-The latest bundle shows no universal single winner; instead, winners vary by task definition. This is still consistent with literature: gated recurrent models remain strong on noisy sequence forecasting, while simpler baselines can dominate when the target is smoother or effectively linear. [1], [2], [5]
+A key message from the results is that “best model” is a property of the task setup, not a permanent label attached to one architecture. When the target is smoother or close to linear in the engineered features, Baseline-LR can match or surpass deeper models. When the target is noisier but still contains short-memory nonlinear structure, gated recurrent models—especially LSTM and GRU—tend to move to the front. This is why the four tasks should be read as four related but distinct forecasting problems rather than as repetitions of the same experiment.
 
-### 8.2 Why the baseline remained competitive
+### 8.2 Relationship to the earlier models and training process
 
-The strong baseline result may be the most informative outcome in the report. If a linear model nearly matches the best neural model, the appropriate interpretation is not that neural methods failed, but that the task itself contains limited predictable structure under the chosen feature set. This is entirely plausible for daily equity-index returns, where much of the variation may be close to noise at this horizon. [1], [5], [8]
+The earlier model discussion in Chapters 2 and 5 helps explain these outcomes. Vanilla RNN provides the simplest recurrent reference, but its training is usually less stable on noisy sequences than gated variants. LSTM and GRU introduce explicit gating, which improves trainability and memory control; this is consistent with their stronger performance in `next_return` and `next_mean_return`. The Transformer is powerful in principle, but in this project’s setting—relatively limited data scale and low feature dimensionality—its added flexibility does not automatically convert to lower out-of-sample error. Importantly, all models were trained under the same chronological split, scaler discipline, and validation-driven tuning workflow, so the ranking differences are more likely to reflect model-task fit than pipeline inconsistency.
 
-### 8.3 Error metrics versus directional accuracy
+### 8.3 How to read MSE, MAE, and directional accuracy together
 
-The GRU’s superior directional accuracy but weaker MSE illustrates a meaningful metric trade-off. A model can make slightly larger magnitude errors while still predicting the correct sign more often. For decision-making tasks where direction matters more than calibrated return size, that distinction could be important.
+MSE and MAE describe magnitude error, while DA describes sign agreement; they answer different questions. For signed targets such as `next_return` and `next_mean_return`, DA adds useful information about directional usefulness. For non-negative targets such as `next_volatility`, DA can become near-saturated and should not be treated as decisive evidence. Therefore, the report’s core ranking should rely primarily on MSE/MAE, with DA used as a secondary lens where the target definition makes sign meaningful.
 
-At the same time, this interpretation boundary is **target-dependent**. DA comparisons are most informative for targets whose realised values are naturally signed (such as `next_return` and `next_mean_return`). For `next_volatility` (forward rolling standard deviation), the target is non-negative by construction, so sign-based DA can become near-constant and non-discriminative across models. In that case, lower MSE/MAE should be treated as the primary evidence of better forecasting quality, and DA should not be over-interpreted when comparing heterogeneous targets in a single table.
+### 8.4 Practical interpretation for model selection
 
-### 8.4 Comparison with expectations from literature
-
-The archived results broadly agree with prior expectations in two ways. First, gated recurrent models outperform a plain RNN, which is consistent with their design motivation. [2], [3] Second, Transformer superiority is not guaranteed on small, noisy, low-dimensional financial datasets. [4], [8] The project therefore supports a cautious reading of recent deep-learning enthusiasm: architecture choice must match the data regime.
-
-### 8.5 Practical meaning of the results
-
-From a practical perspective, model selection should be conditioned on task definition. For the latest bundle, Baseline-LR wins two tasks, while LSTM and GRU each win one. A practitioner with limited compute or strong interpretability requirements can justifiably prioritize the baseline unless a target-specific tuned neural model demonstrates clear gains.
+From a practical viewpoint, the current evidence suggests a conservative model-selection strategy: start from Baseline-LR as a strong default, then promote to a tuned LSTM or GRU only when task-specific validation/testing clearly improves. This approach aligns with the observed margins, controls complexity, and keeps conclusions grounded in measurable gains rather than architectural preference.
 
 ---
 
 ### Chapter 9. Limitations
 
-### 9.1 Dataset limitations
+This study has several limitations that should be kept explicit when interpreting the conclusions. The real-market analysis is centered on a single asset proxy (SPY), so cross-asset generalisation is not yet established. Results also come from a finite set of archived runs rather than many repeated seeds with confidence intervals, which means close model gaps may not be statistically robust. In addition, the benchmark focuses on one-step-style short-horizon formulations under selected target constructions; changing horizon length, feature scope, or market regime could alter winner ordering.
 
-Only one real market asset (SPY) plus one synthetic data source are evaluated. Findings should not be assumed to generalise to single stocks, other asset classes, or international markets.
-
-### 9.2 Experimental limitations
-
-The archived report is based on a limited set of recorded runs rather than repeated experiments with mean ± standard deviation. As a result, some observed ranking differences may be sensitive to run-to-run randomness.
-
-### 9.3 Model-comparison limitations
-
-The project now includes four archived tasks, but ranking still changes across `target_mode` definitions. Additional assets, broader horizons, and multivariate external signals could materially change the observed winner ordering.
-
-### 9.4 External validity limitations
-
-The repository downloads data dynamically from Yahoo Finance. Because market history grows over time and occasional adjustments can occur, future reruns may not reproduce exactly the same sample count or metric values unless the final dataset snapshot is frozen. [11]
-
-### 9.5 Economic limitations
-
-The report evaluates prediction quality, not trading profitability. It does not include transaction costs, slippage, portfolio construction, or risk-adjusted returns. Therefore, the results should not be interpreted as direct evidence of a profitable trading strategy.
+There are also practical reproducibility constraints. Although the pipeline is designed to be reproducible, market data are downloaded from an external source and the available history grows over time, so exact row counts and metrics can drift unless a frozen raw snapshot is used. Finally, predictive accuracy is not the same as trading value: the report does not include execution assumptions, transaction costs, slippage, risk limits, or portfolio construction, so no direct profitability claim should be made from forecast metrics alone.
 
 ---
 
 ### Chapter 10. Conclusion and Future Work
 
-### 10.1 Conclusion
+This project set out to test whether advanced neural sequence models consistently outperform a strong linear baseline under one controlled forecasting pipeline. The final evidence supports a more nuanced conclusion: performance is strongly task-dependent. Baseline-LR is best on `sine_next_day` and `next_volatility`, LSTM is best on `next_return`, and GRU is best on `next_mean_return`. In other words, the central contribution is not a universal winner, but a clear demonstration that target definition (`target_mode`, `horizon`, and smoothing) materially changes which model is most suitable.
 
-This project investigated whether neural sequence models improve forecasting quality under a shared, reproducible benchmark spanning both synthetic and market data tasks with explicit `task_id`, `target_mode`, `horizon`, and `target_smooth_window` definitions. The latest archived bundle shows **task-dependent winners**: Baseline-LR (`sine_next_day`, `next_volatility`), LSTM (`next_return`), and GRU (`next_mean_return`). This supports a practical conclusion that architecture superiority depends on target construction and data regime, and that linear baselines remain essential comparators.
+The work also contributes a practical training-and-reporting workflow: aligned preprocessing, leakage-safe scaling, chronological splits, staged validation-driven tuning, and per-task artifact tracking. This provides a transparent foundation for future comparison studies and makes it easier to audit how each result was produced.
 
-### 10.2 Contributions of the project
-
-The project makes three main contributions:
-
-1. It defines a clear multi-task forecasting benchmark spanning synthetic and SPY-based targets.
-2. It implements a reproducible comparison pipeline across multiple neural architectures and a linear baseline.
-3. It provides a staged tuning and reporting workflow with per-task artifacts and cross-task summary outputs.
-
-### 10.3 Future work
-
-Several extensions would strengthen the study:
-
-- repeated runs with summary statistics,
-- walk-forward or rolling-window evaluation,
-- additional assets and cross-market tests,
-- richer feature sets such as volume, volatility, or macro variables,
-- trading simulation with transaction costs,
-- more extensive Transformer tuning or financial-specific attention architectures.
-
-Overall, the most defensible conclusion is not that one neural architecture universally dominates, but that **model preference is task-dependent and simple baselines remain difficult to beat by a large margin**.
-
----
+Future work should now focus on strengthening external validity and decision relevance: repeated-seed evaluation with uncertainty intervals, walk-forward/rolling validation, broader asset coverage, richer exogenous features, and dedicated trading simulation with realistic costs and risk controls. Transformer-focused extensions are still worthwhile, but should be paired with the data scale and tuning budget needed for attention models to show their intended strengths.
 
 ## 6. References/Bibliography
 
