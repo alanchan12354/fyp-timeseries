@@ -48,7 +48,6 @@ The cross-task summary shows that **Baseline-LR** is best on `sine_next_day` and
   - Chapter 8. Discussion
   - Chapter 9. Limitations
   - Chapter 10. Conclusion and Future Work
-  - Chapter 11. Project Contributions / What Has Been Achieved
 - 6. References/Bibliography
 - 7. Appendices
 
