@@ -267,61 +267,62 @@ The Transformer model first projects each 8-dimensional timestep feature vector 
 
 ### 5.7 Mathematical Formulation of Models
 
-To make the notation easier to read, this section focuses on the **core equations that are directly used in the project**, and explains each formula in plain language.
+This section keeps only the equations needed to understand the implemented models and adds a short symbol guide for readability.
 
-For every sample, the input is a lookback window with `L = seq_len` days and `F = 8` features per day:
-
-```text
-X_t = [x_{t-L+1}, ..., x_t],    x_tau in R^F
-```
-
-The model outputs a scalar forecast `y_hat_t`, and training minimises mean squared error over the training set:
+For each sample, the input is a rolling window of `L` days (where `L = seq_len`) and `F = 8` features per day:
 
 ```text
-MSE = (1/N) sum_{t=1..N} (y_t - y_hat_t)^2
+X_t = [x_{t-L+1}, ..., x_t],  x_tau in R^F
 ```
+
+All models output one scalar forecast `y_hat_t`. Training uses mean squared error:
+
+```text
+MSE = (1/N) * sum_{t=1}^{N} (y_t - y_hat_t)^2
+```
+
+Here, `N` is the number of training samples, `y_t` is the true target, and `y_hat_t` is the model prediction.
 
 #### 5.7.1 Baseline-LR (used in final benchmark)
 
-The linear baseline first flattens the sequence window into one vector and then applies linear regression:
+The baseline flattens the full sequence into one vector and applies a linear map:
 
 ```text
 y_hat_t = w^T vec(X_t) + b
 ```
 
-where `vec(X_t) in R^(L*F)`, `w in R^(L*F)`, and `b in R`.  
-In words, the baseline treats all lagged features as one tabular input and learns a single linear mapping to the target.
+`vec(X_t)` stacks all lagged features into length `L*F`. This is equivalent to linear regression over the same information used by the neural models.
 
 #### 5.7.2 Vanilla RNN (used in final benchmark)
 
-The RNN updates a hidden state step by step through the window:
+The RNN updates a hidden state sequentially:
 
 ```text
 h_tau = tanh(W_x x_tau + W_h h_{tau-1} + b_h)
 y_hat_t = W_o h_t + b_o
 ```
 
-The hidden state `h_tau` carries historical information forward across time.
+The final hidden state summarizes the lookback window and is mapped to the output.
 
 #### 5.7.3 LSTM (used in final benchmark)
 
-LSTM extends the RNN with gates and a memory cell:
+LSTM adds gated memory:
 
 ```text
 i_tau = sigmoid(W_i[x_tau; h_{tau-1}] + b_i)
 f_tau = sigmoid(W_f[x_tau; h_{tau-1}] + b_f)
-g_tau = tanh(W_g[x_tau; h_{tau-1}] + b_g)
 o_tau = sigmoid(W_o[x_tau; h_{tau-1}] + b_o)
+g_tau = tanh(W_g[x_tau; h_{tau-1}] + b_g)
 c_tau = f_tau * c_{tau-1} + i_tau * g_tau
 h_tau = o_tau * tanh(c_tau)
 y_hat_t = W_y h_t + b_y
 ```
 
-`i_tau`, `f_tau`, and `o_tau` are the input/forget/output gates. The cell state `c_tau` is the long-memory path that helps LSTM remain stable on longer dependencies.
+`i_tau`, `f_tau`, and `o_tau` are input, forget, and output gates; `c_tau` is the memory cell.
 
 #### 5.7.4 GRU (used in final benchmark)
 
-GRU uses two gates instead of three:
+GRU uses a lighter gated design:
 
 ```text
 z_tau = sigmoid(W_z[x_tau; h_{tau-1}] + b_z)
@@ -331,23 +332,21 @@ h_tau = (1 - z_tau) * h_{tau-1} + z_tau * h_tilde_tau
 y_hat_t = W_y h_t + b_y
 ```
 
-The update gate `z_tau` controls how much new information is written into the hidden state, while `r_tau` controls how strongly past state is used when building the candidate state.
+`z_tau` controls update strength, and `r_tau` controls how much previous state is used when building the candidate state.
 
 #### 5.7.5 Transformer (used in final benchmark)
 
-Inside each encoder layer, self-attention is computed as:
+Each encoder block computes scaled dot-product attention:
 
 ```text
 Attention(Q, K, V) = softmax(QK^T / sqrt(d_k)) V
 ```
 
-with `Q = XW_Q`, `K = XW_K`, and `V = XW_V`. After positional encoding and stacked encoder blocks, the final representation is mapped to the forecast:
+with `Q = XW_Q`, `K = XW_K`, and `V = XW_V`. The final sequence representation `z_t` is then projected to:
 
 ```text
 y_hat_t = W_h z_t + b_h
 ```
-
-where `z_t` is the final sequence representation used by the prediction head.
 
 #### 5.7.6 Classical models for context (not part of final benchmark)
 
@@ -452,11 +451,11 @@ Table 1 summarises the best-tuned winner for each task from `overall_task_summar
 
 ### 7.2 Per-task tuned comparison highlights
 
-The consolidated table gives the headline winners, but the important point is **why** they differ by task. On the synthetic `sine_next_day` task, the signal is smooth and highly structured, so both linear and recurrent models fit very well; in this regime, Baseline-LR edges out the neural models in test MSE (`4.8070e-08`), while LSTM still achieves very high directional agreement. This indicates that model capacity is not the main bottleneck when the underlying pattern is simple.
+The task-level results can be read in a straightforward way. For the synthetic `sine_next_day` task, all models perform very well because the signal is smooth and regular, and Baseline-LR records the lowest test MSE (`4.8070e-08`). This suggests that on a near-linear, low-noise target, extra model complexity is not necessary.
 
-On `next_return`, which is noisier and harder, the best result shifts to LSTM (`9.1979e-05`), with GRU extremely close (`9.2194e-05`). Here, gated recurrence appears to help capture weak short-term dependencies better than both plain RNN and the flattened linear baseline (`1.2176e-04`), although the margin is still modest. The interpretation is therefore not “LSTM always wins,” but “LSTM is most effective for this specific target definition under this data regime.”
+For `next_return`, performance drops for every model because the target is noisier. In this setting, LSTM is best (`9.1979e-05`) and GRU is very close (`9.2194e-05`), while Baseline-LR is weaker (`1.2176e-04`). The most reasonable conclusion is that gated recurrence helps on this target, but the margin is not large enough to claim a universal neural advantage.
 
-The ranking changes again for `next_volatility` and `next_mean_return`, which reinforces the task-conditioned conclusion. For `next_volatility`, Baseline-LR is best (`1.7733e-05`) and GRU is the strongest neural alternative (`1.9411e-05`); because this target is non-negative and smooth, sign-based DA is less informative and error magnitude should drive interpretation. For `next_mean_return`, GRU becomes the winner (`1.5519e-05`), with LSTM and RNN close behind, suggesting that moderate recurrent gating can help on smoothed return targets while still leaving only limited room over simpler baselines.
+For `next_volatility`, Baseline-LR is again best (`1.7733e-05`), with GRU as the closest neural model (`1.9411e-05`). For `next_mean_return`, the winner changes to GRU (`1.5519e-05`), with LSTM and RNN close behind. Taken together, these two tasks confirm that model ranking depends on how the target is defined (raw return vs smoothed return vs volatility) rather than on model family name alone.
 
 ### 7.3 Updated report artifact map
 
@@ -721,28 +720,22 @@ _Figure 4D-6. GRU prediction slice for `next_mean_return` tuned comparison._
 
 ### 7.5 Summary of key findings
 
-Taken together, the results support three clear conclusions. First, there is no globally best architecture across all four tasks: winner identity changes with target definition. Second, the linear baseline is not a weak comparator; it wins two tasks and remains competitive on the others, which means any neural gain must be interpreted carefully rather than assumed. Third, recurrent gated models (LSTM/GRU) are still the most reliable neural choices in this project, but their advantage is conditional on the target construction and the amount of exploitable structure in the data.
+The key conclusions are:
+
+1. **No single architecture wins all tasks.** Winners change across `sine_next_day`, `next_return`, `next_volatility`, and `next_mean_return`.
+2. **Baseline-LR is a strong benchmark, not a formality.** It is best on two of the four tasks and remains competitive elsewhere.
+3. **LSTM/GRU are the strongest neural options in this study, but only conditionally.** Their benefit appears when the target contains enough nonlinear sequential structure to justify added complexity.
 
 
 ---
 
 ### Chapter 8. Discussion
 
-### 8.1 Interpreting what the model winners really mean
+The main discussion point is that “best model” is task-specific. In these experiments, winner identity changes as the target definition changes. When the target is smoother or approximately linear in the engineered features, Baseline-LR remains very hard to beat. When the target is noisier but still contains short-memory nonlinear structure, gated recurrent models—especially LSTM and GRU—become stronger candidates.
 
-A key message from the results is that “best model” is a property of the task setup, not a permanent label attached to one architecture. When the target is smoother or close to linear in the engineered features, Baseline-LR can match or surpass deeper models. When the target is noisier but still contains short-memory nonlinear structure, gated recurrent models—especially LSTM and GRU—tend to move to the front. This is why the four tasks should be read as four related but distinct forecasting problems rather than as repetitions of the same experiment.
+This pattern is also consistent with the model properties described earlier. Vanilla RNN offers a useful reference but is less robust on noisy sequences. LSTM and GRU improve state control through gating, which likely explains their advantage on `next_return` and `next_mean_return`. Transformer does not dominate in this setting, which is plausible given the limited data scale and low feature dimensionality. Because all models used the same split strategy, scaling protocol, and tuning procedure, the observed differences are more credibly attributed to model–task fit rather than inconsistent evaluation.
 
-### 8.2 Relationship to the earlier models and training process
-
-The earlier model discussion in Chapters 2 and 5 helps explain these outcomes. Vanilla RNN provides the simplest recurrent reference, but its training is usually less stable on noisy sequences than gated variants. LSTM and GRU introduce explicit gating, which improves trainability and memory control; this is consistent with their stronger performance in `next_return` and `next_mean_return`. The Transformer is powerful in principle, but in this project’s setting—relatively limited data scale and low feature dimensionality—its added flexibility does not automatically convert to lower out-of-sample error. Importantly, all models were trained under the same chronological split, scaler discipline, and validation-driven tuning workflow, so the ranking differences are more likely to reflect model-task fit than pipeline inconsistency.
-
-### 8.3 How to read MSE, MAE, and directional accuracy together
-
-MSE and MAE describe magnitude error, while DA describes sign agreement; they answer different questions. For signed targets such as `next_return` and `next_mean_return`, DA adds useful information about directional usefulness. For non-negative targets such as `next_volatility`, DA can become near-saturated and should not be treated as decisive evidence. Therefore, the report’s core ranking should rely primarily on MSE/MAE, with DA used as a secondary lens where the target definition makes sign meaningful.
-
-### 8.4 Practical interpretation for model selection
-
-From a practical viewpoint, the current evidence suggests a conservative model-selection strategy: start from Baseline-LR as a strong default, then promote to a tuned LSTM or GRU only when task-specific validation/testing clearly improves. This approach aligns with the observed margins, controls complexity, and keeps conclusions grounded in measurable gains rather than architectural preference.
+Metric interpretation must also follow the target definition. MSE/MAE are the primary ranking metrics throughout. DA is informative for signed targets such as `next_return` and `next_mean_return`, but less discriminative for non-negative targets such as `next_volatility`. In practical terms, a sensible workflow is to start from Baseline-LR and adopt LSTM/GRU only when validation and test errors show a clear improvement for the specific task being deployed.
 
 ---
 
